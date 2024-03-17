@@ -67,6 +67,7 @@ router.get('/getAll', async (req, res) => {
     return res.status(500).send();
   }
 });
+
 // Route to get all systems by project_id
 router.get('/getAll/:project_id', async (req, res) => {
   const projectId = req.params.project_id;
@@ -168,8 +169,9 @@ async function updateSystem(system) {
     const updatedSystem = {
       screen_count: system.screen_count,
       system_progress: system.system_progress,
-      system_plan_start: new Date(system.system_plan_start).toISOString().split('T')[0],
-      system_plan_end: new Date(system.system_plan_end).toISOString().split('T')[0],
+      // Check if system_plan_start and system_plan_end are null, then keep them as null
+      system_plan_start: system.system_plan_start ? new Date(system.system_plan_start).toISOString().split('T')[0] : null,
+      system_plan_end: system.system_plan_end ? new Date(system.system_plan_end).toISOString().split('T')[0] : null,
       system_manday: system.system_manday,
       id: system.id
     };
@@ -187,6 +189,7 @@ async function updateSystem(system) {
     throw err;
   }
 }
+
 
 // Route to get one system by id
 router.get('/getOne/:id', async (req, res) => {
@@ -304,50 +307,40 @@ router.get('/searchByProjectId_delete/:project_id', async (req, res) => {
 
 // Route to create a new system
 router.post('/createSystem', async (req, res) => {
-  const {
-    project_id,
-    system_id,
-    system_nameTH,
-    system_nameEN,
-    system_shortname,
-    system_analyst,
-    system_member,
-    system_plan_start,
-    system_plan_end,
-  } = req.body;
-  const id = generateId();
+  const { project_id, system_id, system_nameTH, system_nameEN, system_shortname } = req.body;
+
+  // Validate required fields
+  if (!project_id || !system_id || !system_nameTH || !system_nameEN || !system_shortname) {
+    return res.status(400).json({ error: 'Please provide project_id, system_id, system_nameTH, system_nameEN, and system_shortname' });
+  }
+
   try {
-    connection.query(
-      'INSERT INTO systems(id, project_id, system_id, system_nameTH, system_nameEN, system_shortname, system_analyst, system_member, system_plan_start, system_plan_end) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        id,
-        project_id,
-        system_id,
-        system_nameTH,
-        system_nameEN,
-        system_shortname,
-        system_analyst,
-        system_member,
-        system_plan_start,
-        system_plan_end,
-      ],
-      (err, results, fields) => {
-        if (err) {
-          console.error('Error while inserting a system into the database', err);
-          return res.status(400).send();
-        }
-        return res
-          .status(201)
-          .json({ message: 'New system successfully created!' });
+    // Check if the system_id already exists
+    const systemIdExistsQuery = 'SELECT * FROM systems WHERE system_id = ?';
+    connection.query(systemIdExistsQuery, [system_id], async (err, results, fields) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send();
       }
-    );
+      if (results.length > 0) {
+        return res.status(400).json({ error: 'System ID already exists' });
+      }
+
+      // Insert new system into the database
+      const insertSystemQuery = 'INSERT INTO systems (project_id, system_id, system_nameTH, system_nameEN, system_shortname) VALUES (?, ?, ?, ?, ?)';
+      connection.query(insertSystemQuery, [project_id, system_id, system_nameTH, system_nameEN, system_shortname], async (err, results, fields) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send();
+        }
+        return res.status(201).json({ message: 'System created successfully' });
+      });
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).send();
   }
 });
-
-
 
 // Route to update system details
 router.put('/updateSystem/:id', async (req, res) => {
@@ -507,6 +500,7 @@ router.delete("/deleteHistorySystems/:id", async (req, res) => {
     return res.status(500).send();
   }
 });
+
 
 // Route to add user to systems
 router.post('/addUserSystem', async (req, res) => {

@@ -85,6 +85,40 @@
           >Systems Detail</v-btn
         >
       </template>
+
+      <!-- เพิ่มการตรวจสอบเงื่อนไขและแสดงข้อความที่กำหนด -->
+      <template v-slot:item="{ item }">
+        <tr>
+          <td>{{ item.system_id }}</td>
+          <td>{{ item.system_nameTH }}</td>
+          <td>{{ item.system_nameEN }}</td>
+          <td>{{ item.system_shortname }}</td>
+          <td>
+            {{ item.screen_count ? item.screen_count : "0" }}
+          </td>
+          <td>{{ item.system_progress ? item.system_progress : "0" }}</td>
+          <td>
+            {{
+              item.system_plan_start ? item.system_plan_start : "Not determined"
+            }}
+          </td>
+          <td>
+            {{ item.system_plan_end ? item.system_plan_end : "Not determined" }}
+          </td>
+          <td>{{ item.system_manday ? item.system_manday : "0" }}</td>
+          <td>
+            <v-icon class="me-2" size="20" px @click="openEditDialog(item)"
+              >mdi-pencil-circle</v-icon
+            >
+            <v-icon size="20" px @click="confirmDeleteSystem(item)"
+              >mdi-delete-empty</v-icon
+            >
+            <v-btn @click="goToSystemsDetail(item.id)" style="margin-left: 10px"
+              >Systems Detail</v-btn
+            >
+          </td>
+        </tr>
+      </template>
     </v-data-table>
 
     <!-- Create System Dialog -->
@@ -372,21 +406,6 @@ export default {
     async createSystem() {
       const projectId = this.$route.params.id;
       try {
-        // Remove keys with null values
-        Object.keys(this.newSystem).forEach((key) => {
-          if (this.newSystem[key] === null) {
-            delete this.newSystem[key];
-          }
-        });
-
-        // Replace empty string values with null for date fields
-        if (this.newSystem.project_plan_start === "") {
-          this.newSystem.project_plan_start = null;
-        }
-        if (this.newSystem.system_plan_end === "") {
-          this.newSystem.system_plan_end = null;
-        }
-
         const response = await fetch(
           `http://localhost:7777/systems/createSystem`,
           {
@@ -409,18 +428,16 @@ export default {
           system_nameTH: "",
           system_nameEN: "",
           system_shortname: "",
-          project_plan_start: "", // Clear project_plan_start
-          system_plan_end: "", // Clear system_plan_end
         };
         const confirmResult = await Swal.fire({
           icon: "success",
           title: "Success",
           text: "New system created successfully",
-          showConfirmButton: true, // Show "OK" button
-          allowOutsideClick: false, // Prevent closing by outside click
+          showConfirmButton: true, // แสดงปุ่ม "OK"
+          allowOutsideClick: false, // ปิดการคลิกภายนอกเพื่อป้องกันการปิดโดยไม่ได้เช็ค
         });
         if (confirmResult.isConfirmed) {
-          // Update data automatically after successful creation
+          // อัพเดทข้อมูลโดยอัตโนมัติหลังจากสร้างข้อมูลใหม่สำเร็จ
           this.fetchSystems();
         }
       } catch (error) {
