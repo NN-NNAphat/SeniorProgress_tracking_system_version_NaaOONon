@@ -1,33 +1,45 @@
 <template>
   <!-- Systems Data Table container -->
   <div class="systems-data-table">
-    <v-card class="mx-auto align-start" max-width="800" hover>
-      <v-card-item @click="showDetails = !showDetails">
-        <v-card-title>
-          {{ project.project_name_ENG }}
-        </v-card-title>
-        <v-card-subtitle>
-          Project Progress:
-          <v-progress-linear
-            v-if="project.project_progress !== null"
-            :model-value="project.project_progress"
-          ></v-progress-linear>
-          <v-progress-linear v-else model-value="0"></v-progress-linear>
-        </v-card-subtitle>
-      </v-card-item>
+    <v-row style="margin-bottom: 20px">
+      <!-- First v-card -->
+      <v-col cols="6">
+        <v-card class="mx-auto align-start" max-width="800" hover>
+          <v-card-item @click="showDetails = !showDetails">
+            <v-card-title>
+              {{ project.project_name_ENG }}
+            </v-card-title>
+            <v-card-subtitle>
+              Project Progress:
+              <v-progress-linear
+                v-if="project.project_progress !== null"
+                :model-value="project.project_progress"
+              ></v-progress-linear>
+              <v-progress-linear v-else model-value="0"></v-progress-linear>
+            </v-card-subtitle>
+          </v-card-item>
 
-      <v-expand-transition>
-        <div v-show="showDetails">
-          <v-divider></v-divider>
-          <v-card-text>
-            <p>Project Manday: {{ project.project_manday }}</p>
-            <p>System Count: {{ project.system_count }}</p>
-            <p>Project Plan Start: {{ project.project_plan_start }}</p>
-            <p>Project Plan End: {{ project.project_plan_end }}</p>
-          </v-card-text>
-        </div>
-      </v-expand-transition>
-    </v-card>
+          <v-expand-transition>
+            <div v-show="showDetails">
+              <v-divider></v-divider>
+              <v-card-text>
+                <p>Project Manday: {{ project.project_manday }}</p>
+                <p>System Count: {{ project.system_count }}</p>
+                <p>Project Plan Start: {{ project.project_plan_start }}</p>
+                <p>Project Plan End: {{ project.project_plan_end }}</p>
+              </v-card-text>
+            </div>
+          </v-expand-transition>
+        </v-card>
+      </v-col>
+      <!-- Second v-card -->
+      <v-col cols="6">
+        <v-card>
+          <h1>แสดงรายชื่อคนภายในโปรเจค</h1>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- Search bar -->
     <v-row no-gutters>
       <v-col cols="12">
