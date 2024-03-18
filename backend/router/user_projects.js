@@ -205,6 +205,7 @@ router.get("/getUserProjectsByProjectId/:project_id", async (req, res) => {
         return res.status(500).send();
     }
 });
+
 router.get("/getUsersNotInProject/:project_id", async (req, res) => {
     const project_id = req.params.project_id;
     try {

@@ -1,7 +1,7 @@
 <template>
   <!-- Systems Data Table container -->
   <div class="systems-data-table">
-    <v-row style="margin-bottom: 20px">
+    <v-row style="margin-bottom: 20px" align="center">
       <!-- First v-card -->
       <v-col cols="6">
         <v-card class="mx-auto align-start" max-width="800" hover>
@@ -10,12 +10,17 @@
               {{ project.project_name_ENG }}
             </v-card-title>
             <v-card-subtitle>
-              Project Progress:
+              Project Progress: {{ project.project_progress }}
               <v-progress-linear
-                v-if="project.project_progress !== null"
+                v-if="
+                  project.project_progress !== null &&
+                  project.project_progress !== undefined
+                "
+                color="deep-orange"
+                height="10"
                 :model-value="project.project_progress"
+                striped
               ></v-progress-linear>
-              <v-progress-linear v-else model-value="0"></v-progress-linear>
             </v-card-subtitle>
           </v-card-item>
 
@@ -34,9 +39,39 @@
       </v-col>
       <!-- Second v-card -->
       <v-col cols="6">
-        <v-card>
-          <h1>แสดงรายชื่อคนภายในโปรเจค</h1>
-        </v-card>
+        <v-btn class="custom-btn" @click="showUserDialog = true">
+          แสดงรายชื่อคนภายในโปรเจค
+        </v-btn>
+        <v-dialog v-model="showUserDialog" max-width="600">
+          <v-card>
+            <v-card-title>รายชื่อคนภายในโปรเจค</v-card-title>
+            <v-card-text>
+              <v-list>
+                <v-list-item v-for="(user, index) in projectUsers" :key="index">
+                  <v-list-item-avatar>
+                    <img :src="user.user_pic" alt="User Picture" />
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      {{ user.user_position }}: {{ user.user_firstname }}
+                      {{ user.user_lastname }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle
+                      >ตำแหน่ง: {{ user.user_position }}</v-list-item-subtitle
+                    >
+                    <v-list-item-subtitle
+                      >แผนก: {{ user.user_department }}</v-list-item-subtitle
+                    >
+                    <!-- เพิ่มข้อมูลเพิ่มเติมตามต้องการ -->
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list>
+            </v-card-text>
+            <v-card-actions>
+              <v-btn color="primary" @click="showUserDialog = false">ปิด</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
       </v-col>
     </v-row>
 
@@ -228,12 +263,16 @@
 
 <script>
 import Swal from "sweetalert2";
+import axios from "axios";
 
 export default {
   name: "SystemsDataTable",
   layout: "admin",
   data() {
     return {
+      showUserDialog: false,
+      dropdown: false,
+      projectUsers: [],
       showDetails: false,
       project: {},
       projectNameENG: "",
@@ -270,6 +309,24 @@ export default {
     };
   },
   methods: {
+    goToCreateSystem() {
+      // Open the create system dialog first
+      this.createSystemDialog = true;
+    },
+    toggleDropdown() {
+      this.dropdown = !this.dropdown;
+    },
+    async fetchProjectUsers() {
+      const projectId = this.$route.params.id;
+      try {
+        const response = await axios.get(
+          `http://localhost:7777/user_projects/getUserProjectsByProjectId/${projectId}`
+        );
+        this.projectUsers = response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
     async goToSystemsDetail(systemId) {
       // Navigate to the Systems/_id.vue page with the systemId parameter
       await this.$router.push({ path: `/systems/${systemId}` });
@@ -287,7 +344,6 @@ export default {
         // Handle error fetching project
       }
     },
-
     async restoreSystem(item) {
       try {
         const confirmResult = await Swal.fire({
@@ -343,19 +399,6 @@ export default {
         );
       }
     },
-
-    async mounted() {
-      try {
-        const projectId = this.$route.params.id;
-        const response = await this.$axios.$get(
-          `http://localhost:7777/projects/getOne/${projectId}`
-        );
-        this.project = response;
-      } catch (error) {
-        console.error("Error fetching project:", error);
-      }
-    },
-
     async confirmDeleteHistorySystem(item) {
       try {
         const confirmResult = await Swal.fire({
@@ -445,11 +488,10 @@ export default {
           icon: "success",
           title: "Success",
           text: "New system created successfully",
-          showConfirmButton: true, // แสดงปุ่ม "OK"
-          allowOutsideClick: false, // ปิดการคลิกภายนอกเพื่อป้องกันการปิดโดยไม่ได้เช็ค
+          showConfirmButton: true,
+          allowOutsideClick: false,
         });
         if (confirmResult.isConfirmed) {
-          // อัพเดทข้อมูลโดยอัตโนมัติหลังจากสร้างข้อมูลใหม่สำเร็จ
           this.fetchSystems();
         }
       } catch (error) {
@@ -461,7 +503,6 @@ export default {
         });
       }
     },
-
     async updateSystem() {
       try {
         const response = await fetch(
@@ -493,37 +534,7 @@ export default {
         });
       }
     },
-
-    async fetchSystems() {
-      const projectId = this.$route.params.id;
-      try {
-        const response = await fetch(
-          `http://localhost:7777/systems/getAll/${projectId}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch systems");
-        }
-        const data = await response.json();
-        this.systems = data;
-      } catch (error) {
-        console.error("Error fetching systems:", error);
-      }
-    },
-    async goToCreateSystem() {
-      // Open the create system dialog first
-      this.createSystemDialog = true;
-    },
-    openEditDialog(system) {
-      this.editedSystem = { ...system };
-      this.editSystemDialog = true;
-    },
-    async editSystem(system) {
-      // Set the edited system to the selected system
-      this.editedSystem = { ...system };
-      // Open the edit system dialog
-      this.editSystemDialog = true;
-    },
-    async confirmDeleteSystem(system) {
+    async confirmDeleteSystem(item) {
       try {
         const confirmResult = await Swal.fire({
           title: "Are you sure?",
@@ -533,47 +544,26 @@ export default {
           confirmButtonColor: "#3085d6",
           cancelButtonColor: "#d33",
           confirmButtonText: "Yes, delete it!",
-          showClass: {
-            popup: "animate__animated animate__fadeInDown", // Set animation when showing SweetAlert
-          },
-          hideClass: {
-            popup: "animate__animated animate__fadeOutUp", // Set animation when hiding SweetAlert
-          },
         });
         if (confirmResult.isConfirmed) {
-          // If user confirms deletion, call deleteSystem method
-          await this.deleteSystem(system);
-          // Update data automatically after deletion
+          const response = await fetch(
+            `http://localhost:7777/systems/deleteSystem/${item.id}`,
+            {
+              method: "DELETE",
+            }
+          );
+          if (!response.ok) {
+            throw new Error("Failed to delete system");
+          }
+          await Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: "System deleted successfully",
+          });
           this.fetchSystems();
         }
       } catch (error) {
         console.error("Error confirming delete system:", error);
-      }
-    },
-
-    async deleteSystem(system) {
-      const systemId = system.id;
-      try {
-        // Send a DELETE request to the API to delete the system
-        const response = await fetch(
-          `http://localhost:7777/systems/delete/${systemId}`,
-          {
-            method: "DELETE",
-          }
-        );
-        if (!response.ok) {
-          throw new Error("Failed to delete system");
-        }
-        // If deletion is successful, show success message and update systems data
-        await Swal.fire({
-          icon: "success",
-          title: "Success",
-          text: "System deleted successfully",
-        });
-        this.fetchDeletedSystems(); // Refresh the deleted systems data
-      } catch (error) {
-        console.error("Error deleting system:", error);
-        // If an error occurs during deletion, show error message
         await Swal.fire({
           icon: "error",
           title: "Error",
@@ -581,28 +571,70 @@ export default {
         });
       }
     },
+    async openEditDialog(item) {
+      this.editedSystem = { ...item };
+      this.editSystemDialog = true;
+    },
+    async fetchSystems() {
+      try {
+        const projectId = this.$route.params.id;
+        const response = await fetch(
+          `http://localhost:7777/systems/searchByProjectId/${projectId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch systems");
+        }
+        const systems = await response.json();
+        this.systems = systems;
+      } catch (error) {
+        console.error("Error fetching systems:", error);
+        // Handle error fetching systems
+      }
+    },
+    filterSystems() {
+      const query = this.searchQuery.toLowerCase();
+      return this.systems.filter(
+        (system) =>
+          system.system_id.toLowerCase().includes(query) ||
+          system.system_nameTH.toLowerCase().includes(query) ||
+          system.system_nameEN.toLowerCase().includes(query) ||
+          system.system_shortname.toLowerCase().includes(query)
+      );
+    },
   },
   computed: {
     filteredSystems() {
-      return this.systems.filter((system) => {
-        const searchText = this.searchQuery.toLowerCase();
-        return (
-          system.system_id.toLowerCase().includes(searchText) ||
-          system.system_nameTH.toLowerCase().includes(searchText) ||
-          system.system_nameEN.toLowerCase().includes(searchText) ||
-          system.system_shortname.toLowerCase().includes(searchText)
-        );
-      });
+      return this.filterSystems();
     },
   },
-
-  mounted() {
-    this.fetchSystems();
+  watch: {
+    $route(to, from) {
+      this.fetchProjectNameENG();
+      this.fetchProjectUsers();
+      this.fetchSystems();
+    },
+  },
+  created() {
     this.fetchProjectNameENG();
+    this.fetchProjectUsers();
+    this.fetchSystems();
   },
 };
 </script>
 
+
 <style scoped>
-/* Add your scoped styles here */
+.v-data-table > .v-data-footer {
+  padding-top: 0;
+}
+
+.systems-data-table .v-progress-linear__background {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.custom-btn {
+  width: 100%;
+  height: 50%;
+}
 </style>
+
