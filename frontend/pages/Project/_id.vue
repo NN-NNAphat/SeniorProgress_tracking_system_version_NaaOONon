@@ -128,6 +128,7 @@
         <v-icon size="20" px @click="confirmDeleteSystem(item)"
           >mdi-delete-empty</v-icon
         >
+
         <v-btn @click="goToSystemsDetail(item.id)" style="margin-left: 10px"
           >Systems Detail</v-btn
         >
@@ -547,7 +548,7 @@ export default {
         });
         if (confirmResult.isConfirmed) {
           const response = await fetch(
-            `http://localhost:7777/systems/deleteSystem/${item.id}`,
+            `http://localhost:7777/systems/delete/${item.id}`,
             {
               method: "DELETE",
             }
