@@ -333,7 +333,7 @@ router.post('/createSystem', async (req, res) => {
           console.error(err);
           return res.status(500).send();
         }
-        return res.status(201).json({ message: 'System created successfully' });
+        return res.status(201).json({ message: 'New system created successfully' }); // แก้ไขข้อความที่ส่งกลับ
       });
     });
   } catch (err) {
@@ -341,6 +341,7 @@ router.post('/createSystem', async (req, res) => {
     return res.status(500).send();
   }
 });
+
 
 // Route to update system details
 router.put('/updateSystem/:id', async (req, res) => {

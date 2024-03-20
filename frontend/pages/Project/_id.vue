@@ -197,6 +197,16 @@
               label="Short Name"
             ></v-text-field>
 
+            <!-- Add v-select for selecting users -->
+            <v-select
+              v-model="selectedUser"
+              :items="projectUsers"
+              label="Select User"
+              item-value="user_id"
+              item-text="user_firstname"
+              multiple
+            ></v-select>
+
             <v-btn type="submit">Create</v-btn>
             <v-btn @click="createSystemDialog = false">Cancel</v-btn>
           </v-form>
@@ -271,6 +281,7 @@ export default {
   layout: "admin",
   data() {
     return {
+      selectedUser: null,
       showUserDialog: false,
       dropdown: false,
       projectUsers: [],
@@ -478,8 +489,9 @@ export default {
         if (!response.ok) {
           throw new Error("Failed to create system");
         }
-        // Clear the newSystem object
+        const responseData = await response.json(); // เพิ่มส่วนนี้เพื่อรับข้อมูลที่ส่งกลับมาจากเซิร์ฟเวอร์
         this.newSystem = {
+          // เคลียร์ข้อมูลหลังจากสร้างระบบเรียบร้อย
           system_id: "",
           system_nameTH: "",
           system_nameEN: "",
@@ -488,7 +500,7 @@ export default {
         const confirmResult = await Swal.fire({
           icon: "success",
           title: "Success",
-          text: "New system created successfully",
+          text: responseData.message, // ใช้ข้อความที่ส่งกลับมาจากเซิร์ฟเวอร์
           showConfirmButton: true,
           allowOutsideClick: false,
         });
@@ -504,6 +516,7 @@ export default {
         });
       }
     },
+
     async updateSystem() {
       try {
         const response = await fetch(
