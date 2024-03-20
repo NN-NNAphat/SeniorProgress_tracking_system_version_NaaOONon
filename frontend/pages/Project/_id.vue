@@ -303,10 +303,40 @@
           <v-btn color="blue darken-1" text @click="manageUserDialog = false"
             >Close</v-btn
           >
-          <!-- เพิ่มปุ่มเพื่อทำการเพิ่มผู้ใช้ระบบ -->
-          <v-btn color="blue darken-1" text @click="openNestedDialog()"
+          <v-btn
+            color="blue darken-1"
+            text
+            @click="openNestedDialog(selectedSystemId, selectedProjectId)"
             >Assign User</v-btn
           >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- assing Userdialog -->
+    <v-dialog v-model="assinguserDalog" max-width="800px">
+      <v-card>
+        <v-card-title>Assign User</v-card-title>
+        <v-card-text>
+          <!-- แสดง system_id -->
+          <div>System ID: {{ selectedSystemId }}</div>
+          <!-- แสดง project_id -->
+          <div>Project ID: {{ selectedProjectId }}</div>
+          <!-- เพิ่ม select สำหรับเลือกผู้ใช้ -->
+          <v-select
+            v-model="selectedUsers"
+            :items="availableUsers"
+            label="Select User"
+            item-text="user_firstname"
+            item-value="id"
+            multiple
+          ></v-select>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="blue darken-1" text @click="assinguserDalog = false"
+            >Close</v-btn
+          >
+          <v-btn color="blue darken-1" text @click="assignUser">Assign</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -322,6 +352,9 @@ export default {
   layout: "admin",
   data() {
     return {
+      selectedUsers: [], // เก็บผู้ใช้ที่ถูกเลือก
+      availableUsers: [],
+      assinguserDalog: false,
       selectedProjectId: null,
       users: [],
       system_id: "",
@@ -375,10 +408,27 @@ export default {
     };
   },
   methods: {
+    async assignUser() {
+      try {
+        const { selectedUsers, selectedSystemId, selectedProjectId } = this;
+        // เรียก API เพื่อสร้างการเชื่อมต่อระหว่างผู้ใช้และระบบ
+        const response = await axios.post(`http://localhost:7777/user_systems/createUser_system`, {
+          user_id: selectedUsers,
+          system_id: selectedSystemId,
+          project_id: selectedProjectId,
+        });
+        console.log(response.data.message); // พิมพ์ข้อความจากการสร้างผู้ใช้ระบบใหม่
+        // ปิด Dialog หลังจากที่สร้างผู้ใช้ระบบเรียบร้อย
+        this.assinguserDalog = false;
+        // สามารถดำเนินการอื่นๆ ตามต้องการ เช่น รีเฟรชรายการผู้ใช้หรืออื่นๆ
+      } catch (error) {
+        console.error("Error assigning user:", error);
+        // จัดการข้อผิดพลาดหากมีปัญหาในการสร้างผู้ใช้ระบบ
+      }
+    },
+
     async fetchUsersBySystemAndProject(systemId, projectId) {
       try {
-        console.log("systemId:", systemId);
-        console.log("projectId:", projectId);
         const response = await axios.get(
           `http://localhost:7777/user_systems/getUserBySystemAndProject/${systemId}/${projectId}`
         );
@@ -394,8 +444,18 @@ export default {
       this.fetchUsersBySystemAndProject(item.system_id, item.project_id); // เรียกใช้งานฟังก์ชันโหลดข้อมูลผู้ใช้
     },
 
-    openNestedDialog() {
-      // ใส่โค้ดที่เปิด Dialog สำหรับกำหนดผู้ใช้ระบบ
+    async openNestedDialog(systemId, projectId) {
+      try {
+        // เรียก API เพื่อรับรายชื่อผู้ใช้ที่สามารถเลือกได้
+        const response = await axios.get(
+          `http://localhost:7777/user_systems/checkUsersInProjectSystem/${projectId}/${systemId}`
+        );
+        this.availableUsers = response.data;
+        // เปิด Dialog
+        this.assinguserDalog = true;
+      } catch (error) {
+        console.error(error);
+      }
     },
 
     async deleteUser(systemId, projectId, userId) {
@@ -412,15 +472,12 @@ export default {
             this.users.splice(index, 1);
           }
           // แสดงข้อความเตือนว่าลบผู้ใช้ระบบสำเร็จ
-          
         } else {
           // แสดงข้อความเตือนว่ามีข้อผิดพลาดในการลบผู้ใช้ระบบ
-         
         }
       } catch (error) {
         // แสดงข้อความเตือนว่ามีข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์
         console.error("Error deleting user system:", error);
-        
       }
     },
 

@@ -229,25 +229,34 @@ router.get("/getUserBySystemAndProject/:system_id/:project_id", async (req, res)
 
 
 // Get users not in system by system_id
-router.get("/getUsersNotInSystems/:system_id", async (req, res) => {
-    const system_id = req.params.system_id;
+router.get("/checkUsersInProjectSystem/:project_id/:system_id", async (req, res) => {
+    const { project_id, system_id } = req.params;
+
     try {
-        connection.query(
-            "SELECT * FROM users WHERE id NOT IN (SELECT user_id FROM user_systems WHERE system_id = ?)",
-            [system_id],
-            (err, results, fields) => {
-                if (err) {
-                    console.log(err);
-                    return res.status(400).send();
-                }
-                res.status(200).json(results);
+        // Query to find users who are not in the specified project and system
+        const query = `
+            SELECT u.id, u.user_firstname, u.user_lastname, u.user_position
+            FROM users u
+            WHERE u.id NOT IN (
+                SELECT us.user_id
+                FROM user_systems us
+                WHERE us.project_id = ? AND us.system_id = ?
+            )
+        `;
+
+        connection.query(query, [project_id, system_id], (err, results, fields) => {
+            if (err) {
+                console.log(err);
+                return res.status(400).send();
             }
-        );
+            res.status(200).json(results);
+        });
     } catch (err) {
         console.log(err);
         return res.status(500).send();
     }
 });
+
 //* DELETE user_system by system_id, project_id, and user_id
 router.delete("/deleteUserSystem/:system_id/:project_id/:user_id", async (req, res) => {
     const { system_id, project_id, user_id } = req.params;
