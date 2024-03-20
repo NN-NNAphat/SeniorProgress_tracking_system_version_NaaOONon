@@ -305,42 +305,68 @@ router.get('/searchByProjectId_delete/:project_id', async (req, res) => {
   }
 });
 
-// Route to create a new system
-router.post('/createSystem', async (req, res) => {
-  const { project_id, system_id, system_nameTH, system_nameEN, system_shortname } = req.body;
+// API createSystem
+router.post("/createSystem", async (req, res) => {
+  const {
+    project_id,
+    system_nameTH,
+    system_nameEN,
+    selectedUser,
+  } = req.body;
 
-  // Validate required fields
-  if (!project_id || !system_id || !system_nameTH || !system_nameEN || !system_shortname) {
-    return res.status(400).json({ error: 'Please provide project_id, system_id, system_nameTH, system_nameEN, and system_shortname' });
-  }
+  const id = generateId(); // Generate ID using generateId() function
 
   try {
-    // Check if the system_id already exists
-    const systemIdExistsQuery = 'SELECT * FROM systems WHERE system_id = ?';
-    connection.query(systemIdExistsQuery, [system_id], async (err, results, fields) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send();
-      }
-      if (results.length > 0) {
-        return res.status(400).json({ error: 'System ID already exists' });
-      }
-
-      // Insert new system into the database
-      const insertSystemQuery = 'INSERT INTO systems (project_id, system_id, system_nameTH, system_nameEN, system_shortname) VALUES (?, ?, ?, ?, ?)';
-      connection.query(insertSystemQuery, [project_id, system_id, system_nameTH, system_nameEN, system_shortname], async (err, results, fields) => {
+    connection.query(
+      "INSERT INTO systems (id, project_id, system_id, system_nameTH, system_nameEN, system_shortname) VALUES (?, ?, ?, ?, ?, '')",
+      [id, project_id, id, system_nameTH, system_nameEN], // Use the same ID for system_id
+      (err, results, fields) => {
         if (err) {
-          console.error(err);
-          return res.status(500).send();
+          console.error(
+            "Error while inserting a system into the database",
+            err
+          );
+          return res.status(400).send();
         }
-        return res.status(201).json({ message: 'New system created successfully' }); // แก้ไขข้อความที่ส่งกลับ
-      });
-    });
+
+        // Create user_system relations if selectedUsers are provided
+        if (selectedUser) {
+          const userSystemValues = selectedUser.map((user_id) => [
+            user_id,
+            id, // Use the newly generated system ID
+            project_id,
+          ]);
+
+          connection.query(
+            "INSERT INTO user_systems (user_id, system_id, project_id) VALUES ?",
+            [userSystemValues],
+            (error, results, fields) => {
+              if (error) {
+                console.error(
+                  "Error while inserting users into the system",
+                  error
+                );
+                return res.status(400).send();
+              }
+              return res
+                .status(201)
+                .json({ message: "New system and users assigned successfully!", system_id: id }); // Return the system_id
+            }
+          );
+        } else {
+          return res
+            .status(201)
+            .json({ message: "New system created successfully!", system_id: id }); // Return the system_id
+        }
+      }
+    );
   } catch (err) {
     console.error(err);
     return res.status(500).send();
   }
 });
+
+
 
 
 // Route to update system details

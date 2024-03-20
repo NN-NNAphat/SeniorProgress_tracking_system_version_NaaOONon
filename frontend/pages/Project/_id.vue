@@ -93,6 +93,7 @@
         />
       </v-col>
     </v-row>
+
     <!-- Data Table -->
     <v-data-table
       :headers="headers"
@@ -489,9 +490,32 @@ export default {
         if (!response.ok) {
           throw new Error("Failed to create system");
         }
-        const responseData = await response.json(); // เพิ่มส่วนนี้เพื่อรับข้อมูลที่ส่งกลับมาจากเซิร์ฟเวอร์
+
+        // Extract system_id from response data
+        const responseData = await response.json();
+        const system_id = responseData.system_id; // ใช้ system_id ที่ได้รับจากการสร้างระบบ
+
+        // Send selected users to the server
+        const userResponse = await fetch(
+          `http://localhost:7777/user_systems/createUser_system`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: this.selectedUser,
+              system_id: system_id, // ใส่ system_id ที่ได้รับจากการสร้างระบบ
+              project_id: projectId,
+            }),
+          }
+        );
+        if (!userResponse.ok) {
+          throw new Error("Failed to assign users to the system");
+        }
+
+        // Clear the form and show success message
         this.newSystem = {
-          // เคลียร์ข้อมูลหลังจากสร้างระบบเรียบร้อย
           system_id: "",
           system_nameTH: "",
           system_nameEN: "",
@@ -500,7 +524,7 @@ export default {
         const confirmResult = await Swal.fire({
           icon: "success",
           title: "Success",
-          text: responseData.message, // ใช้ข้อความที่ส่งกลับมาจากเซิร์ฟเวอร์
+          text: "New system and users assigned successfully",
           showConfirmButton: true,
           allowOutsideClick: false,
         });
