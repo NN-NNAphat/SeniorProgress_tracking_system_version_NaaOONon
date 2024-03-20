@@ -105,9 +105,9 @@
       <template v-slot:top>
         <v-toolbar flat>
           <!-- ชื่อโปรเจค -->
-          <v-toolbar-title
-            >Systems Management - Project: {{ projectNameENG }}</v-toolbar-title
-          >
+          <v-toolbar-title>Systems Management</v-toolbar-title>
+          <!-- ใช้ v-spacer เพื่อชิดปุ่มไปทางขวา -->
+          <v-spacer></v-spacer>
           <!-- เพิ่มปุ่ม New System -->
           <v-btn color="primary" dark @click="goToCreateSystem"
             >New System</v-btn
@@ -412,11 +412,14 @@ export default {
       try {
         const { selectedUsers, selectedSystemId, selectedProjectId } = this;
         // เรียก API เพื่อสร้างการเชื่อมต่อระหว่างผู้ใช้และระบบ
-        const response = await axios.post(`http://localhost:7777/user_systems/createUser_system`, {
-          user_id: selectedUsers,
-          system_id: selectedSystemId,
-          project_id: selectedProjectId,
-        });
+        const response = await axios.post(
+          `http://localhost:7777/user_systems/createUser_system`,
+          {
+            user_id: selectedUsers,
+            system_id: selectedSystemId,
+            project_id: selectedProjectId,
+          }
+        );
         console.log(response.data.message); // พิมพ์ข้อความจากการสร้างผู้ใช้ระบบใหม่
         // ปิด Dialog หลังจากที่สร้างผู้ใช้ระบบเรียบร้อย
         this.assinguserDalog = false;
