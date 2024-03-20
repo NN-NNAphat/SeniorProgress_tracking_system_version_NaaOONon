@@ -193,10 +193,28 @@
             <!-- Add v-select for selecting users -->
             <v-select
               v-model="selectedUser"
-              :items="projectUsers"
-              label="Select User"
+              :items="filteredUsers('Implementer')"
+              label="Select Implementer"
               item-value="user_id"
-              item-text="user_firstname"
+              item-text="displayName"
+              multiple
+            ></v-select>
+
+            <v-select
+              v-model="selectedUser"
+              :items="filteredUsers('Developer')"
+              label="Select Developer"
+              item-value="user_id"
+              item-text="displayName"
+              multiple
+            ></v-select>
+
+            <v-select
+              v-model="selectedUser"
+              :items="filteredUsers('System Analyst')"
+              label="Select System Analyst"
+              item-value="user_id"
+              item-text="displayName"
               multiple
             ></v-select>
 
@@ -231,9 +249,7 @@
               v-model="editedSystem.system_shortname"
               label="Short Name"
             ></v-text-field>
-            <!-- Add more fields as needed -->
-            <!-- You can also add selection fields for system analyst and member -->
-            <!-- Add buttons to submit and cancel -->
+
             <v-btn type="submit">Update</v-btn>
             <v-btn @click="editSystemDialog = false">Cancel</v-btn>
           </v-form>
@@ -412,6 +428,14 @@ export default {
     };
   },
   methods: {
+    filteredUsers(position) {
+      return this.projectUsers
+        .filter((user) => user.user_position === position)
+        .map((user) => ({
+          ...user,
+          displayName: `${user.user_firstname} ${user.user_lastname}`,
+        }));
+    },
     async assignUser() {
       try {
         const { selectedUsers, selectedSystemId, selectedProjectId } = this;
@@ -501,7 +525,10 @@ export default {
         const response = await axios.get(
           `http://localhost:7777/user_projects/getUserProjectsByProjectId/${projectId}`
         );
-        this.projectUsers = response.data;
+        this.projectUsers = response.data.map((user) => ({
+          ...user,
+          displayName: `${user.user_position} : ${user.user_firstname} ${user.user_lastname}`,
+        }));
       } catch (error) {
         console.error(error);
       }
