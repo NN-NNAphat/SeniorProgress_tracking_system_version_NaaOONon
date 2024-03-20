@@ -334,20 +334,45 @@
     </v-dialog>
 
     <!-- assing Userdialog -->
-    <v-dialog v-model="assinguserDalog" max-width="800px">
+    <v-dialog v-model="assinguserDalog" max-width="500px">
       <v-card>
         <v-card-title>Assign User</v-card-title>
         <v-card-text>
-          <!-- แสดง system_id -->
-          <div>System ID: {{ selectedSystemId }}</div>
-          <!-- แสดง project_id -->
-          <div>Project ID: {{ selectedProjectId }}</div>
-          <!-- เพิ่ม select สำหรับเลือกผู้ใช้ -->
           <v-select
             v-model="selectedUsers"
-            :items="availableUsers"
-            label="Select User"
-            item-text="user_firstname"
+            :items="
+              availableUsers.filter(
+                (user) => user.user_position === 'Implementer'
+              )
+            "
+            label="Select Implementer"
+            item-text="displayName"
+            item-value="id"
+            multiple
+          ></v-select>
+
+          <v-select
+            v-model="selectedUsers"
+            :items="
+              availableUsers.filter(
+                (user) => user.user_position === 'Developer'
+              )
+            "
+            label="Select Developer"
+            item-text="displayName"
+            item-value="id"
+            multiple
+          ></v-select>
+
+          <v-select
+            v-model="selectedUsers"
+            :items="
+              availableUsers.filter(
+                (user) => user.user_position === 'System Analyst'
+              )
+            "
+            label="Select System Analyst"
+            item-text="displayName"
             item-value="id"
             multiple
           ></v-select>
@@ -481,7 +506,16 @@ export default {
         const response = await axios.get(
           `http://localhost:7777/user_systems/checkUsersInProjectSystem/${projectId}/${systemId}`
         );
-        this.availableUsers = response.data;
+
+        // เพิ่มข้อมูล user_position เข้าไปในชุดข้อมูล
+        const usersWithDisplayName = response.data.map((user) => ({
+          ...user,
+          displayName: `${user.user_position} : ${user.user_firstname} ${user.user_lastname}`,
+        }));
+
+        // กำหนดข้อมูลผู้ใช้ใหม่ตามตำแหน่ง
+        this.availableUsers = usersWithDisplayName;
+
         // เปิด Dialog
         this.assinguserDalog = true;
       } catch (error) {

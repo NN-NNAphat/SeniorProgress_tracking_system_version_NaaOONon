@@ -455,23 +455,23 @@ router.delete("/deleteHistorySystems/:id", async (req, res) => {
   const id = req.params.id;
 
   try {
-    connection.beginTransaction(async (err) => {
+    connection.query("START TRANSACTION", async (err, results, fields) => {
       if (err) {
         console.error(err);
         return res.status(500).send();
       }
 
-      // Delete tasks related to screens with the given system_id
+      // Now, delete issues related to the system_id
       connection.query(
         `
-        DELETE FROM tasks
-        WHERE screen_id IN (SELECT id FROM screens WHERE system_id = ?)
+        DELETE FROM issues
+        WHERE system_id IN (SELECT id FROM screens WHERE system_id = ?)
         `,
         [id],
         async (err, results, fields) => {
           if (err) {
             console.error(err);
-            connection.rollback(() => {
+            connection.query("ROLLBACK", () => {
               return res.status(500).send();
             });
           }
@@ -486,35 +486,52 @@ router.delete("/deleteHistorySystems/:id", async (req, res) => {
             async (err, results, fields) => {
               if (err) {
                 console.error(err);
-                connection.rollback(() => {
+                connection.query("ROLLBACK", () => {
                   return res.status(500).send();
                 });
               }
 
-              // Now, delete the system itself
+              // Now, delete user_systems related to the system_id
               connection.query(
                 `
-                DELETE FROM systems
-                WHERE id = ?
+                DELETE FROM user_systems
+                WHERE system_id = ?
                 `,
                 [id],
                 async (err, results, fields) => {
                   if (err) {
                     console.error(err);
-                    connection.rollback(() => {
+                    connection.query("ROLLBACK", () => {
                       return res.status(500).send();
                     });
                   }
 
-                  connection.commit((err) => {
-                    if (err) {
-                      console.error(err);
-                      connection.rollback(() => {
-                        return res.status(500).send();
+                  // Now, delete the system itself
+                  connection.query(
+                    `
+                    DELETE FROM systems
+                    WHERE id = ?
+                    `,
+                    [id],
+                    async (err, results, fields) => {
+                      if (err) {
+                        console.error(err);
+                        connection.query("ROLLBACK", () => {
+                          return res.status(500).send();
+                        });
+                      }
+
+                      connection.query("COMMIT", (err) => {
+                        if (err) {
+                          console.error(err);
+                          connection.query("ROLLBACK", () => {
+                            return res.status(500).send();
+                          });
+                        }
+                        return res.status(200).json({ message: "System and related data deleted successfully!" });
                       });
                     }
-                    return res.status(200).json({ message: "System and related data deleted successfully!" });
-                  });
+                  );
                 }
               );
             }
@@ -527,6 +544,10 @@ router.delete("/deleteHistorySystems/:id", async (req, res) => {
     return res.status(500).send();
   }
 });
+
+
+
+
 
 
 // Route to add user to systems
