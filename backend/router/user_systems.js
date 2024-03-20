@@ -68,7 +68,7 @@ router.get("/getOneScreenID/:system_id", async (req, res) => {
 
 // * POST FROM user_systems
 router.post("/createUser_system", async (req, res) => {
-    const { user_id,system_id,project_id } = req.body;
+    const { user_id, system_id, project_id } = req.body;
 
     try {
         for (let i = 0; i < user_id.length; i++) {
@@ -206,6 +206,72 @@ router.delete("/deleteProjectID/:project_id", async (req, res) => {
 });
 
 
+//* GET user by system_id and project_id
+router.get("/getUserBySystemAndProject/:system_id/:project_id", async (req, res) => {
+    const { system_id, project_id } = req.params;
+    try {
+        connection.query(
+            "SELECT users.id, users.user_firstname, users.user_lastname, users.user_position, users.user_department, users.user_pic FROM user_systems INNER JOIN users ON user_systems.user_id = users.id WHERE user_systems.system_id = ? AND user_systems.project_id = ?",
+            [system_id, project_id],
+            (err, results, fields) => {
+                if (err) {
+                    console.log(err);
+                    return res.status(400).send();
+                }
+                res.status(200).json(results);
+            }
+        );
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
+
+
+// Get users not in system by system_id
+router.get("/getUsersNotInSystems/:system_id", async (req, res) => {
+    const system_id = req.params.system_id;
+    try {
+        connection.query(
+            "SELECT * FROM users WHERE id NOT IN (SELECT user_id FROM user_systems WHERE system_id = ?)",
+            [system_id],
+            (err, results, fields) => {
+                if (err) {
+                    console.log(err);
+                    return res.status(400).send();
+                }
+                res.status(200).json(results);
+            }
+        );
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
+//* DELETE user_system by system_id, project_id, and user_id
+router.delete("/deleteUserSystem/:system_id/:project_id/:user_id", async (req, res) => {
+    const { system_id, project_id, user_id } = req.params;
+
+    try {
+        connection.query(
+            "DELETE FROM user_systems WHERE system_id = ? AND project_id = ? AND user_id = ?",
+            [system_id, project_id, user_id],
+            (err, results, fields) => {
+                if (err) {
+                    console.log(err);
+                    return res.status(400).send();
+                }
+                if (results.affectedRows === 0) {
+                    return res.status(404).json({ message: "No matching user_system found" });
+                }
+                return res.status(200).json({ message: "User system deleted successfully" });
+            }
+        );
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
 
 
 module.exports = router;

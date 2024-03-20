@@ -101,50 +101,37 @@
       :items-per-page="5"
       class="elevation-1"
     >
+      <!-- ส่วน Toolbar -->
       <template v-slot:top>
         <v-toolbar flat>
+          <!-- ชื่อโปรเจค -->
           <v-toolbar-title
-            >Systems Management - Project :
-            {{ projectNameENG }}</v-toolbar-title
+            >Systems Management - Project: {{ projectNameENG }}</v-toolbar-title
           >
-          <v-divider class="mx-4" inset vertical></v-divider>
-          <v-spacer></v-spacer>
+          <!-- เพิ่มปุ่ม New System -->
           <v-btn color="primary" dark @click="goToCreateSystem"
             >New System</v-btn
           >
+          <!-- เพิ่มปุ่ม Show History System -->
           <v-btn
             color="primary"
             dark
             @click="goToHistorySystems"
             style="margin-left: 10px"
-            >Show HistorySystem</v-btn
+            >Show History System</v-btn
           >
         </v-toolbar>
       </template>
 
-      <template v-slot:item.actions="{ item }">
-        <v-icon class="me-2" size="20" px @click="openEditDialog(item)"
-          >mdi-pencil-circle</v-icon
-        >
-        <v-icon size="20" px @click="confirmDeleteSystem(item)"
-          >mdi-delete-empty</v-icon
-        >
-
-        <v-btn @click="goToSystemsDetail(item.id)" style="margin-left: 10px"
-          >Systems Detail</v-btn
-        >
-      </template>
-
-      <!-- เพิ่มการตรวจสอบเงื่อนไขและแสดงข้อความที่กำหนด -->
+      <!-- ส่วนแสดงข้อมูล -->
       <template v-slot:item="{ item }">
         <tr>
+          <!-- แสดงข้อมูลต่าง ๆ -->
           <td>{{ item.system_id }}</td>
           <td>{{ item.system_nameTH }}</td>
           <td>{{ item.system_nameEN }}</td>
           <td>{{ item.system_shortname }}</td>
-          <td>
-            {{ item.screen_count ? item.screen_count : "0" }}
-          </td>
+          <td>{{ item.screen_count ? item.screen_count : "0" }}</td>
           <td>{{ item.system_progress ? item.system_progress : "0" }}</td>
           <td>
             {{
@@ -155,6 +142,7 @@
             {{ item.system_plan_end ? item.system_plan_end : "Not determined" }}
           </td>
           <td>{{ item.system_manday ? item.system_manday : "0" }}</td>
+          <!-- เพิ่มปุ่ม manage user systems -->
           <td>
             <v-icon class="me-2" size="20" px @click="openEditDialog(item)"
               >mdi-pencil-circle</v-icon
@@ -164,6 +152,10 @@
             >
             <v-btn @click="goToSystemsDetail(item.id)" style="margin-left: 10px"
               >Systems Detail</v-btn
+            >
+            <!-- เพิ่มปุ่ม manage user systems -->
+            <v-btn @click="openManageUserDialog(item)"
+              >Manage User Systems</v-btn
             >
           </td>
         </tr>
@@ -270,6 +262,54 @@
         </template>
       </v-data-table>
     </v-dialog>
+
+    <!-- Dialog สำหรับการจัดการผู้ใช้ระบบ -->
+    <v-dialog v-model="manageUserDialog" max-width="800px">
+      <v-card>
+        <v-card-title>Manage User Systems</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="search"
+            label="Search"
+            dense
+            hide-details
+            solo
+            flat
+          ></v-text-field>
+          <v-data-table :headers="userSystemsHeaders" :items="users">
+            <template v-slot:item="{ item }">
+              <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.user_firstname }}</td>
+                <td>{{ item.user_lastname }}</td>
+                <td>{{ item.user_position }}</td>
+                <td>
+                  <v-img :src="item.user_pic" height="50" contain></v-img>
+                </td>
+                <td>
+                  <!-- Add trash icon here -->
+                  <v-icon
+                    @click="
+                      deleteUser(selectedSystemId, selectedProjectId, item.id)
+                    "
+                    >mdi-delete</v-icon
+                  >
+                </td>
+              </tr>
+            </template>
+          </v-data-table>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="blue darken-1" text @click="manageUserDialog = false"
+            >Close</v-btn
+          >
+          <!-- เพิ่มปุ่มเพื่อทำการเพิ่มผู้ใช้ระบบ -->
+          <v-btn color="blue darken-1" text @click="openNestedDialog()"
+            >Assign User</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -282,6 +322,19 @@ export default {
   layout: "admin",
   data() {
     return {
+      selectedProjectId: null,
+      users: [],
+      system_id: "",
+      userSystemsHeaders: [
+        { text: "ID", value: "id" },
+        { text: "First Name", value: "user_firstname" },
+        { text: "Last Name", value: "user_lastname" },
+        { text: "Position", value: "user_position" },
+        { text: "Picture", value: "user_pic" }, // เพิ่มหัวข้อ Picture ลงใน userProjectsHeaders
+      ],
+      search: "",
+      manageUserDialog: false, // เพิ่มตัวแปร manageUserDialog
+      selectedSystemId: "",
       selectedUser: null,
       showUserDialog: false,
       dropdown: false,
@@ -322,6 +375,55 @@ export default {
     };
   },
   methods: {
+    async fetchUsersBySystemAndProject(systemId, projectId) {
+      try {
+        console.log("systemId:", systemId);
+        console.log("projectId:", projectId);
+        const response = await axios.get(
+          `http://localhost:7777/user_systems/getUserBySystemAndProject/${systemId}/${projectId}`
+        );
+        this.users = response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    openManageUserDialog(item) {
+      this.selectedSystemId = item.system_id; // เก็บรหัสระบบที่เลือก
+      this.selectedProjectId = item.project_id; // เก็บรหัสโปรเจคที่เลือก
+      this.manageUserDialog = true; // เปิด Dialog
+      this.fetchUsersBySystemAndProject(item.system_id, item.project_id); // เรียกใช้งานฟังก์ชันโหลดข้อมูลผู้ใช้
+    },
+
+    openNestedDialog() {
+      // ใส่โค้ดที่เปิด Dialog สำหรับกำหนดผู้ใช้ระบบ
+    },
+
+    async deleteUser(systemId, projectId, userId) {
+      try {
+        const response = await axios.delete(
+          `http://localhost:7777/user_systems/deleteUserSystem/${systemId}/${projectId}/${userId}`
+        );
+
+        // ตรวจสอบว่าคำขอ DELETE สำเร็จหรือไม่
+        if (response.status === 200) {
+          // ลบผู้ใช้ระบบจากตาราง users ใน Vue
+          const index = this.users.findIndex((user) => user.id === userId);
+          if (index !== -1) {
+            this.users.splice(index, 1);
+          }
+          // แสดงข้อความเตือนว่าลบผู้ใช้ระบบสำเร็จ
+          
+        } else {
+          // แสดงข้อความเตือนว่ามีข้อผิดพลาดในการลบผู้ใช้ระบบ
+         
+        }
+      } catch (error) {
+        // แสดงข้อความเตือนว่ามีข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์
+        console.error("Error deleting user system:", error);
+        
+      }
+    },
+
     goToCreateSystem() {
       // Open the create system dialog first
       this.createSystemDialog = true;
