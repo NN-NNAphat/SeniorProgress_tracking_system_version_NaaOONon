@@ -276,7 +276,11 @@
             solo
             flat
           ></v-text-field>
-          <v-data-table :headers="userSystemsHeaders" :items="users">
+          <v-data-table
+            :headers="userSystemsHeaders"
+            :items="users"
+            :search="search"
+          >
             <template v-slot:item="{ item }">
               <tr>
                 <td>{{ item.id }}</td>
