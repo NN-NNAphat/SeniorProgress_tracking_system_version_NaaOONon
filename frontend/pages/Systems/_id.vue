@@ -1,5 +1,6 @@
 <template>
   <div class="system-details">
+    <v-row> <h1>$route.params.id</h1></v-row>
     <!-- Search bar -->
     <v-row no-gutters>
       <v-col cols="12">
@@ -18,160 +19,155 @@
         />
       </v-col>
     </v-row>
-    
-    <!--data table -->
-    <v-data-table
-      :headers="userScreenHeaders"
-      :items="filteredScreens"
-      :items-per-page="5"
-      class="elevation-1"
+    <v-row
+      ><v-btn color="primary" dark @click="goToCreateScreen">New Screen</v-btn>
+      <v-btn color="primary" dark @click="goToHistoryScreens"
+        >Show History Screen</v-btn
+      ></v-row
     >
-      <template v-slot:top>
-        <v-toolbar flat>
-          <v-toolbar-title
-            >Screen Management - System : {{ systemNameENG }}</v-toolbar-title
+
+    <!-- แสดงรายระเอียดScreen -->
+    <div>
+      <v-container>
+        <v-row class="full-width">
+          <v-col
+            cols="12"
+            md="6"
+            lg="4"
+            v-for="screen in filteredScreens"
+            :key="screen.id"
           >
-          <v-divider class="mx-4" inset vertical></v-divider>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" dark @click="goToCreateScreen"
-            >New Screen</v-btn
-          >
-          <v-btn color="primary" dark @click="goToHistoryScreens"
-            >Show History Screen</v-btn
-          >
-          <!-- <v-btn color="primary" dark @click="goToHistoryScreen"
-            >Show HistoryScreen</v-btn
-          > -->
-        </v-toolbar>
+            <v-card class="mx-auto full-width" max-width="400">
+              <v-img
+                class="align-end text-white"
+                height="200"
+                :src="getBase64Image(screen.screen_pic)"
+                cover
+              >
+                <v-card-title>{{ screen.screen_name }}</v-card-title>
+              </v-img>
 
-        <!-- Create Screen Dialog -->
-        <v-dialog
-          v-model="createScreenDialog"
-          max-width="600"
-          ref="createScreenDialog"
-        >
-          <v-card>
-            <v-card-title>Create New Screen</v-card-title>
-            <v-card-text>
-              <!-- Form to create a new screen -->
-              <v-form>
-                <v-text-field
-                  v-model="newScreen.screen_id"
-                  label="Screen ID"
-                ></v-text-field>
-                <v-text-field
-                  v-model="newScreen.screen_name"
-                  label="Screen Name"
-                ></v-text-field>
-                <v-select
-                  v-model="newScreen.screen_level"
-                  label="Screen Level"
-                  :items="[
-                    'Very Difficult',
-                    'Hard',
-                    'Moderate',
-                    'Easy',
-                    'Simple',
-                  ]"
-                ></v-select>
+              <v-card-subtitle class="pt-4">
+                {{ screen.screen_id }}
+              </v-card-subtitle>
 
-                <!-- File input for avatar -->
-                <v-file-input
-                  :rules="rules"
-                  accept="image/png, image/jpeg, image/bmp"
-                  label="Avatar"
-                  placeholder="Pick an avatar"
-                  prepend-icon="mdi-camera"
-                  v-model="newScreen.avatar"
-                >
-                </v-file-input>
+              <v-card-text>
+                <div><b>Due Date:</b> {{ screen.screen_plan_end }}</div>
+                <div><b>Screen Level:</b> {{ screen.screen_level }}</div>
+                <div><b>Progress:</b> {{ screen.screen_progress }}</div>
+              </v-card-text>
 
-                <v-btn
-                  type="submit"
-                  @click="
-                    createScreenDialog = false;
-                    createScreen();
-                  "
-                  >Create</v-btn
-                >
-                <v-btn @click="createScreenDialog = false">Cancel</v-btn>
-              </v-form>
-            </v-card-text>
-          </v-card>
-        </v-dialog>
+              <v-card-actions>
+                <v-btn color="orange" @click="openEditDialog(screen)">
+                  Edit
+                </v-btn>
 
-        <!-- Edit Screen Dialog -->
-        <v-dialog
-          v-model="editScreenDialog"
-          max-width="600"
-          ref="editScreenDialog"
-        >
-          <v-card>
-            <v-card-title>Edit Screen</v-card-title>
-            <v-card-text>
-              <!-- Form to edit screen -->
-              <v-form @submit.prevent="updateScreen">
-                <v-text-field
-                  v-model="editScreen.screen_id"
-                  label="Screen ID" readonly
-                ></v-text-field>
-                <v-text-field
-                  v-model="editScreen.screen_name"
-                  label="Screen Name"
-                ></v-text-field>
-                <v-select
-                  v-model="editScreen.screen_level"
-                  label="Screen Level"
-                  :items="[
-                    'Very Difficult',
-                    'Hard',
-                    'Moderate',
-                    'Easy',
-                    'Simple',
-                  ]"
-                ></v-select>
-                <v-btn type="submit">Update</v-btn>
-                <v-btn @click="editScreenDialog = false">Cancel</v-btn>
-              </v-form>
-            </v-card-text>
-          </v-card>
-        </v-dialog>
+                <v-btn color="orange" @click="confirmDeleteScreen(screen)">
+                  Delete
+                </v-btn>
 
-        <!-- Show deleted screens history -->
-        <v-dialog v-model="showHistoryDialog" max-width="800">
-          <v-data-table headers="headers" :items="deletedScreens">
-            <!-- Define headers for the table -->
+                <v-btn @click="goToScreensDetail(screen.id)">
+                  Screen Detail
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
+    </div>
 
-            <template v-slot:top>
-              <v-toolbar flat>
-                <v-toolbar-title>Deleted Screens History</v-toolbar-title>
-                <v-divider class="mx-4" inset vertical></v-divider>
-                <v-spacer></v-spacer>
-              </v-toolbar>
-            </template>
-          </v-data-table>
-        </v-dialog>
-        
-      </template>
+    <!-- Create Screen Dialog -->
+    <v-dialog
+      v-model="createScreenDialog"
+      max-width="600"
+      ref="createScreenDialog"
+    >
+      <v-card>
+        <v-card-title>Create New Screen</v-card-title>
+        <v-card-text>
+          <!-- Form to create a new screen -->
+          <v-form>
+            <v-text-field
+              v-model="newScreen.screen_id"
+              label="Screen ID"
+            ></v-text-field>
+            <v-text-field
+              v-model="newScreen.screen_name"
+              label="Screen Name"
+            ></v-text-field>
+            <v-select
+              v-model="newScreen.screen_level"
+              label="Screen Level"
+              :items="['Very Difficult', 'Hard', 'Moderate', 'Easy', 'Simple']"
+            ></v-select>
 
-      <template v-slot:item="{ item }">
-        <tr>
-    <td>
-      <b>Screen ID:</b> {{ item.screen_id }} <br>
-      <b>Screen Name:</b> {{ item.screen_name }} <br>
-      <b>Due Date:</b> {{ item.screen_plan_end }} <br>
-      <b>Screen Level:</b> {{ item.screen_level }} <br>
-      <b>Progress:</b> {{ item.screen_progress }} <br>
-      <b>Picture:</b> <v-img :src="getBase64Image(item.screen_pic)" height="50" contain></v-img>
-    </td>
-    <td>
-      <v-icon class="me-2" size="20" px @click="openEditDialog(item)">mdi-pencil-circle</v-icon>
-      <v-icon size="20" px @click="confirmDeleteScreen(item)">mdi-delete-empty</v-icon>
-      <v-btn @click="goToScreensDetail(item.id)">Screen Detail</v-btn>
-    </td>
-  </tr>
-      </template>
-    </v-data-table>
+            <!-- File input for avatar -->
+            <v-file-input
+              :rules="rules"
+              accept="image/png, image/jpeg, image/bmp"
+              label="Avatar"
+              placeholder="Pick an avatar"
+              prepend-icon="mdi-camera"
+              v-model="newScreen.avatar"
+            >
+            </v-file-input>
+
+            <v-btn
+              type="submit"
+              @click="
+                createScreenDialog = false;
+                createScreen();
+              "
+              >Create</v-btn
+            >
+            <v-btn @click="createScreenDialog = false">Cancel</v-btn>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Edit Screen Dialog -->
+    <v-dialog v-model="editScreenDialog" max-width="600" ref="editScreenDialog">
+      <v-card>
+        <v-card-title>Edit Screen</v-card-title>
+        <v-card-text>
+          <!-- Form to edit screen -->
+          <v-form @submit.prevent="updateScreen">
+            <v-text-field
+              v-model="editScreen.screen_id"
+              label="Screen ID"
+              readonly
+            ></v-text-field>
+            <v-text-field
+              v-model="editScreen.screen_name"
+              label="Screen Name"
+            ></v-text-field>
+            <v-select
+              v-model="editScreen.screen_level"
+              label="Screen Level"
+              :items="['Very Difficult', 'Hard', 'Moderate', 'Easy', 'Simple']"
+            ></v-select>
+            <v-btn type="submit">Update</v-btn>
+            <v-btn @click="editScreenDialog = false">Cancel</v-btn>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Show deleted screens history -->
+    <v-dialog v-model="showHistoryDialog" max-width="800">
+      <v-data-table headers="headers" :items="deletedScreens">
+        <!-- Define headers for the table -->
+
+        <template v-slot:top>
+          <v-toolbar flat>
+            <v-toolbar-title>Deleted Screens History</v-toolbar-title>
+            <v-divider class="mx-4" inset vertical></v-divider>
+            <v-spacer></v-spacer>
+          </v-toolbar>
+        </template>
+      </v-data-table>
+    </v-dialog>
   </div>
 </template>
 
@@ -215,7 +211,7 @@ export default {
         { text: "Image", value: "screen_pic" }, // เปลี่ยนจาก "Progress" เป็น "Picture"
         { text: "Actions", value: "actions", sortable: false },
       ],
-       headers: [
+      headers: [
         { text: "Screen ID", value: "screen_id" },
         { text: "Screen Name", value: "screen_name" },
         { text: "Due date", value: "screen_plan_end" },
@@ -223,7 +219,7 @@ export default {
         { text: "Progress", value: "screen_progress" },
         { text: "Actions", value: "actions", sortable: false },
       ],
-      
+
       watch: {
         // Watch for changes in the selected system ID and fetch details accordingly
         selectedSystemId: "fetchSystemDetails",
@@ -754,7 +750,7 @@ export default {
 </script>
 
 <style>
-  /* CSS for the table */
+/* CSS for the table */
 .system-details {
   overflow-x: auto; /* Add horizontal scrollbar if table overflows */
 }
@@ -775,6 +771,9 @@ export default {
   margin: auto; /* Center the image horizontally */
 }
 
-  
+.full-width {
+  display: flex;
+  flex-wrap: wrap;
+}
 </style>
 
