@@ -309,23 +309,55 @@ router.get('/searchByProjectId_delete/:project_id', async (req, res) => {
 router.post("/createSystem", async (req, res) => {
   const {
     project_id,
-    system_id,
     system_nameTH,
     system_nameEN,
-    system_shortname
+    selectedUser,
   } = req.body;
+
+  const id = generateId(); // Generate ID using generateId() function
 
   try {
     connection.query(
-      "INSERT INTO systems (id, project_id, system_id, system_nameTH, system_nameEN, system_shortname) VALUES (?, ?, ?, ?, ?, ?)",
-      [generateId(), project_id, system_id, system_nameTH, system_nameEN, system_shortname],
+      "INSERT INTO systems (id, project_id, system_id, system_nameTH, system_nameEN, system_shortname) VALUES (?, ?, ?, ?, ?, '')",
+      [id, project_id, id, system_nameTH, system_nameEN], // Use the same ID for system_id
       (err, results, fields) => {
         if (err) {
-          console.error("Error while inserting a system into the database", err);
+          console.error(
+            "Error while inserting a system into the database",
+            err
+          );
           return res.status(400).send();
         }
 
-        return res.status(201).json({ message: "New system created successfully!", system_id: system_id });
+        // Create user_system relations if selectedUsers are provided
+        if (selectedUser) {
+          const userSystemValues = selectedUser.map((user_id) => [
+            user_id,
+            id, // Use the newly generated system ID
+            project_id,
+          ]);
+
+          connection.query(
+            "INSERT INTO user_systems (user_id, system_id, project_id) VALUES ?",
+            [userSystemValues],
+            (error, results, fields) => {
+              if (error) {
+                console.error(
+                  "Error while inserting users into the system",
+                  error
+                );
+                return res.status(400).send();
+              }
+              return res
+                .status(201)
+                .json({ message: "New system and users assigned successfully!", system_id: id }); // Return the system_id
+            }
+          );
+        } else {
+          return res
+            .status(201)
+            .json({ message: "New system created successfully!", system_id: id }); // Return the system_id
+        }
       }
     );
   } catch (err) {

@@ -171,6 +171,7 @@
       <v-card>
         <v-card-title>Create New System</v-card-title>
         <v-card-text>
+          <!-- Form to create new system -->
           <v-form @submit.prevent="createSystem">
             <v-text-field
               v-model="newSystem.system_id"
@@ -190,9 +191,8 @@
             ></v-text-field>
 
             <!-- Add v-select for selecting users -->
-            <!-- Implementer -->
             <v-select
-              v-model="selectedUsers.Implementer"
+              v-model="selectedUser"
               :items="filteredUsers('Implementer')"
               label="Select Implementer"
               item-value="user_id"
@@ -200,9 +200,8 @@
               multiple
             ></v-select>
 
-            <!-- Developer -->
             <v-select
-              v-model="selectedUsers.Developer"
+              v-model="selectedUser"
               :items="filteredUsers('Developer')"
               label="Select Developer"
               item-value="user_id"
@@ -210,9 +209,8 @@
               multiple
             ></v-select>
 
-            <!-- System Analyst -->
             <v-select
-              v-model="selectedUsers['System Analyst']"
+              v-model="selectedUser"
               :items="filteredUsers('System Analyst')"
               label="Select System Analyst"
               item-value="user_id"
@@ -702,9 +700,6 @@ export default {
     },
     async createSystem() {
       const projectId = this.$route.params.id;
-      const { system_id, system_nameTH, system_nameEN, system_shortname } =
-        this.newSystem;
-
       try {
         const response = await fetch(
           `http://localhost:7777/systems/createSystem`,
@@ -715,16 +710,35 @@ export default {
             },
             body: JSON.stringify({
               project_id: projectId,
-              system_id: system_id, // ใช้ system_id ที่รับจาก <v-text-field>
-              system_nameTH: system_nameTH,
-              system_nameEN: system_nameEN,
-              system_shortname: system_shortname,
+              ...this.newSystem,
             }),
           }
         );
-
         if (!response.ok) {
           throw new Error("Failed to create system");
+        }
+
+        // Extract system_id from response data
+        const responseData = await response.json();
+        const system_id = responseData.system_id; // ใช้ system_id ที่ได้รับจากการสร้างระบบ
+
+        // Send selected users to the server
+        const userResponse = await fetch(
+          `http://localhost:7777/user_systems/createUser_system`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: this.selectedUser,
+              system_id: system_id, // ใส่ system_id ที่ได้รับจากการสร้างระบบ
+              project_id: projectId,
+            }),
+          }
+        );
+        if (!userResponse.ok) {
+          throw new Error("Failed to assign users to the system");
         }
 
         // Clear the form and show success message
@@ -734,15 +748,13 @@ export default {
           system_nameEN: "",
           system_shortname: "",
         };
-
         const confirmResult = await Swal.fire({
           icon: "success",
           title: "Success",
-          text: "New system created successfully",
+          text: "New system and users assigned successfully",
           showConfirmButton: true,
           allowOutsideClick: false,
         });
-
         if (confirmResult.isConfirmed) {
           this.fetchSystems();
         }
@@ -755,6 +767,7 @@ export default {
         });
       }
     },
+
     async updateSystem() {
       try {
         const response = await fetch(
@@ -889,4 +902,3 @@ export default {
   height: 50%;
 }
 </style>
-
