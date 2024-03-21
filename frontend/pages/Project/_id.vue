@@ -192,7 +192,7 @@
 
             <!-- Add v-select for selecting users -->
             <v-select
-              v-model="selectedUser"
+              v-model="selectedUsers"
               :items="filteredUsers('Implementer')"
               label="Select Implementer"
               item-value="user_id"
@@ -201,7 +201,7 @@
             ></v-select>
 
             <v-select
-              v-model="selectedUser"
+              v-model="selectedUsers"
               :items="filteredUsers('Developer')"
               label="Select Developer"
               item-value="user_id"
@@ -210,7 +210,7 @@
             ></v-select>
 
             <v-select
-              v-model="selectedUser"
+              v-model="selectedUsers"
               :items="filteredUsers('System Analyst')"
               label="Select System Analyst"
               item-value="user_id"
@@ -397,8 +397,9 @@ export default {
   layout: "admin",
   data() {
     return {
-      selectedUsers: [], // เก็บผู้ใช้ที่ถูกเลือก
+      selectedUsers: [],
       availableUsers: [],
+      assignUserDialog: false,
       assinguserDalog: false,
       selectedProjectId: null,
       users: [],
@@ -408,10 +409,10 @@ export default {
         { text: "First Name", value: "user_firstname" },
         { text: "Last Name", value: "user_lastname" },
         { text: "Position", value: "user_position" },
-        { text: "Picture", value: "user_pic" }, // เพิ่มหัวข้อ Picture ลงใน userProjectsHeaders
+        { text: "Picture", value: "user_pic" },
       ],
       search: "",
-      manageUserDialog: false, // เพิ่มตัวแปร manageUserDialog
+      manageUserDialog: false,
       selectedSystemId: "",
       selectedUser: null,
       showUserDialog: false,
@@ -425,6 +426,7 @@ export default {
       createSystemDialog: false,
       editSystemDialog: false,
       newSystem: {
+        id: "",
         system_id: "",
         system_nameTH: "",
         system_nameEN: "",
@@ -494,10 +496,10 @@ export default {
       }
     },
     openManageUserDialog(item) {
-      this.selectedSystemId = item.system_id; // เก็บรหัสระบบที่เลือก
+      this.selectedSystemId = item.id; // เก็บรหัสระบบที่เลือก
       this.selectedProjectId = item.project_id; // เก็บรหัสโปรเจคที่เลือก
       this.manageUserDialog = true; // เปิด Dialog
-      this.fetchUsersBySystemAndProject(item.system_id, item.project_id); // เรียกใช้งานฟังก์ชันโหลดข้อมูลผู้ใช้
+      this.fetchUsersBySystemAndProject(item.id, item.project_id); // เรียกใช้งานฟังก์ชันโหลดข้อมูลผู้ใช้
     },
 
     async openNestedDialog(systemId, projectId) {
@@ -711,34 +713,12 @@ export default {
             body: JSON.stringify({
               project_id: projectId,
               ...this.newSystem,
+              selectedUser: this.selectedUsers, // ส่ง selectedUsers ไปด้วย
             }),
           }
         );
         if (!response.ok) {
           throw new Error("Failed to create system");
-        }
-
-        // Extract system_id from response data
-        const responseData = await response.json();
-        const system_id = responseData.system_id; // ใช้ system_id ที่ได้รับจากการสร้างระบบ
-
-        // Send selected users to the server
-        const userResponse = await fetch(
-          `http://localhost:7777/user_systems/createUser_system`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              user_id: this.selectedUser,
-              system_id: system_id, // ใส่ system_id ที่ได้รับจากการสร้างระบบ
-              project_id: projectId,
-            }),
-          }
-        );
-        if (!userResponse.ok) {
-          throw new Error("Failed to assign users to the system");
         }
 
         // Clear the form and show success message
@@ -767,7 +747,6 @@ export default {
         });
       }
     },
-
     async updateSystem() {
       try {
         const response = await fetch(

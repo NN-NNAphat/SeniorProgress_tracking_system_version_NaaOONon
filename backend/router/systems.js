@@ -309,17 +309,19 @@ router.get('/searchByProjectId_delete/:project_id', async (req, res) => {
 router.post("/createSystem", async (req, res) => {
   const {
     project_id,
+    system_id,
     system_nameTH,
     system_nameEN,
+    system_shortname,
     selectedUser,
   } = req.body;
 
-  const id = generateId(); // Generate ID using generateId() function
+  const id = generateId(); // Generate a valid ID using generateId() function
 
   try {
     connection.query(
-      "INSERT INTO systems (id, project_id, system_id, system_nameTH, system_nameEN, system_shortname) VALUES (?, ?, ?, ?, ?, '')",
-      [id, project_id, id, system_nameTH, system_nameEN], // Use the same ID for system_id
+      "INSERT INTO systems (id, project_id, system_id, system_nameTH, system_nameEN, system_shortname) VALUES (?, ?, ?, ?, ?, ?)",
+      [id, project_id, system_id, system_nameTH, system_nameEN, system_shortname], // Use the generated ID
       (err, results, fields) => {
         if (err) {
           console.error(
@@ -333,7 +335,7 @@ router.post("/createSystem", async (req, res) => {
         if (selectedUser) {
           const userSystemValues = selectedUser.map((user_id) => [
             user_id,
-            id, // Use the newly generated system ID
+            id, // Use the provided system_id
             project_id,
           ]);
 
@@ -365,6 +367,8 @@ router.post("/createSystem", async (req, res) => {
     return res.status(500).send();
   }
 });
+
+
 
 
 
