@@ -379,14 +379,13 @@ router.get("/searchBySystemId_delete/:system_id", async (req, res) => {
   }
 });
 
-// Route to create a new screen
+
 // Route to create a new screen
 router.post("/createScreen", async (req, res) => {
   const {
     screen_name,
     screen_status,
     screen_level,
-    screen_pic,
     system_id,
     screen_progress,
     screen_plan_start,
@@ -401,18 +400,17 @@ router.post("/createScreen", async (req, res) => {
 
     // Insert screen data into screens table
     const insertScreenQuery =
-      'INSERT INTO screens (id,screen_id, screen_name, screen_status, screen_level, screen_pic, system_id, screen_progress, screen_plan_start, screen_plan_end, project_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      'INSERT INTO screens (id, screen_id, screen_name, screen_status, screen_level, system_id, screen_progress, screen_plan_start, screen_plan_end, project_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
     await new Promise((resolve, reject) => {
       connection.query(
         insertScreenQuery,
         [
           id,
-          screen_id,
+          id, // Use id as screen_id
           screen_name,
           screen_status,
           screen_level,
-          screen_pic,
           system_id,
           screen_progress,
           screen_plan_start,
@@ -426,29 +424,31 @@ router.post("/createScreen", async (req, res) => {
           }
           try {
             // Insert assigned users into user_screens table
-            const insertUserScreenQuery =
-              'INSERT INTO user_screens (user_id, screen_id, system_id, project_id) VALUES ?';
+            if (assignedUsers && assignedUsers.length > 0) {
+              const insertUserScreenQuery =
+                'INSERT INTO user_screens (user_id, screen_id, system_id, project_id) VALUES ?';
 
-            const userScreenValues = assignedUsers.map(userId => [
-              userId,
-              id, // Use the screen_id of the newly created screen
-              system_id,
-              project_id
-            ]);
+              const userScreenValues = assignedUsers.map(userId => [
+                userId,
+                id, // Use the screen_id of the newly created screen
+                system_id,
+                project_id
+              ]);
 
-            await new Promise((resolve, reject) => {
-              connection.query(
-                insertUserScreenQuery,
-                [userScreenValues],
-                (err, result) => {
-                  if (err) {
-                    console.error('Error assigning users to screen:', err);
-                    return reject(err);
+              await new Promise((resolve, reject) => {
+                connection.query(
+                  insertUserScreenQuery,
+                  [userScreenValues],
+                  (err, result) => {
+                    if (err) {
+                      console.error('Error assigning users to screen:', err);
+                      return reject(err);
+                    }
+                    resolve(result);
                   }
-                  resolve(result);
-                }
-              );
-            });
+                );
+              });
+            }
 
             resolve(result);
           } catch (error) {
@@ -464,6 +464,8 @@ router.post("/createScreen", async (req, res) => {
     res.sendStatus(500);
   }
 });
+
+
 
 
 // Route to update a screen by ID

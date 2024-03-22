@@ -168,8 +168,8 @@
       <v-card>
         <v-card-title>Create New Screen</v-card-title>
         <v-card-text>
-          <!-- Form to create a new screen -->
-          <v-form>
+          <v-form @submit.prevent="createScreen()">
+            <!-- Existing fields -->
             <v-text-field
               v-model="newScreen.screen_id"
               label="Screen ID"
@@ -183,8 +183,6 @@
               label="Screen Level"
               :items="['Very Difficult', 'Hard', 'Moderate', 'Easy', 'Simple']"
             ></v-select>
-
-            <!-- File input for avatar -->
             <v-file-input
               accept="image/png, image/jpeg, image/bmp"
               label="Avatar"
@@ -193,21 +191,16 @@
               v-model="newScreen.avatar"
             ></v-file-input>
 
-            <!-- Select User -->
+            <!-- New field for selecting users -->
             <v-select
-              v-model="newScreen.selectedUser"
-              label="Select User"
+              v-model="newScreen.selectedUsers"
+              label="Select Users"
+              multiple
               :items="userOptions"
             ></v-select>
 
-            <v-btn
-              type="submit"
-              @click="
-                createScreenDialog = false;
-                createScreen();
-              "
-              >Create</v-btn
-            >
+            <!-- Buttons -->
+            <v-btn type="submit">Create</v-btn>
             <v-btn @click="createScreenDialog = false">Cancel</v-btn>
           </v-form>
         </v-card-text>
@@ -267,7 +260,7 @@ export default {
   layout: "admin",
   data() {
     return {
-      userOptions: [],
+      userOptions: [{ text: "Position: Firstname Lastname", value: "user_id" }],
       perPage: 12,
       currentPage: 1,
       itemsPerPage: 12,
@@ -335,83 +328,15 @@ export default {
     this.fetchSystemUsers(this.systemId, this.projectId);
   },
   methods: {
-    onPageChange(newPage) {
-      this.currentPage = newPage;
-    },
-    async fetchSystemUsers(systemId, projectId) {
-      try {
-        const response = await fetch(
-          `http://localhost:7777/user_systems/getUserBySystemAndProject/${systemId}/${projectId}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch system users");
-        }
-        const users = await response.json();
-        return users.map((user) => ({
-          text: `${user.user_position}: ${user.user_firstname} ${user.user_lastname}`,
-          value: user,
-        }));
-      } catch (error) {
-        console.error("Error fetching system users:", error);
-        return []; // หรือค่าเริ่มต้นที่คุณต้องการส่งกลับ
-      }
-    },
-
-    // คุณสามารถเรียกใช้ fetchSystemUsers() ใน created() เพื่อดึงข้อมูลผู้ใช้เมื่อคอมโพเนนต์ถูกสร้าง
-    created() {
-      this.fetchSystemUsers(this.systemId, this.projectId);
-    },
-
-    // ใน fetchSystem() ให้เรียกใช้ fetchSystemUsers() เพื่อดึงข้อมูลผู้ใช้เมื่อระบบถูกโหลด
-    async fetchSystem() {
-      // อื่น ๆ...
-      if (this.systemId !== null && this.projectId !== null) {
-        const userOptions = await this.fetchSystemUsers(
-          this.systemId,
-          this.projectId
-        );
-        this.userOptions = userOptions;
-      }
-      // อื่น ๆ...
-    },
-
-    async fetchSystem() {
-      // เพิ่ม method เพื่อดึงข้อมูล system จาก API
-      const systemId = this.$route.params.id;
-      try {
-        const response = await fetch(
-          `http://localhost:7777/systems/getOne/${systemId}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch system data");
-        }
-        const systemData = await response.json();
-        this.system = systemData;
-        this.projectId = systemData.project_id;
-        this.systemId = systemData.id; // หรืออื่น ๆ ตามความเหมาะสม
-
-        // ตรวจสอบค่า systemId และ projectId ว่าถูกตั้งค่าหรือไม่
-        console.log("systemId:", this.systemId);
-        console.log("projectId:", this.projectId);
-
-        // หลังจากตรวจสอบค่าแล้ว ให้เรียกใช้ fetchSystemUsers() ถ้าค่าไม่ใช่ null
-        if (this.systemId !== null && this.projectId !== null) {
-          const userOptions = await this.fetchSystemUsers(
-            this.systemId,
-            this.projectId
-          );
-          this.userOptions = userOptions;
-        }
-      } catch (error) {
-        console.error("Error fetching system data:", error);
-        // Handle error fetching system data
-        await Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Failed to fetch system data. Please try again.",
-          timer: 3000,
-        });
-      }
+    // ฟังก์ชันสำหรับแปลงไฟล์รูปภาพเป็น base64
+    // ฟังก์ชันสำหรับแปลงไฟล์รูปภาพเป็น base64
+    imageToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+      });
     },
 
     async createScreen() {
@@ -459,12 +384,9 @@ export default {
         );
 
         if (response.ok) {
-          await Swal.fire({
-            icon: "success",
-            title: "Screen Created!",
-            text: "The new screen has been created successfully.",
-            timer: 3000, // Set the timer to 3 seconds (3000 milliseconds)
-          });
+          // Handle success
+          console.log("Screen created successfully");
+          console.log(requestData.screen_pic);
         } else {
           throw new Error("Failed to create screen");
         }
@@ -472,32 +394,83 @@ export default {
         // ... continue
       } catch (error) {
         console.error("Error creating screen", error);
+        // Handle error
+      }
+    },
 
-        // Show error message using SweetAlert2
+    onPageChange(newPage) {
+      this.currentPage = newPage;
+    },
+    async fetchSystemUsers(systemId, projectId) {
+      try {
+        const response = await fetch(
+          `http://localhost:7777/user_systems/getUserBySystemAndProject/${systemId}/${projectId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch system users");
+        }
+        const users = await response.json();
+        return users.map((user) => ({
+          text: `${user.user_position}: ${user.user_firstname} ${user.user_lastname}`,
+          value: user.id, // ใช้ user.id เป็นค่า value ของ v-select
+        }));
+      } catch (error) {
+        console.error("Error fetching system users:", error);
+        return []; // หรือค่าเริ่มต้นที่คุณต้องการส่งกลับ
+      }
+    },
+
+    // คุณสามารถเรียกใช้ fetchSystemUsers() ใน created() เพื่อดึงข้อมูลผู้ใช้เมื่อคอมโพเนนต์ถูกสร้าง
+    created() {
+      this.fetchSystemUsers(this.systemId, this.projectId);
+    },
+
+    // ใน fetchSystem() ให้เรียกใช้ fetchSystemUsers() เพื่อดึงข้อมูลผู้ใช้เมื่อระบบถูกโหลด
+    async fetchSystem() {
+      // อื่น ๆ...
+      if (this.systemId !== null && this.projectId !== null) {
+        const userOptions = await this.fetchSystemUsers(
+          this.systemId,
+          this.projectId
+        );
+        this.userOptions = userOptions;
+      }
+      // อื่น ๆ...
+    },
+
+    async fetchSystem() {
+      // เพิ่ม method เพื่อดึงข้อมูล system จาก API
+      const systemId = this.$route.params.id;
+      try {
+        const response = await fetch(
+          `http://localhost:7777/systems/getOne/${systemId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch system data");
+        }
+        const systemData = await response.json();
+        this.system = systemData;
+        this.projectId = systemData.project_id;
+        this.systemId = systemData.id; // หรืออื่น ๆ ตามความเหมาะสม
+
+        // หลังจากตรวจสอบค่าแล้ว ให้เรียกใช้ fetchSystemUsers() ถ้าค่าไม่ใช่ null
+        if (this.systemId !== null && this.projectId !== null) {
+          const userOptions = await this.fetchSystemUsers(
+            this.systemId,
+            this.projectId
+          );
+          this.userOptions = userOptions;
+        }
+      } catch (error) {
+        console.error("Error fetching system data:", error);
+        // Handle error fetching system data
         await Swal.fire({
           icon: "error",
           title: "Error",
-          text: "Failed to create the screen. Please try again.",
-          timer: 3000, // Set the timer to 3 seconds (3000 milliseconds)
+          text: "Failed to fetch system data. Please try again.",
+          timer: 3000,
         });
-        // ... continue
       }
-    },
-    // Function to convert image to Base64
-    imageToBase64(imagePath) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(imagePath);
-
-        reader.onload = () => {
-          const base64String = reader.result.split(",")[1]; // Exclude the data:imasge/<fileType>;base64, prefix
-          resolve(base64String);
-        };
-
-        reader.onerror = (error) => {
-          reject(error);
-        };
-      });
     },
 
     getBase64Image(base64Data) {
