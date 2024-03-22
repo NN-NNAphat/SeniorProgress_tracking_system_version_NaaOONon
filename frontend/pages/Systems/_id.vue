@@ -35,6 +35,12 @@
           </v-expand-transition>
         </v-card>
       </v-col>
+
+      <v-col>
+        <h1>System ID: {{ systemId }}</h1>
+        <h1>Project ID: {{ projectId }}</h1>
+      </v-col>
+      
     </v-row>
 
     <!-- Search bar -->
@@ -215,6 +221,8 @@ export default {
   layout: "admin",
   data() {
     return {
+      projectId: null,
+      systemId: null,
       system: {},
       showDetails: false,
       dateStartMenu: false,
@@ -280,7 +288,10 @@ export default {
         if (!response.ok) {
           throw new Error("Failed to fetch system data");
         }
-        this.system = await response.json();
+        const systemData = await response.json();
+        this.system = systemData;
+        this.projectId = systemData.project_id;
+        this.systemId = systemData.id; // หรืออื่น ๆ ตามความเหมาะสม
       } catch (error) {
         console.error("Error fetching system data:", error);
         // Handle error fetching system data
