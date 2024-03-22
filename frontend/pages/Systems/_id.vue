@@ -1,6 +1,6 @@
 <template>
-  <div class="system-details">
-    <v-row>
+  <div>
+    <v-row style="margin-bottom: 20px" align="center">
       <v-col cols="6">
         <v-card class="mx-auto align-start" max-width="800" hover>
           <v-card-item @click="showDetails = !showDetails">
@@ -37,10 +37,41 @@
       </v-col>
 
       <v-col>
-        <h1>System ID: {{ systemId }}</h1>
-        <h1>Project ID: {{ projectId }}</h1>
+        <v-btn class="custom-btn" @click="showUserDialog = true">
+          แสดงรายชื่อผู้ใช้ในระบบ
+        </v-btn>
+
+        <v-dialog v-model="showUserDialog" max-width="600">
+          <v-card>
+            <v-card-title>รายชื่อผู้ใช้ในระบบ</v-card-title>
+            <v-card-text>
+              <v-list>
+                <v-list-item v-for="(user, index) in projectUsers" :key="index">
+                  <v-list-item-avatar>
+                    <img :src="user.user_pic" alt="User Picture" />
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      {{ user.user_position }}: {{ user.user_firstname }}
+                      {{ user.user_lastname }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle
+                      >ตำแหน่ง: {{ user.user_position }}</v-list-item-subtitle
+                    >
+                    <v-list-item-subtitle
+                      >แผนก: {{ user.user_department }}</v-list-item-subtitle
+                    >
+                    <!-- เพิ่มข้อมูลเพิ่มเติมตามต้องการ -->
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list>
+            </v-card-text>
+            <v-card-actions>
+              <v-btn color="primary" @click="showUserDialog = false">ปิด</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
       </v-col>
-      
     </v-row>
 
     <!-- Search bar -->
@@ -61,12 +92,14 @@
         />
       </v-col>
     </v-row>
-    <v-row
-      ><v-btn color="primary" dark @click="goToCreateScreen">New Screen</v-btn>
+    <!-- ปุ่ม -->
+    <v-row style="margin-bottom: 20px" justify="end">
+      <v-btn color="primary" dark @click="goToCreateScreen">New Screen</v-btn>
+      &nbsp;&nbsp;&nbsp;
       <v-btn color="primary" dark @click="goToHistoryScreens"
         >Show History Screen</v-btn
-      ></v-row
-    >
+      >
+    </v-row>
 
     <!-- แสดงรายระเอียดScreen -->
     <div>
@@ -94,6 +127,7 @@
               </v-card-subtitle>
 
               <v-card-text>
+                <h1>screen ID: {{ screen.id }}</h1>
                 <div><b>Due Date:</b> {{ screen.screen_plan_end }}</div>
                 <div><b>Screen Level:</b> {{ screen.screen_level }}</div>
                 <div><b>Progress:</b> {{ screen.screen_progress }}</div>
@@ -221,6 +255,9 @@ export default {
   layout: "admin",
   data() {
     return {
+      projectUsers: [],
+      showUserDialog: false,
+      systemUsers: [],
       projectId: null,
       systemId: null,
       system: {},
@@ -277,7 +314,28 @@ export default {
     this.fetchScreens();
     this.fetchSystemNameENG();
   },
+  created() {
+    this.fetchSystemUsers(this.systemId, this.projectId);
+  },
   methods: {
+    async fetchSystemUsers(systemId, projectId) {
+      try {
+        console.log("systemId:", systemId);
+        console.log("projectId:", projectId);
+        const response = await fetch(
+          `http://localhost:7777/user_systems/getUserBySystemAndProject/${systemId}/${projectId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch system users");
+        }
+        const users = await response.json();
+        console.log("Users:", users); // แสดงผู้ใช้ที่ได้รับจาก API ในคอนโซลโลจิก
+        this.projectUsers = users; // อัพเดท projectUsers ด้วยข้อมูลผู้ใช้ที่ได้จาก API
+      } catch (error) {
+        console.error("Error fetching system users:", error);
+      }
+    },
+
     async fetchSystem() {
       // เพิ่ม method เพื่อดึงข้อมูล system จาก API
       const systemId = this.$route.params.id;
@@ -292,6 +350,15 @@ export default {
         this.system = systemData;
         this.projectId = systemData.project_id;
         this.systemId = systemData.id; // หรืออื่น ๆ ตามความเหมาะสม
+
+        // ตรวจสอบค่า systemId และ projectId ว่าถูกตั้งค่าหรือไม่
+        console.log("systemId:", this.systemId);
+        console.log("projectId:", this.projectId);
+
+        // หลังจากตรวจสอบค่าแล้ว ให้เรียกใช้ fetchSystemUsers() ถ้าค่าไม่ใช่ null
+        if (this.systemId !== null && this.projectId !== null) {
+          this.fetchSystemUsers(this.systemId, this.projectId);
+        }
       } catch (error) {
         console.error("Error fetching system data:", error);
         // Handle error fetching system data
@@ -303,6 +370,7 @@ export default {
         });
       }
     },
+
     async createScreen() {
       const systemId = this.$route.params.id;
 
@@ -347,8 +415,6 @@ export default {
           }
         );
 
-        // Check if the screen was created successfully
-        // Check if the screen was created successfully
         if (response.ok) {
           await Swal.fire({
             icon: "success",
@@ -588,33 +654,6 @@ export default {
       }
     },
 
-    async fetchSystemDetails() {
-      const systemId = this.$route.params.id;
-
-      try {
-        const response = await fetch(
-          `http://localhost:7777/systems/getOne/${systemId}`
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch system details");
-        }
-
-        const systemData = await response.json();
-
-        // ตรวจสอบว่า project_id ไม่เป็น null และไม่ว่างเปล่า
-        // หากเป็น null หรือว่างเปล่า กำหนดค่าเริ่มต้นเป็นค่าที่ต้องการ
-        this.projectId =
-          systemData.project_id !== null
-            ? systemData.project_id
-            : "defaultProjectId";
-        // ... ต่อไป
-      } catch (error) {
-        console.error("Error fetching system details:", error);
-        // Handle error fetching system details
-      }
-    },
-
     async restoreScreen(item) {
       try {
         const confirmResult = await Swal.fire({
@@ -734,8 +773,13 @@ export default {
         if (!response.ok) {
           throw new Error("Failed to fetch screens");
         }
-        const data = await response.json();
-        this.screens = data;
+
+        const screens = await response.json();
+        this.screens = screens;
+        // ใช้ค่า id ของหน้าจอที่กำลังวน loop มาเพื่อกำหนดค่าให้กับ screenId
+        if (screens.length > 0) {
+          this.screenId = screens[0].id; // เลือกหน้าจอแรกในรายการเป็นตัวอย่าง
+        }
       } catch (error) {
         console.error("Error fetching screens:", error);
       }
@@ -820,29 +864,12 @@ export default {
 </script>
 
 <style>
-/* CSS for the table */
-.system-details {
-  overflow-x: auto; /* Add horizontal scrollbar if table overflows */
-}
-
-/* Set width for each column */
-.system-details td,
-.system-details th {
-  min-width: 120px; /* Adjust width as needed */
-  max-width: 120px; /* Adjust width as needed */
-  word-wrap: break-word; /* Allow long text to wrap */
-}
-
-/* CSS for the image */
-.system-details img {
-  width: 50px; /* Adjust width of the image */
-  height: auto; /* Maintain aspect ratio */
-  display: block; /* Make sure image is displayed as a block element */
-  margin: auto; /* Center the image horizontally */
-}
-
 .full-width {
   display: flex;
   flex-wrap: wrap;
+}
+.custom-btn {
+  width: 100%;
+  height: 50%;
 }
 </style>
