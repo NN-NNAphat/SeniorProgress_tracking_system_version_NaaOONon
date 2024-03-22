@@ -1,6 +1,42 @@
 <template>
   <div class="system-details">
-    <v-row> <h1>$route.params.id</h1></v-row>
+    <v-row>
+      <v-col cols="6">
+        <v-card class="mx-auto align-start" max-width="800" hover>
+          <v-card-item @click="showDetails = !showDetails">
+            <v-card-title>
+              {{ system.system_nameEN }}
+            </v-card-title>
+            <v-card-subtitle>
+              Systems Progress: {{ system.system_progress }}
+              <v-progress-linear
+                v-if="
+                  system.system_progress !== null &&
+                  system.system_progress !== undefined
+                "
+                color="deep-orange"
+                height="10"
+                :model-value="system.system_progress"
+                striped
+              ></v-progress-linear>
+            </v-card-subtitle>
+          </v-card-item>
+
+          <v-expand-transition>
+            <div v-show="showDetails">
+              <v-divider></v-divider>
+              <v-card-text>
+                <p>System Manday: {{ system.system_manday }}</p>
+                <p>Screen Count: {{ system.screen_count }}</p>
+                <p>System Plan Start: {{ system.system_plan_start }}</p>
+                <p>System Plan End: {{ system.system_plan_end }}</p>
+              </v-card-text>
+            </div>
+          </v-expand-transition>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- Search bar -->
     <v-row no-gutters>
       <v-col cols="12">
@@ -103,7 +139,6 @@
 
             <!-- File input for avatar -->
             <v-file-input
-              :rules="rules"
               accept="image/png, image/jpeg, image/bmp"
               label="Avatar"
               placeholder="Pick an avatar"
@@ -180,6 +215,8 @@ export default {
   layout: "admin",
   data() {
     return {
+      system: {},
+      showDetails: false,
       dateStartMenu: false,
       dateEndMenu: false,
       systemNameENG: "",
@@ -196,7 +233,7 @@ export default {
         screen_plan_start: "",
         screen_plan_end: "",
       },
-      editScreen: {
+      editedScreen: {
         screen_id: "",
         screen_name: "",
         screen_level: "",
@@ -228,11 +265,33 @@ export default {
   },
 
   mounted() {
-    // Fetch system details on component mount
+    this.fetchSystem();
     this.fetchScreens();
     this.fetchSystemNameENG();
   },
   methods: {
+    async fetchSystem() {
+      // เพิ่ม method เพื่อดึงข้อมูล system จาก API
+      const systemId = this.$route.params.id;
+      try {
+        const response = await fetch(
+          `http://localhost:7777/systems/getOne/${systemId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch system data");
+        }
+        this.system = await response.json();
+      } catch (error) {
+        console.error("Error fetching system data:", error);
+        // Handle error fetching system data
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to fetch system data. Please try again.",
+          timer: 3000,
+        });
+      }
+    },
     async createScreen() {
       const systemId = this.$route.params.id;
 
@@ -776,4 +835,3 @@ export default {
   flex-wrap: wrap;
 }
 </style>
-
