@@ -109,8 +109,8 @@
             cols="12"
             md="6"
             lg="4"
-            v-for="screen in filteredScreens"
-            :key="screen.id"
+            v-for="(screen, index) in paginatedScreens"
+            :key="index"
           >
             <v-card class="mx-auto full-width" max-width="400">
               <v-img
@@ -150,6 +150,13 @@
           </v-col>
         </v-row>
       </v-container>
+
+      <!-- เพิ่ม Pagination ที่นี่ -->
+      <v-pagination
+        v-model="currentPage"
+        :length="Math.ceil(filteredScreens.length / perPage)"
+        @input="onPageChange"
+      ></v-pagination>
     </div>
 
     <!-- Create Screen Dialog -->
@@ -255,6 +262,9 @@ export default {
   layout: "admin",
   data() {
     return {
+      perPage: 12,
+      currentPage: 1,
+      itemsPerPage: 12,
       projectUsers: [],
       showUserDialog: false,
       systemUsers: [],
@@ -318,10 +328,11 @@ export default {
     this.fetchSystemUsers(this.systemId, this.projectId);
   },
   methods: {
+    onPageChange(newPage) {
+      this.currentPage = newPage;
+    },
     async fetchSystemUsers(systemId, projectId) {
       try {
-        console.log("systemId:", systemId);
-        console.log("projectId:", projectId);
         const response = await fetch(
           `http://localhost:7777/user_systems/getUserBySystemAndProject/${systemId}/${projectId}`
         );
@@ -329,7 +340,6 @@ export default {
           throw new Error("Failed to fetch system users");
         }
         const users = await response.json();
-        console.log("Users:", users); // แสดงผู้ใช้ที่ได้รับจาก API ในคอนโซลโลจิก
         this.projectUsers = users; // อัพเดท projectUsers ด้วยข้อมูลผู้ใช้ที่ได้จาก API
       } catch (error) {
         console.error("Error fetching system users:", error);
@@ -850,6 +860,11 @@ export default {
     },
   },
   computed: {
+    paginatedScreens() {
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+      return this.filteredScreens.slice(startIndex, endIndex);
+    },
     filteredScreens() {
       return this.screens.filter((screen) => {
         const searchText = this.searchQuery.toLowerCase();
