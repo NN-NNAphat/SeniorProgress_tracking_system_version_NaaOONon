@@ -369,6 +369,7 @@ export default {
           screen_plan_start: this.newScreen.screen_plan_start || null, // Use null if empty
           screen_plan_end: this.newScreen.screen_plan_end || null, // Use null if empty
           project_id: projectId, // Use the fetched project_id
+          assignedUsers: this.newScreen.selectedUsers, // Add selectedUsers to the requestData
         };
 
         // Make the request to create a new screen
@@ -427,15 +428,35 @@ export default {
 
     // ใน fetchSystem() ให้เรียกใช้ fetchSystemUsers() เพื่อดึงข้อมูลผู้ใช้เมื่อระบบถูกโหลด
     async fetchSystem() {
-      // อื่น ๆ...
-      if (this.systemId !== null && this.projectId !== null) {
-        const userOptions = await this.fetchSystemUsers(
-          this.systemId,
-          this.projectId
+      const systemId = this.$route.params.id;
+      try {
+        const response = await fetch(
+          `http://localhost:7777/systems/getOne/${systemId}`
         );
-        this.userOptions = userOptions;
+        if (!response.ok) {
+          throw new Error("Failed to fetch system data");
+        }
+        const systemData = await response.json();
+        this.system = systemData;
+        this.projectId = systemData.project_id;
+        this.systemId = systemData.id;
+
+        if (this.systemId !== null && this.projectId !== null) {
+          const userOptions = await this.fetchSystemUsers(
+            this.systemId,
+            this.projectId
+          );
+          this.userOptions = userOptions;
+        }
+      } catch (error) {
+        console.error("Error fetching system data:", error);
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to fetch system data. Please try again.",
+          timer: 3000,
+        });
       }
-      // อื่น ๆ...
     },
 
     async fetchSystem() {
@@ -474,7 +495,7 @@ export default {
     },
 
     getBase64Image(base64Data) {
-      return "data:image/jpeg;base64," + base64Data;
+      return base64Data;
     },
 
     async fetchSystemNameENG() {

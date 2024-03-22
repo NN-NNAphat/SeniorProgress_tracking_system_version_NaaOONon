@@ -396,7 +396,7 @@ router.post("/createScreen", async (req, res) => {
 
   try {
     // Generate random screen_id
-    const id = generateId();
+    const id = generateId(); // Assume this function generates a unique screen ID
 
     // Insert screen data into screens table
     const insertScreenQuery =
@@ -464,6 +464,7 @@ router.post("/createScreen", async (req, res) => {
     res.sendStatus(500);
   }
 });
+
 
 
 
