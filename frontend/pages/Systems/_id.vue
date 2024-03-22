@@ -191,8 +191,14 @@
               placeholder="Pick an avatar"
               prepend-icon="mdi-camera"
               v-model="newScreen.avatar"
-            >
-            </v-file-input>
+            ></v-file-input>
+
+            <!-- Select User -->
+            <v-select
+              v-model="newScreen.selectedUser"
+              label="Select User"
+              :items="userOptions"
+            ></v-select>
 
             <v-btn
               type="submit"
@@ -253,7 +259,6 @@
   </div>
 </template>
 
-
 <script>
 import Swal from "sweetalert2";
 
@@ -262,6 +267,7 @@ export default {
   layout: "admin",
   data() {
     return {
+      userOptions: [],
       perPage: 12,
       currentPage: 1,
       itemsPerPage: 12,
@@ -320,6 +326,7 @@ export default {
   },
 
   mounted() {
+    this.fetchSystemUsers();
     this.fetchSystem();
     this.fetchScreens();
     this.fetchSystemNameENG();
@@ -340,10 +347,32 @@ export default {
           throw new Error("Failed to fetch system users");
         }
         const users = await response.json();
-        this.projectUsers = users; // อัพเดท projectUsers ด้วยข้อมูลผู้ใช้ที่ได้จาก API
+        return users.map((user) => ({
+          text: `${user.user_position}: ${user.user_firstname} ${user.user_lastname}`,
+          value: user,
+        }));
       } catch (error) {
         console.error("Error fetching system users:", error);
+        return []; // หรือค่าเริ่มต้นที่คุณต้องการส่งกลับ
       }
+    },
+
+    // คุณสามารถเรียกใช้ fetchSystemUsers() ใน created() เพื่อดึงข้อมูลผู้ใช้เมื่อคอมโพเนนต์ถูกสร้าง
+    created() {
+      this.fetchSystemUsers(this.systemId, this.projectId);
+    },
+
+    // ใน fetchSystem() ให้เรียกใช้ fetchSystemUsers() เพื่อดึงข้อมูลผู้ใช้เมื่อระบบถูกโหลด
+    async fetchSystem() {
+      // อื่น ๆ...
+      if (this.systemId !== null && this.projectId !== null) {
+        const userOptions = await this.fetchSystemUsers(
+          this.systemId,
+          this.projectId
+        );
+        this.userOptions = userOptions;
+      }
+      // อื่น ๆ...
     },
 
     async fetchSystem() {
@@ -367,7 +396,11 @@ export default {
 
         // หลังจากตรวจสอบค่าแล้ว ให้เรียกใช้ fetchSystemUsers() ถ้าค่าไม่ใช่ null
         if (this.systemId !== null && this.projectId !== null) {
-          this.fetchSystemUsers(this.systemId, this.projectId);
+          const userOptions = await this.fetchSystemUsers(
+            this.systemId,
+            this.projectId
+          );
+          this.userOptions = userOptions;
         }
       } catch (error) {
         console.error("Error fetching system data:", error);
