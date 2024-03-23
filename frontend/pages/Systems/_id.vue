@@ -45,8 +45,12 @@
           <v-card>
             <v-card-title>รายชื่อผู้ใช้ในระบบ</v-card-title>
             <v-card-text>
+              <div>
+                <p>System ID: {{ systemId }}</p>
+                <p>Project ID: {{ projectId }}</p>
+              </div>
               <v-list>
-                <v-list-item v-for="(user, index) in projectUsers" :key="index">
+                <v-list-item v-for="(user, index) in systemUsers" :key="index">
                   <v-list-item-avatar>
                     <img :src="user.user_pic" alt="User Picture" />
                   </v-list-item-avatar>
@@ -197,7 +201,8 @@
               v-model="newScreen.selectedUsers"
               label="Select Users"
               multiple
-              :items="userOptions"
+              :items="systemUsers"
+              item-text="text"
             ></v-select>
 
             <!-- Buttons -->
@@ -261,6 +266,8 @@ export default {
   layout: "admin",
   data() {
     return {
+      userText: "",
+      selectedSystemId: null,
       avatarFile: null,
       userOptions: [{ text: "Position: Firstname Lastname", value: "user_id" }],
       perPage: 12,
@@ -269,8 +276,6 @@ export default {
       projectUsers: [],
       showUserDialog: false,
       systemUsers: [],
-      projectId: null,
-      systemId: null,
       system: {},
       showDetails: false,
       dateStartMenu: false,
@@ -312,22 +317,26 @@ export default {
         { text: "Progress", value: "screen_progress" },
         { text: "Actions", value: "actions", sortable: false },
       ],
-
-      watch: {
-        avatarFile: "handleAvatarChange",
-        // Watch for changes in the selected system ID and fetch details accordingly
-        selectedSystemId: "fetchSystemDetails",
-      },
     };
   },
 
+  props: {
+    systemId: {
+      // รับค่า systemId จากพ่อค้าน
+      type: String,
+      default: null,
+    },
+    projectId: {
+      // รับค่า projectId จากพ่อค้าน
+      type: String,
+      default: null,
+    },
+  },
+
   mounted() {
-    this.fetchSystemUsers();
     this.fetchSystem();
     this.fetchScreens();
     this.fetchSystemNameENG();
-  },
-  created() {
     this.fetchSystemUsers(this.systemId, this.projectId);
   },
   methods: {
@@ -366,8 +375,7 @@ export default {
           screen_plan_start: this.newScreen.screen_plan_start || null, // Use null if empty
           screen_plan_end: this.newScreen.screen_plan_end || null, // Use null if empty
           project_id: projectId, // Use the fetched project_id
-           assignedUsers: this.newScreen.selectedUsers, // Add selectedUsers to the 
-           
+          assignedUsers: this.newScreen.selectedUsers, // Add selectedUsers to the
         };
 
         // Make the request to create a new screen
@@ -453,6 +461,11 @@ export default {
     },
     async fetchSystemUsers(systemId, projectId) {
       try {
+        // Check if systemId and projectId are not null
+        if (systemId === null || projectId === null) {
+          throw new Error("System ID or Project ID is null");
+        }
+
         const response = await fetch(
           `http://localhost:7777/user_systems/getUserBySystemAndProject/${systemId}/${projectId}`
         );
@@ -460,22 +473,20 @@ export default {
           throw new Error("Failed to fetch system users");
         }
         const users = await response.json();
-        return users.map((user) => ({
-          text: `${user.user_position}: ${user.user_firstname} ${user.user_lastname}`,
-          value: user.id, // ใช้ user.id เป็นค่า value ของ v-select
+        this.systemUsers = users.map((user) => ({
+          user_pic: user.user_pic, // อาจต้องปรับแต่งตามการส่งค่าจาก API ของคุณ
+          user_position: user.user_position,
+          user_firstname: user.user_firstname,
+          user_lastname: user.user_lastname,
+          user_department: user.user_department,
+          id: user.id,
         }));
       } catch (error) {
         console.error("Error fetching system users:", error);
-        return []; // หรือค่าเริ่มต้นที่คุณต้องการส่งกลับ
+        this.systemUsers = [];
       }
     },
 
-    // คุณสามารถเรียกใช้ fetchSystemUsers() ใน created() เพื่อดึงข้อมูลผู้ใช้เมื่อคอมโพเนนต์ถูกสร้าง
-    created() {
-      this.fetchSystemUsers(this.systemId, this.projectId);
-    },
-
-    // ใน fetchSystem() ให้เรียกใช้ fetchSystemUsers() เพื่อดึงข้อมูลผู้ใช้เมื่อระบบถูกโหลด
     async fetchSystem() {
       const systemId = this.$route.params.id;
       try {
@@ -508,41 +519,6 @@ export default {
       }
     },
 
-    async fetchSystem() {
-      // เพิ่ม method เพื่อดึงข้อมูล system จาก API
-      const systemId = this.$route.params.id;
-      try {
-        const response = await fetch(
-          `http://localhost:7777/systems/getOne/${systemId}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch system data");
-        }
-        const systemData = await response.json();
-        this.system = systemData;
-        this.projectId = systemData.project_id;
-        this.systemId = systemData.id; // หรืออื่น ๆ ตามความเหมาะสม
-
-        // หลังจากตรวจสอบค่าแล้ว ให้เรียกใช้ fetchSystemUsers() ถ้าค่าไม่ใช่ null
-        if (this.systemId !== null && this.projectId !== null) {
-          const userOptions = await this.fetchSystemUsers(
-            this.systemId,
-            this.projectId
-          );
-          this.userOptions = userOptions;
-        }
-      } catch (error) {
-        console.error("Error fetching system data:", error);
-        // Handle error fetching system data
-        await Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Failed to fetch system data. Please try again.",
-          timer: 3000,
-        });
-      }
-    },
-
     async fetchSystemNameENG() {
       try {
         const systemId = this.$route.params.id;
@@ -563,7 +539,6 @@ export default {
     async goToScreensDetail(screenId) {
       await this.$router.push({ path: `/screens/${screenId}` });
     },
-
     async updateScreen() {
       try {
         const response = await fetch(

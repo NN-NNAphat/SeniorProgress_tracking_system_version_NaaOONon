@@ -381,6 +381,7 @@ router.get("/searchBySystemId_delete/:system_id", async (req, res) => {
 
 router.post("/createScreen", async (req, res) => {
   const {
+    screen_id,
     screen_name,
     screen_status,
     screen_level,
@@ -405,7 +406,7 @@ router.post("/createScreen", async (req, res) => {
         insertScreenQuery,
         [
           id,
-          id, // Use id as screen_id
+          screen_id,
           screen_name,
           screen_status,
           screen_level,
