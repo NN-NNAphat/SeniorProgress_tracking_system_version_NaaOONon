@@ -98,7 +98,7 @@
     <v-row style="margin-bottom: 20px" justify="end">
       <v-btn color="primary" dark @click="goToCreateScreen">New Screen</v-btn>
       &nbsp;&nbsp;&nbsp;
-      <v-btn color="primary" dark @click="goToHistoryScreens"
+      <v-btn color="primary" @click="showSystemIdDialog"
         >Show History Screen</v-btn
       >
     </v-row>
@@ -257,19 +257,49 @@
       </v-card>
     </v-dialog>
 
-    <!-- Show deleted screens history -->
-    <v-dialog v-model="showHistoryDialog" max-width="800">
-      <v-data-table headers="headers" :items="deletedScreens">
-        <!-- Define headers for the table -->
-
-        <template v-slot:top>
-          <v-toolbar flat>
-            <v-toolbar-title>Deleted Screens History</v-toolbar-title>
-            <v-divider class="mx-4" inset vertical></v-divider>
-            <v-spacer></v-spacer>
-          </v-toolbar>
-        </template>
-      </v-data-table>
+    <!-- Dialog for displaying SystemId -->
+    <v-dialog v-model="systemIdDialog" max-width="800">
+      <v-card>
+        <v-card-title>System ID: {{ systemId }}</v-card-title>
+        <v-list>
+          <v-list-item-group>
+            <v-list-item v-for="(screen, index) in deletedScreens" :key="index">
+              <v-list-item-content>
+                <v-list-item-title>{{ screen.screen_id }}</v-list-item-title>
+                <v-list-item-subtitle>{{
+                  screen.screen_name
+                }}</v-list-item-subtitle>
+                <v-list-item-subtitle>{{
+                  screen.screen_plan_end
+                }}</v-list-item-subtitle>
+                <v-list-item-subtitle>{{
+                  screen.screen_level
+                }}</v-list-item-subtitle>
+              </v-list-item-content>
+              <v-list-item-avatar>
+                <v-img
+                  :src="getBase64Image(screen.screen_pic)"
+                  height="50"
+                  contain
+                ></v-img>
+              </v-list-item-avatar>
+              <v-list-item-action>
+                <v-btn icon @click="confirmDeleteScreenHistory(screen.id)">
+                  <v-icon color="red darken-2">mdi-delete</v-icon>
+                </v-btn>
+              </v-list-item-action>
+              <v-list-item-action>
+                <v-btn icon @click="restoreScreen(screen.id)">
+                  <v-icon color="green darken-2">mdi-restore</v-icon>
+                </v-btn>
+              </v-list-item-action>
+            </v-list-item>
+          </v-list-item-group>
+        </v-list>
+        <v-card-actions>
+          <v-btn color="primary" @click="closeSystemIdDialog">Close</v-btn>
+        </v-card-actions>
+      </v-card>
     </v-dialog>
   </div>
 </template>
@@ -282,6 +312,14 @@ export default {
   layout: "admin",
   data() {
     return {
+      deletedScreensHeaders: [
+        { text: "Screen ID", value: "screen_id" },
+        { text: "Screen Name", value: "screen_name" },
+        { text: "Due Date", value: "screen_plan_end" },
+        { text: "Screen Level", value: "screen_level" },
+        // Add more headers as needed
+      ],
+      systemIdDialog: false,
       userText: "",
       selectedSystemId: null,
       avatarFile: null,
@@ -297,7 +335,6 @@ export default {
       dateStartMenu: false,
       dateEndMenu: false,
       systemNameENG: "",
-      showHistoryDialog: false,
       deletedScreens: [],
       createScreenDialog: false,
       editScreenDialog: false,
@@ -325,25 +362,16 @@ export default {
         { text: "Image", value: "screen_pic" }, // เปลี่ยนจาก "Progress" เป็น "Picture"
         { text: "Actions", value: "actions", sortable: false },
       ],
-      headers: [
-        { text: "Screen ID", value: "screen_id" },
-        { text: "Screen Name", value: "screen_name" },
-        { text: "Due date", value: "screen_plan_end" },
-        { text: "Screen ", value: "screen_level" },
-        { text: "Progress", value: "screen_progress" },
-        { text: "Actions", value: "actions", sortable: false },
-      ],
+      headers: [],
     };
   },
 
   props: {
     systemId: {
-      // รับค่า systemId จากพ่อค้าน
       type: String,
       default: null,
     },
     projectId: {
-      // รับค่า projectId จากพ่อค้าน
       type: String,
       default: null,
     },
@@ -356,6 +384,29 @@ export default {
     this.fetchSystemUsers(this.systemId, this.projectId);
   },
   methods: {
+    async fetchDeletedScreensBySystemId() {
+      try {
+        const systemId = this.systemId; // Get the systemId from the props
+        const response = await fetch(
+          `http://localhost:7777/screens/searchBySystemId_delete/${systemId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch deleted screens by system ID");
+        }
+        const deletedScreens = await response.json();
+        this.deletedScreens = deletedScreens;
+      } catch (error) {
+        console.error("Error fetching deleted screens by system ID:", error);
+      }
+    },
+    async showSystemIdDialog() {
+      this.systemIdDialog = true;
+      await this.fetchDeletedScreensBySystemId(); // Fetch deleted screens when opening the dialog
+    },
+
+    closeSystemIdDialog() {
+      this.systemIdDialog = false;
+    },
     filteredUsers(position) {
       return this.systemUsers.filter((user) => user.user_position === position);
     },
@@ -599,27 +650,6 @@ export default {
         params: { selectedScreen: screen },
       });
     },
-    async goToHistoryScreens() {
-      await this.fetchDeletedScreens();
-      this.showHistoryDialog = true;
-    },
-    async fetchDeletedScreens() {
-      try {
-        const systemId = this.$route.params.id;
-        const response = await fetch(
-          `http://localhost:7777/screens/searchBySystemId_delete/${systemId}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch deleted screens");
-        }
-        const deletedScreens = await response.json();
-        console.log(deletedScreens); // ตรวจสอบ deleted screens ที่ได้รับมา
-        this.deletedScreens = deletedScreens;
-      } catch (error) {
-        console.error("Error fetching deleted screens:", error);
-        // Handle error fetching deleted screens
-      }
-    },
     openEditDialog(screen) {
       this.editScreen = { ...screen };
       this.editScreenDialog = true;
@@ -747,9 +777,8 @@ export default {
         });
 
         if (confirmResult.isConfirmed) {
-          const screenId = item.id;
           const response = await fetch(
-            `http://localhost:7777/screens/updateScreen/${screenId}`,
+            `http://localhost:7777/screens/updateScreen/${item}`,
             {
               method: "PUT",
               headers: {
@@ -774,10 +803,9 @@ export default {
             "Screen restored successfully.",
             "success"
           );
-
-          // เพิ่มบรรทัดนี้เพื่ออัพเดทตารางอัตโนมัติ
-          this.fetchDeletedScreens();
         }
+        this.fetchDeletedScreens();
+        this.fetchScreens();
       } catch (error) {
         console.error("Error restoring screen:", error);
         await Swal.fire(
@@ -787,7 +815,7 @@ export default {
         );
       }
     },
-    async confirmDeleteHistoryScreen(item) {
+    async confirmDeleteScreenHistory(item) {
       try {
         const confirmResult = await Swal.fire({
           title: "Are you sure?",
@@ -798,34 +826,36 @@ export default {
           cancelButtonColor: "#d33",
           confirmButtonText: "Yes, delete it!",
         });
+
         if (confirmResult.isConfirmed) {
-          const screenId = item.id; // Get the ID of the system to delete
           const response = await fetch(
-            `http://localhost:7777/screens/deleteHistoryScreens/${screenId}`,
+            `http://localhost:7777/screens/deleteHistoryScreen/${item}`,
             {
               method: "DELETE",
             }
           );
+
           if (!response.ok) {
             throw new Error("Failed to delete screen");
           }
-          await Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: "System and related data deleted successfully",
-          });
-          this.fetchDeletedScreens(); // Refresh the deleted screen data
+
+          console.log("Screen deleted successfully");
+
+          await Swal.fire("Success", "Screen deleted successfully.", "success");
+
+          // Refresh the deleted screens data
+          this.fetchDeletedScreens();
         }
       } catch (error) {
-        console.error("Error confirming delete history screen:", error);
-        await Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Failed to delete history screen",
-        });
+        console.error("Error deleting screen:", error);
+
+        await Swal.fire(
+          "Error",
+          "An error occurred during the screen deletion process.",
+          "error"
+        );
       }
     },
-
     async fetchDeletedScreens() {
       try {
         const systemId = this.$route.params.id;
