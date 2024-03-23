@@ -36,6 +36,7 @@
         </v-card>
       </v-col>
 
+      <!-- แสดงรายชื่อ USser systems -->
       <v-col>
         <v-btn class="custom-btn" @click="showUserDialog = true">
           แสดงรายชื่อผู้ใช้ในระบบ
@@ -45,10 +46,6 @@
           <v-card>
             <v-card-title>รายชื่อผู้ใช้ในระบบ</v-card-title>
             <v-card-text>
-              <div>
-                <p>System ID: {{ systemId }}</p>
-                <p>Project ID: {{ projectId }}</p>
-              </div>
               <v-list>
                 <v-list-item v-for="(user, index) in systemUsers" :key="index">
                   <v-list-item-avatar>
@@ -132,7 +129,7 @@
               </v-card-subtitle>
 
               <v-card-text>
-                <h1>screen ID: {{ screen.id }}</h1>
+                <!-- <h1>screen ID: {{ screen.id }}</h1> -->
                 <div><b>Due Date:</b> {{ screen.screen_plan_end }}</div>
                 <div><b>Screen Level:</b> {{ screen.screen_level }}</div>
                 <div><b>Progress:</b> {{ screen.screen_progress }}</div>
@@ -199,10 +196,29 @@
             <!-- New field for selecting users -->
             <v-select
               v-model="newScreen.selectedUsers"
-              label="Select Users"
+              :items="filteredUsers('Implementer')"
+              label="Select Implementer"
+              item-value="id"
+              item-text="userText"
               multiple
-              :items="systemUsers"
-              item-text="text"
+            ></v-select>
+
+            <v-select
+              v-model="newScreen.selectedUsers"
+              :items="filteredUsers('Developer')"
+              label="Select Developer"
+              item-value="id"
+              item-text="userText"
+              multiple
+            ></v-select>
+
+            <v-select
+              v-model="newScreen.selectedUsers"
+              :items="filteredUsers('System Analyst')"
+              label="Select System Analyst"
+              item-value="id"
+              item-text="userText"
+              multiple
             ></v-select>
 
             <!-- Buttons -->
@@ -340,6 +356,9 @@ export default {
     this.fetchSystemUsers(this.systemId, this.projectId);
   },
   methods: {
+    filteredUsers(position) {
+      return this.systemUsers.filter((user) => user.user_position === position);
+    },
     async createScreen() {
       const systemId = this.$route.params.id;
 
@@ -401,6 +420,9 @@ export default {
         } else {
           throw new Error("Failed to create screen");
         }
+        this.fetchScreens();
+        this.fetchSystemNameENG();
+        this.fetchSystem();
       } catch (error) {
         console.error("Error creating screen", error);
 
@@ -474,12 +496,13 @@ export default {
         }
         const users = await response.json();
         this.systemUsers = users.map((user) => ({
-          user_pic: user.user_pic, // อาจต้องปรับแต่งตามการส่งค่าจาก API ของคุณ
+          user_pic: user.user_pic,
           user_position: user.user_position,
           user_firstname: user.user_firstname,
           user_lastname: user.user_lastname,
           user_department: user.user_department,
           id: user.id,
+          userText: `${user.user_position}: ${user.user_firstname} ${user.user_lastname}`,
         }));
       } catch (error) {
         console.error("Error fetching system users:", error);
