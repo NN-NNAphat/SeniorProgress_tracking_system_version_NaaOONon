@@ -183,7 +183,7 @@
             <v-select
               v-model="newScreen.screen_level"
               label="Screen Level"
-              :items="['Very Difficult', 'Hard', 'Moderate', 'Easy', 'Simple']"
+              :items="[ 'Hard', 'Moderate', 'Easy', 'Simple']"
             ></v-select>
             <v-file-input
               accept="image/png, image/jpeg, image/bmp"
@@ -248,7 +248,7 @@
             <v-select
               v-model="editScreen.screen_level"
               label="Screen Level"
-              :items="['Very Difficult', 'Hard', 'Moderate', 'Easy', 'Simple']"
+              :items="['Hard', 'Moderate', 'Easy', 'Simple']"
             ></v-select>
             <v-btn type="submit">Update</v-btn>
             <v-btn @click="editScreenDialog = false">Cancel</v-btn>
