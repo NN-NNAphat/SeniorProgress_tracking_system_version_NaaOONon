@@ -144,6 +144,15 @@
                   Delete
                 </v-btn>
 
+                <v-btn
+                  color="orange"
+                  @click="
+                    getUserScreenManagement(projectId, systemId, screen.id)
+                  "
+                >
+                  User screen management
+                </v-btn>
+
                 <v-btn @click="goToScreensDetail(screen.id)">
                   Screen Detail
                 </v-btn>
@@ -183,7 +192,7 @@
             <v-select
               v-model="newScreen.screen_level"
               label="Screen Level"
-              :items="[ 'Hard', 'Moderate', 'Easy', 'Simple']"
+              :items="['Hard', 'Moderate', 'Easy', 'Simple']"
             ></v-select>
             <v-file-input
               accept="image/png, image/jpeg, image/bmp"
@@ -301,6 +310,70 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="showUserManagementDialog" max-width="600">
+      <v-card>
+        <v-card-title> User Screen Management </v-card-title>
+        <v-card-text>
+          <v-list>
+            <v-list-item v-for="(user, index) in screenUsers" :key="user.id">
+              <v-list-item-avatar>
+                <v-img :src="user.user_pic" width="40" height="40"></v-img>
+              </v-list-item-avatar>
+              <v-list-item-content>
+                <v-list-item-title>
+                  {{ user.user_firstname }} {{ user.user_lastname }}
+                </v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ user.user_position }} - {{ user.user_department }}
+                </v-list-item-subtitle>
+              </v-list-item-content>
+              <!-- ปุ่มลบ -->
+              <v-list-item-action>
+                <v-btn icon @click="deleteUser(user.id)">
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </v-list-item-action>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="primary" @click="showUserManagementDialog = false"
+            >Close</v-btn
+          >
+          <v-btn
+            color="primary"
+            @click="
+              openAssignUserDialog(projectId, systemId, screenId), assignUser
+            "
+            >Assign User</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="dialogVisible">
+      <v-card>
+        <v-card-title>Assign User</v-card-title>
+        <v-card-text>
+          <div>Project ID: {{ assignProjectId }}</div>
+          <div>System ID: {{ assignSystemId }}</div>
+          <div>Screen ID: {{ assignScreenId }}</div>
+          <v-select
+            v-model="selectedUsers"
+            :items="userOptions"
+            label="Select Users"
+            multiple
+          ></v-select>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="primary" @click="closeAssignUserDialog">Close</v-btn>
+          <v-btn color="primary" @click="assignUsersToScreen"
+            >Assign User</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -312,6 +385,16 @@ export default {
   layout: "admin",
   data() {
     return {
+      selectedUsers: [],
+      dialogVisible: false,
+      assignProjectId: "",
+      assignSystemId: "",
+      assignScreenId: "",
+      screenId: null,
+      screen: {},
+      showAssignUserDialog: false,
+      showUserManagementDialog: false,
+      screenUsers: [],
       deletedScreensHeaders: [
         { text: "Screen ID", value: "screen_id" },
         { text: "Screen Name", value: "screen_name" },
@@ -384,6 +467,128 @@ export default {
     this.fetchSystemUsers(this.systemId, this.projectId);
   },
   methods: {
+    deleteUser(userId) {
+      const { systemId, projectId, screenId } = this; // สมมติว่าคุณมีตัวแปรเหล่านี้ใน Vue instance อยู่แล้ว
+      try {
+        fetch(
+          `http://localhost:7777/user_screens/deleteUserScreen/${systemId}/${projectId}/${screenId}/${userId}`,
+          {
+            method: "DELETE",
+          }
+        )
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to delete user");
+            }
+            // ลบผู้ใช้ออกจากอาร์เรย์ screenUsers
+            this.screenUsers = this.screenUsers.filter(
+              (user) => user.id !== userId
+            );
+            console.log("User deleted successfully.");
+          })
+          .catch((error) => {
+            console.error("Error deleting user:", error);
+            // จัดการข้อผิดพลาดการลบผู้ใช้
+          });
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        // จัดการข้อผิดพลาดการลบผู้ใช้
+      }
+    },
+    async assignUsersToScreen() {
+      const { assignProjectId, assignSystemId, assignScreenId, selectedUsers } =
+        this;
+
+      try {
+        const response = await fetch(
+          "http://localhost:7777/user_screens/createUser_screen",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: selectedUsers,
+              screen_id: assignScreenId,
+              system_id: assignSystemId,
+              project_id: assignProjectId,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to assign users to screen");
+        }
+
+        // ดำเนินการอื่นๆ หลังจากสำเร็จ
+
+        // ปิด Dialog หลังจากทำงานเสร็จสิ้น
+        this.closeAssignUserDialog();
+      } catch (error) {
+        console.error("Error assigning users to screen:", error);
+        // จัดการข้อผิดพลาดที่เกิดขึ้น
+      }
+    },
+    openAssignUserDialog(projectId, systemId, screenId) {
+      // เรียกใช้งาน assignUser ที่นี่หลังจากกำหนดค่า projectId, systemId, screenId
+      this.assignProjectId = projectId;
+      this.assignSystemId = systemId;
+      this.assignScreenId = screenId;
+      this.fetchUsersNOTINScreen(); // เรียกใช้งาน assignUser ที่นี่
+      this.dialogVisible = true;
+    },
+    closeAssignUserDialog() {
+      this.dialogVisible = false;
+    },
+    async fetchUsersNOTINScreen() {
+      const projectId = this.assignProjectId;
+      const systemId = this.assignSystemId;
+      const screenId = this.assignScreenId;
+      console.log(screenId);
+      try {
+        const response = await fetch(
+          `http://localhost:7777/user_screens/checkUsersNOTINScreen/${projectId}/${systemId}/${screenId}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch users data");
+        }
+
+        const users = await response.json();
+
+        // สร้าง options สำหรับ v-select
+        this.userOptions = users.map((user) => ({
+          text: `${user.user_firstname} ${user.user_lastname}`,
+          value: user.id,
+        }));
+      } catch (error) {
+        console.error("Error fetching users data:", error);
+        // จัดการข้อผิดพลาดการดึงข้อมูลผู้ใช้
+      }
+    },
+
+    async getUserScreenManagement(projectId, systemId, screenId) {
+      try {
+        const response = await fetch(
+          `http://localhost:7777/user_screens/checkUsersINScreen/${projectId}/${systemId}/${screenId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch user screen management data");
+        }
+        const users = await response.json();
+        console.log(users); // ตรวจสอบข้อมูลผู้ใช้ที่ได้รับมา
+        this.screenUsers = users; // เซ็ตค่าข้อมูลผู้ใช้ที่ดึงมาให้กับตัวแปร screenUsers
+        this.showUserManagementDialog = true; // เปิด Dialog เมื่อข้อมูลถูกดึงมาสำเร็จ
+        // ไม่เรียกใช้ this.assignUser(projectId, systemId, screenId);
+        this.projectId = projectId; // ส่ง projectId ไปยังตัวแปรของคอมโพเนนต์
+        this.systemId = systemId; // ส่ง systemId ไปยังตัวแปรของคอมโพเนนต์
+        this.screenId = screenId; // ส่ง screenId ไปยังตัวแปรของคอมโพเนนต์
+      } catch (error) {
+        console.error("Error fetching user screen management data:", error);
+        // Handle error fetching user screen management data
+      }
+    },
+
     async fetchDeletedScreensBySystemId() {
       try {
         const systemId = this.systemId; // Get the systemId from the props

@@ -307,6 +307,87 @@ router.delete("/deleteProjectID/:project_id", async (req, res) => {
     }
 });
 
+router.get("/checkUsersNOTINScreen/:project_id/:system_id/:screen_id", async (req, res) => {
+    const { project_id, system_id, screen_id } = req.params;
 
+    try {
+        // Query to find users not in the specified project, system, and screen
+        const query = `
+            SELECT users.id, users.user_firstname, users.user_lastname, users.user_position, users.user_department, users.user_pic
+            FROM users
+            LEFT JOIN user_screens
+            ON users.id = user_screens.user_id
+            WHERE user_screens.project_id != ? OR user_screens.system_id != ? OR user_screens.screen_id != ?
+            OR user_screens.project_id IS NULL OR user_screens.system_id IS NULL OR user_screens.screen_id IS NULL
+        `;
+
+        connection.query(query, [project_id, system_id, screen_id], (err, results, fields) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).send();
+            }
+            res.status(200).json(results);
+        });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
+
+router.get("/checkUsersINScreen/:project_id/:system_id/:screen_id", async (req, res) => {
+    const { project_id, system_id, screen_id } = req.params;
+
+    try {
+        // Query to find users in the specified screen
+        const query = `
+            SELECT users.id, users.user_firstname, users.user_lastname, users.user_position, users.user_department, users.user_pic
+            FROM users
+            INNER JOIN user_screens ON users.id = user_screens.user_id
+            WHERE user_screens.project_id = ? AND user_screens.system_id = ? AND user_screens.screen_id = ?
+        `;
+
+        // Execute the query
+        connection.query(query, [project_id, system_id, screen_id], (err, results, fields) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).send();
+            }
+            // Send the response with the list of users in the screen
+            res.status(200).json(results);
+        });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
+
+router.delete("/deleteUserScreen/:system_id/:project_id/:screen_id/:user_id", async (req, res) => {
+    const { system_id, project_id, screen_id, user_id } = req.params;
+
+    try {
+        // Query to delete user_screen by system_id, project_id, screen_id, and user_id
+        const query = `
+            DELETE FROM user_screens
+            WHERE system_id = ? AND project_id = ? AND screen_id = ? AND user_id = ?
+        `;
+
+        // Execute the query
+        connection.query(query, [system_id, project_id, screen_id, user_id], (err, results, fields) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).send();
+            }
+            // Check if any user_screen was deleted
+            if (results.affectedRows === 0) {
+                return res.status(404).json({ message: "No user_screen found with the provided details." });
+            }
+            // Send success response
+            return res.status(200).json({ message: "User_screen deleted successfully." });
+        });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
 
 module.exports = router;
