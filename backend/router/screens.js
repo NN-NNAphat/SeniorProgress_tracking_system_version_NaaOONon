@@ -379,8 +379,6 @@ router.get("/searchBySystemId_delete/:system_id", async (req, res) => {
   }
 });
 
-
-// Route to create a new screen
 router.post("/createScreen", async (req, res) => {
   const {
     screen_name,
@@ -391,7 +389,7 @@ router.post("/createScreen", async (req, res) => {
     screen_plan_start,
     screen_plan_end,
     project_id,
-    assignedUsers // เพิ่ม field assignedUsers ใน req.body เพื่อรับข้อมูลผู้ใช้ที่ต้องการจะกำหนดให้เข้าถึงหน้าจอ
+    assignedUsers
   } = req.body;
 
   try {
@@ -400,7 +398,7 @@ router.post("/createScreen", async (req, res) => {
 
     // Insert screen data into screens table
     const insertScreenQuery =
-      'INSERT INTO screens (id, screen_id, screen_name, screen_status, screen_level, system_id, screen_progress, screen_plan_start, screen_plan_end, project_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      'INSERT INTO screens (id, screen_id, screen_name, screen_status, screen_level, system_id, screen_progress, screen_plan_start, screen_plan_end, project_id, screen_pic) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
     await new Promise((resolve, reject) => {
       connection.query(
@@ -415,7 +413,8 @@ router.post("/createScreen", async (req, res) => {
           screen_progress,
           screen_plan_start,
           screen_plan_end,
-          project_id
+          project_id,
+          req.body.screen_pic // Insert Base64 image directly
         ],
         async (err, result) => {
           if (err) {
@@ -466,10 +465,6 @@ router.post("/createScreen", async (req, res) => {
 });
 
 
-
-
-
-// Route to update a screen by ID
 router.put("/updateScreen/:id", (req, res) => {
   const id = req.params.id;
   const {
@@ -532,6 +527,8 @@ router.put("/updateScreen/:id", (req, res) => {
     return res.status(500).send();
   }
 });
+
+
 // Route to delete a screen by ID
 router.delete("/delete/:id", async (req, res) => {
   const id = req.params.id;

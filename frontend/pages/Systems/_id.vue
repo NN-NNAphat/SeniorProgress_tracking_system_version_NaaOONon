@@ -92,6 +92,7 @@
         />
       </v-col>
     </v-row>
+
     <!-- ปุ่ม -->
     <v-row style="margin-bottom: 20px" justify="end">
       <v-btn color="primary" dark @click="goToCreateScreen">New Screen</v-btn>
@@ -188,7 +189,7 @@
               label="Avatar"
               placeholder="Pick an avatar"
               prepend-icon="mdi-camera"
-              v-model="newScreen.avatar"
+              v-model="avatarFile"
             ></v-file-input>
 
             <!-- New field for selecting users -->
@@ -260,6 +261,7 @@ export default {
   layout: "admin",
   data() {
     return {
+      avatarFile: null,
       userOptions: [{ text: "Position: Firstname Lastname", value: "user_id" }],
       perPage: 12,
       currentPage: 1,
@@ -312,6 +314,7 @@ export default {
       ],
 
       watch: {
+        avatarFile: "handleAvatarChange",
         // Watch for changes in the selected system ID and fetch details accordingly
         selectedSystemId: "fetchSystemDetails",
       },
@@ -328,21 +331,18 @@ export default {
     this.fetchSystemUsers(this.systemId, this.projectId);
   },
   methods: {
-    // ฟังก์ชันสำหรับแปลงไฟล์รูปภาพเป็น base64
-    // ฟังก์ชันสำหรับแปลงไฟล์รูปภาพเป็น base64
-    imageToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-      });
-    },
-
     async createScreen() {
       const systemId = this.$route.params.id;
 
       try {
+        // Check if an avatar file is selected
+        if (!this.avatarFile) {
+          throw new Error("Please select an avatar file.");
+        }
+
+        // Convert image to Base64
+        const base64Image = await this.imageToBase64(this.avatarFile);
+
         // Fetch system data to get project_id
         const systemResponse = await fetch(
           `http://localhost:7777/systems/getOne/${systemId}`
@@ -353,9 +353,6 @@ export default {
 
         const systemData = await systemResponse.json();
         const projectId = systemData.project_id;
-
-        // Convert image to Base64
-        const base64Image = await this.imageToBase64(this.newScreen.avatar);
 
         // Prepare data to send
         const requestData = {
@@ -369,7 +366,8 @@ export default {
           screen_plan_start: this.newScreen.screen_plan_start || null, // Use null if empty
           screen_plan_end: this.newScreen.screen_plan_end || null, // Use null if empty
           project_id: projectId, // Use the fetched project_id
-          assignedUsers: this.newScreen.selectedUsers, // Add selectedUsers to the requestData
+           assignedUsers: this.newScreen.selectedUsers, // Add selectedUsers to the 
+           
         };
 
         // Make the request to create a new screen
@@ -384,21 +382,72 @@ export default {
           }
         );
 
+        // Check if the screen was created successfully
         if (response.ok) {
-          // Handle success
-          console.log("Screen created successfully");
-          console.log(requestData.screen_pic);
+          await Swal.fire({
+            icon: "success",
+            title: "Screen Created!",
+            text: "The new screen has been created successfully.",
+            timer: 3000, // Set the timer to 3 seconds (3000 milliseconds)
+          });
         } else {
           throw new Error("Failed to create screen");
         }
-
-        // ... continue
       } catch (error) {
         console.error("Error creating screen", error);
-        // Handle error
+
+        // Show error message using SweetAlert2
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text:
+            error.message || "Failed to create the screen. Please try again.",
+          timer: 3000, // Set the timer to 3 seconds (3000 milliseconds)
+        });
       }
     },
 
+    async imageToBase64(imageFile) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          const base64String = reader.result.split(",")[1]; // Skip metadata and extract base64 data
+          resolve(base64String);
+        };
+
+        reader.onerror = (error) => {
+          reject(error);
+        };
+
+        reader.readAsDataURL(imageFile); // Read file as base64
+      });
+    },
+    getBase64Image(base64Data) {
+      return "data:image/jpeg;base64," + base64Data;
+    },
+
+    async sendAvatarDataToAPI(base64Data) {
+      // Send the base64Data to your API
+      // Example:
+      try {
+        const response = await fetch("YOUR_API_ENDPOINT", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ avatar: base64Data }),
+        });
+
+        if (response.ok) {
+          console.log("Avatar data sent successfully");
+        } else {
+          throw new Error("Failed to send avatar data");
+        }
+      } catch (error) {
+        console.error("Error sending avatar data:", error);
+      }
+    },
     onPageChange(newPage) {
       this.currentPage = newPage;
     },
@@ -492,10 +541,6 @@ export default {
           timer: 3000,
         });
       }
-    },
-
-    getBase64Image(base64Data) {
-      return base64Data;
     },
 
     async fetchSystemNameENG() {
