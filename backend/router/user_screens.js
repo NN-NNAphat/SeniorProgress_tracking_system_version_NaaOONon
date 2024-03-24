@@ -311,21 +311,25 @@ router.get("/checkUsersNOTINScreen/:project_id/:system_id/:screen_id", async (re
     const { project_id, system_id, screen_id } = req.params;
 
     try {
-        // Query to find users not in the specified project, system, and screen
+        // Query to find users in the specified screen
         const query = `
             SELECT users.id, users.user_firstname, users.user_lastname, users.user_position, users.user_department, users.user_pic
             FROM users
-            LEFT JOIN user_screens
-            ON users.id = user_screens.user_id
-            WHERE user_screens.project_id != ? OR user_screens.system_id != ? OR user_screens.screen_id != ?
-            OR user_screens.project_id IS NULL OR user_screens.system_id IS NULL OR user_screens.screen_id IS NULL
+            LEFT JOIN user_systems ON users.id = user_systems.user_id
+            WHERE user_systems.project_id = ? AND user_systems.system_id = ?
+            AND users.id NOT IN (
+                SELECT user_id FROM user_screens
+                WHERE project_id = ? AND system_id = ? AND screen_id = ?
+            )
         `;
 
-        connection.query(query, [project_id, system_id, screen_id], (err, results, fields) => {
+        // Execute the query
+        connection.query(query, [project_id, system_id, project_id, system_id, screen_id], (err, results, fields) => {
             if (err) {
                 console.log(err);
                 return res.status(500).send();
             }
+            // Send the response with the list of users not in the screen
             res.status(200).json(results);
         });
     } catch (err) {
@@ -333,6 +337,7 @@ router.get("/checkUsersNOTINScreen/:project_id/:system_id/:screen_id", async (re
         return res.status(500).send();
     }
 });
+
 
 router.get("/checkUsersINScreen/:project_id/:system_id/:screen_id", async (req, res) => {
     const { project_id, system_id, screen_id } = req.params;

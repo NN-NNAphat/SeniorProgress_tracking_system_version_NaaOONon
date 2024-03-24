@@ -506,7 +506,7 @@ export default {
       try {
         // เรียก API เพื่อรับรายชื่อผู้ใช้ที่สามารถเลือกได้
         const response = await axios.get(
-          `http://localhost:7777/user_systems/checkUsersInProjectSystem/${projectId}/${systemId}`
+          `http://localhost:7777/user_systems/checkUsersNotInSystem/${projectId}/${systemId}`
         );
 
         // เพิ่มข้อมูล user_position เข้าไปในชุดข้อมูล
