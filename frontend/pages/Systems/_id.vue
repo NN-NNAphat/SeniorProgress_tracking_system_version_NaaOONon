@@ -121,11 +121,22 @@
                 :src="getBase64Image(screen.screen_pic)"
                 cover
               >
-                <v-card-title>{{ screen.screen_name }}</v-card-title>
+                <v-card-title>
+                  <div
+                    style="
+                      padding: 1.4px;
+                      background-color: rgba(0, 0, 0, 0.4);
+                      color: white;
+                    "
+                  >
+                    {{ screen.screen_name }}
+                  </div>
+                </v-card-title>
               </v-img>
 
               <v-card-subtitle class="pt-4">
-                {{ screen.screen_id }}
+                <span style="font-weight: bold">Screen Name:</span>
+                {{ screen.screen_name }}
               </v-card-subtitle>
 
               <v-card-text>
@@ -136,25 +147,34 @@
               </v-card-text>
 
               <v-card-actions>
-                <v-btn color="orange" @click="openEditDialog(screen)">
-                  Edit
-                </v-btn>
-
-                <v-btn color="orange" @click="confirmDeleteScreen(screen)">
-                  Delete
+                <v-btn
+                  color="orange"
+                  class="small"
+                  @click="openEditDialog(screen)"
+                >
+                  <v-icon>mdi-pencil</v-icon>
                 </v-btn>
 
                 <v-btn
                   color="orange"
+                  class="small"
+                  @click="confirmDeleteScreen(screen)"
+                >
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+
+                <v-btn
+                  color="orange"
+                  class="small"
                   @click="
                     getUserScreenManagement(projectId, systemId, screen.id)
                   "
                 >
-                  User screen management
+                  <v-icon>mdi-account-multiple</v-icon>
                 </v-btn>
 
-                <v-btn @click="goToScreensDetail(screen.id)">
-                  Screen Detail
+                <v-btn class="small" @click="goToScreensDetail(screen.id)">
+                  <v-icon>mdi-information</v-icon>
                 </v-btn>
               </v-card-actions>
             </v-card>
@@ -311,6 +331,7 @@
       </v-card>
     </v-dialog>
 
+    <!-- User Screen Managementdialog -->
     <v-dialog v-model="showUserManagementDialog" max-width="600">
       <v-card>
         <v-card-title> User Screen Management </v-card-title>
@@ -351,18 +372,27 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <v-dialog v-model="dialogVisible">
+    <!-- Assign Userdialog -->
+    <v-dialog v-model="dialogVisible" max-width="400">
       <v-card>
         <v-card-title>Assign User</v-card-title>
         <v-card-text>
-          <div>Project ID: {{ assignProjectId }}</div>
-          <div>System ID: {{ assignSystemId }}</div>
-          <div>Screen ID: {{ assignScreenId }}</div>
           <v-select
             v-model="selectedUsers"
-            :items="userOptions"
-            label="Select Users"
+            :items="implementers"
+            label="Select Implementers"
+            multiple
+          ></v-select>
+          <v-select
+            v-model="selectedUsers"
+            :items="developers"
+            label="Select Developers"
+            multiple
+          ></v-select>
+          <v-select
+            v-model="selectedUsers"
+            :items="systemAnalysts"
+            label="Select System Analysts"
             multiple
           ></v-select>
         </v-card-text>
@@ -385,6 +415,9 @@ export default {
   layout: "admin",
   data() {
     return {
+      implementers: [],
+      developers: [],
+      systemAnalysts: [],
       selectedUsers: [],
       dialogVisible: false,
       assignProjectId: "",
@@ -556,17 +589,32 @@ export default {
 
         const users = await response.json();
 
-        // สร้าง options สำหรับ v-select
-        this.userOptions = users.map((user) => ({
-          text: `${user.user_firstname} ${user.user_lastname}`,
-          value: user.id,
-        }));
+        // สร้าง options สำหรับ v-select แยกตามตำแหน่งผู้ใช้
+        this.implementers = users
+          .filter((user) => user.user_position === "Implementer")
+          .map((user) => ({
+            text: `${user.user_firstname} ${user.user_lastname}`,
+            value: user.id,
+          }));
+
+        this.developers = users
+          .filter((user) => user.user_position === "Developer")
+          .map((user) => ({
+            text: `${user.user_firstname} ${user.user_lastname}`,
+            value: user.id,
+          }));
+
+        this.systemAnalysts = users
+          .filter((user) => user.user_position === "System Analyst")
+          .map((user) => ({
+            text: `${user.user_firstname} ${user.user_lastname}`,
+            value: user.id,
+          }));
       } catch (error) {
         console.error("Error fetching users data:", error);
         // จัดการข้อผิดพลาดการดึงข้อมูลผู้ใช้
       }
     },
-
     async getUserScreenManagement(projectId, systemId, screenId) {
       try {
         const response = await fetch(
