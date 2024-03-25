@@ -161,6 +161,7 @@ router.get("/getOne/:id", async (req, res) => {
       SELECT
         Screens.*,
         AVG(tasks.task_progress) AS screen_progress,
+        COUNT(tasks.id) AS task_count,
         DATE(MIN(Screens.screen_plan_start)) AS screen_plan_start,
         DATE(MAX(Screens.screen_plan_end)) AS screen_plan_end,
         DATEDIFF(MAX(tasks.task_plan_end), MIN(tasks.task_plan_start)) AS screen_manday
@@ -199,6 +200,7 @@ router.get("/getOne/:id", async (req, res) => {
     return res.status(500).send();
   }
 });
+
 
 // Route to get all historical screens
 router.get("/getAllHistoryScreens", async (req, res) => {

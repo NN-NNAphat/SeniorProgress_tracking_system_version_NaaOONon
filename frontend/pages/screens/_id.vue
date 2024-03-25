@@ -1,52 +1,105 @@
 <template>
   <div class="screen-details">
-    <v-row v-if="ScreenName" style="margin-bottom: 20px" align="center">
-      <v-col cols="6">
-        <ScreenDetailsCard
-          :ScreenName="ScreenName"
-          :screenProgress="screenProgress"
-          :screenPlanStart="screenPlanStart"
-          :screenPlanEnd="screenPlanEnd"
-          :screenManday="screenManday"
-        />
-      </v-col>
-      <v-col>
-        <v-btn class="custom-btn" @click="openUserListDialog">
-          แสดงรายชื่อผู้ใช้ในระบบ
-        </v-btn>
+    <v-row style="margin-bottom: 20px" align="center">
+      <v-col cols="12" v-if="screenId">
+        <v-card class="mx-auto align-start" max-width="none" hover>
+          <v-img
+            v-if="screen_pic"
+            :src="screen_pic"
+            alt="Screen PIC"
+            width="100%"
+            max-height="450px"
+            @click="showImageDialog = true"
+          ></v-img>
 
-        <!-- Dialog Component -->
-        <v-dialog v-model="userDialog" max-width="500">
-          <v-card>
-            <v-card-title>ข้อมูลผู้ใช้ในระบบ</v-card-title>
-            <v-card-text>
-              <v-list>
-                <v-list-item v-for="user in userList" :key="user.id">
-                  <!-- แสดงรูปโปรไฟล์ของผู้ใช้ -->
-                  <v-list-item-avatar>
-                    <v-img :src="user.user_pic" alt="User Profile"></v-img>
-                  </v-list-item-avatar>
-                  <!-- แสดงข้อมูลผู้ใช้ -->
-                  <v-list-item-content>
-                    <v-list-item-title>
-                      {{ user.user_firstname }} {{ user.user_lastname }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle>{{
-                      user.user_position
-                    }}</v-list-item-subtitle>
-                    <v-list-item-subtitle>{{
-                      user.user_department
-                    }}</v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-            <v-card-actions>
-              <v-btn color="primary" @click="closeUserListDialog">ปิด</v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
+          <v-card-item
+            class="d-flex justify-space-between"
+            @click="showDetails = !showDetails"
+          >
+            <v-card-title>
+              {{ screen_name }}
+            </v-card-title>
+            <v-icon
+              class="custom-btn"
+              @click="openUserListDialog"
+              style="margin-right: 25px"
+            >
+              mdi-account-multiple
+            </v-icon>
+          </v-card-item>
+
+          <v-card-subtitle>
+            Screen Progress: {{ screen_progress }}
+            <v-progress-linear
+              v-if="screen_progress !== null && screen_progress !== undefined"
+              color="deep-orange"
+              height="10"
+              :model-value="screen_progress"
+              striped
+            ></v-progress-linear>
+          </v-card-subtitle>
+
+          <v-expand-transition>
+            <div v-show="showDetails">
+              <v-divider></v-divider>
+              <v-card-text>
+                <p>Plan Start: {{ screen_plan_start }}</p>
+                <p>Plan End: {{ screen_plan_end }}</p>
+                <p>Screen Manday: {{ screen_manday }}</p>
+                <p>Screen Level: {{ screen_level }}</p>
+                <p>Screen Type: {{ screenType }}</p>
+                <p>Task Count: {{ task_count }}</p>
+           
+              </v-card-text>
+            </div>
+          </v-expand-transition>
+        </v-card>
       </v-col>
+
+      <v-dialog
+        v-model="showImageDialog"
+        max-width="600"
+        max-height="800"
+        fullscreen
+        hide-overlay
+      >
+        <v-img
+          :src="screen_pic"
+          style="width: 100%; height: 100%; object-fit: contain"
+          @click="closeImageDialog"
+        ></v-img>
+      </v-dialog>
+
+      <v-dialog v-model="userDialog" max-width="500">
+        <v-card>
+          <v-card-title>ข้อมูลผู้ใช้ในระบบ</v-card-title>
+          <v-card-text>
+            <v-list>
+              <v-list-item v-for="user in userList" :key="user.id">
+                <!-- แสดงรูปโปรไฟล์ของผู้ใช้ -->
+                <v-list-item-avatar>
+                  <v-img :src="user.user_pic" alt="User Profile"></v-img>
+                </v-list-item-avatar>
+                <!-- แสดงข้อมูลผู้ใช้ -->
+                <v-list-item-content>
+                  <v-list-item-title>
+                    {{ user.user_firstname }} {{ user.user_lastname }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle>{{
+                    user.user_position
+                  }}</v-list-item-subtitle>
+                  <v-list-item-subtitle>{{
+                    user.user_department
+                  }}</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="primary" @click="closeUserListDialog">ปิด</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-row>
     <!-- Search bar -->
     <v-row no-gutters>
@@ -70,7 +123,7 @@
     <div class="task-list">
       <!-- ScreenName and Progress -->
       <div class="topper">
-        <h3>Task Management: {{ ScreenName }}</h3>
+        <h3>Task Management</h3>
         <v-divider vertical></v-divider>
         <!-- open add task form -->
         <v-btn color="primary" @click="dialogAddTaskForm = true"
@@ -240,28 +293,28 @@
 </template>
 
 <script>
-import ScreenDetailsCard from "../../components/Task/ScreenDetailsCard.vue";
 import Swal from "sweetalert2";
 
 export default {
   layout: "admin",
-  components: {
-    ScreenDetailsCard,
-  },
-  props: {
-    ScreenName: String,
-    screenProgress: Number,
-    screenPlanStart: String,
-    screenPlanEnd: String,
-    screenManday: Number,
-  },
+
   data() {
     return {
+      showImageDialog: false,
+      screen_plan_start: "",
+      screen_plan_end: "",
+      screen_progress: "",
+      screen_manday: "",
+      screen_level: "",
+      screen_pic: "",
+      screenType: "",
+      task_count: "",
+      screen_name: "",
       userDialog: false,
       userList: [],
-      screenId: "", // เก็บค่า Id
-      system_id: "", // เก็บค่า System Id
-      project_id: "", // เก็บค่า Project Id
+      screenId: "",
+      system_id: "",
+      project_id: "",
 
       showDetails: false,
       // Dialogs
@@ -312,6 +365,9 @@ export default {
     this.fetchTasks();
   },
   methods: {
+    closeImageDialog() {
+      this.showImageDialog = false;
+    },
     async fetchScreenDetail() {
       try {
         const screenId = this.$route.params.id;
@@ -323,24 +379,39 @@ export default {
         }
         const screenData = await response.json();
 
+        if (screenData.length === 0) {
+          throw new Error("No screen data found");
+        }
+
         const screen = screenData[0];
         this.screenId = screen.id; // Set the Screen Id
         this.system_id = screen.system_id; // Set the System Id
         this.project_id = screen.project_id; // Set the Project Id
-
-        this.ScreenName = screen.screen_name; // Set the ScreenName
-        this.screenPlanStart = screen.screen_plan_start; // Set the Plan Start
-        this.screenPlanEnd = screen.screen_plan_end; // Set the Plan End
-        this.screenProgress = screen.screen_progress; // Set the Screen Progress
-        this.screenManday = screen.screen_manday; // Set the Screen Manday
+        this.screen_name = screen.screen_name; // Set the ScreenName
+        this.screen_level = screen.screen_level; // Set the Screen Level
+        this.screen_manday = screen.screen_manday; // Set the Screen Manday
+        this.screen_pic = await this.convertBase64ToURL(screen.screen_pic); // Convert Base64 to URL
+        this.screen_progress = screen.screen_progress; // Set the Screen Progress
+        this.task_count = screen.task_count; // Set the Task Count
+        this.screen_plan_start = screen.screen_plan_start; // Set the Plan Start
+        this.screen_plan_end = screen.screen_plan_end; // Set the Plan End
       } catch (error) {
         console.error("Error fetching screen:", error);
       }
     },
 
+    async convertBase64ToURL(base64String) {
+      try {
+        const response = await fetch(`data:image/jpeg;base64,${base64String}`);
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+      } catch (error) {
+        console.error("Error converting Base64 to URL:", error);
+        return ""; // Return empty string if conversion fails
+      }
+    },
     async fetchUserList() {
       try {
-        // Call fetchScreenDetail to ensure data is fetched
         await this.fetchScreenDetail();
         const { project_id, system_id, screenId } = this;
 
@@ -510,9 +581,5 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
-}
-.custom-btn {
-  width: 100%;
-  height: 50%;
 }
 </style>
