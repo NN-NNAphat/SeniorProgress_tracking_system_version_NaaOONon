@@ -8,25 +8,41 @@
           :screenPlanStart="screenPlanStart"
           :screenPlanEnd="screenPlanEnd"
           :screenManday="screenManday"
-          @toggleDetails="toggleDetails"
         />
       </v-col>
-
       <v-col>
         <v-btn class="custom-btn" @click="openUserListDialog">
           แสดงรายชื่อผู้ใช้ในระบบ
         </v-btn>
 
+        <!-- Dialog Component -->
         <v-dialog v-model="userDialog" max-width="500">
           <v-card>
             <v-card-title>ข้อมูลผู้ใช้ในระบบ</v-card-title>
             <v-card-text>
-              <div>Id: {{ id }}</div>
-              <div>System Id: {{ system_id }}</div>
-              <div>Project Id: {{ project_id }}</div>
+              <v-list>
+                <v-list-item v-for="user in userList" :key="user.id">
+                  <!-- แสดงรูปโปรไฟล์ของผู้ใช้ -->
+                  <v-list-item-avatar>
+                    <v-img :src="user.user_pic" alt="User Profile"></v-img>
+                  </v-list-item-avatar>
+                  <!-- แสดงข้อมูลผู้ใช้ -->
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      {{ user.user_firstname }} {{ user.user_lastname }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle>{{
+                      user.user_position
+                    }}</v-list-item-subtitle>
+                    <v-list-item-subtitle>{{
+                      user.user_department
+                    }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list>
             </v-card-text>
             <v-card-actions>
-              <v-btn color="primary" @click="userDialog = false">ปิด</v-btn>
+              <v-btn color="primary" @click="closeUserListDialog">ปิด</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -242,7 +258,8 @@ export default {
   data() {
     return {
       userDialog: false,
-      id: "", // เก็บค่า Id
+      userList: [],
+      screenId: "", // เก็บค่า Id
       system_id: "", // เก็บค่า System Id
       project_id: "", // เก็บค่า Project Id
 
@@ -253,10 +270,8 @@ export default {
       show: false,
       //ScreenProgress: "",
       //Search bar
-      searchQuery: "",
-
+      searchQuery: "", // ลบออกเนื่องจากซ้ำ
       //Edited Task data
-      searchQuery: "",
       editedTask: {
         task_id: "",
         task_name: "",
@@ -279,6 +294,7 @@ export default {
       },
     };
   },
+
   computed: {
     filteredTasks() {
       if (this.tasks && Array.isArray(this.tasks)) {
@@ -291,15 +307,12 @@ export default {
     },
   },
   async mounted() {
-    this.fetchScreenDetail();
+    await this.fetchScreenDetail(); // เรียกก่อนเพื่อกำหนดค่า project_id และ system_id
+    await this.fetchUserList();
     this.fetchTasks();
   },
   methods: {
-    toggleDetails() {
-      this.$emit("toggleDetails");
-    },
-    //Fetch screen detail
-   async fetchScreenDetail() { 
+    async fetchScreenDetail() {
       try {
         const screenId = this.$route.params.id;
         const response = await fetch(
@@ -309,20 +322,54 @@ export default {
           throw new Error("Failed to fetch screen");
         }
         const screenData = await response.json();
-        console.log("Screen data:", screenData); // Log the received data
-        // Assuming screenData is an array with one element
+
         const screen = screenData[0];
+        this.screenId = screen.id; // Set the Screen Id
+        this.system_id = screen.system_id; // Set the System Id
+        this.project_id = screen.project_id; // Set the Project Id
+
         this.ScreenName = screen.screen_name; // Set the ScreenName
         this.screenPlanStart = screen.screen_plan_start; // Set the Plan Start
         this.screenPlanEnd = screen.screen_plan_end; // Set the Plan End
         this.screenProgress = screen.screen_progress; // Set the Screen Progress
         this.screenManday = screen.screen_manday; // Set the Screen Manday
-        // You can set other properties here as well
       } catch (error) {
         console.error("Error fetching screen:", error);
-        // Handle error fetching Screen
       }
     },
+
+    async fetchUserList() {
+      try {
+        // Call fetchScreenDetail to ensure data is fetched
+        await this.fetchScreenDetail();
+        const { project_id, system_id, screenId } = this;
+
+        const response = await fetch(
+          `http://localhost:7777/user_screens/checkUsersINScreen/${project_id}/${system_id}/${screenId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch user list");
+        }
+        const userList = await response.json();
+
+        // Set the userList data
+        this.userList = userList;
+      } catch (error) {
+        console.error("Error fetching user list:", error);
+      }
+    },
+    openUserListDialog() {
+      this.fetchUserList();
+      this.userDialog = true;
+    },
+
+    closeUserListDialog() {
+      this.userDialog = false; // ปิด Dialog
+    },
+    toggleDetails() {
+      this.$emit("toggleDetails");
+    },
+    //Fetch screen detail
 
     //Cancel create task
     cancel() {
@@ -339,7 +386,7 @@ export default {
           throw new Error("Failed to fetch tasks");
         }
         const tasks = await response.json();
-        console.log("Tasks:", tasks); // Log the received tasks
+
         this.tasks = tasks; // Set the tasks
       } catch (error) {
         console.error("Error fetching tasks:", error);
