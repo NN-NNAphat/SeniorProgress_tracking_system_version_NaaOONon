@@ -216,8 +216,8 @@
             ></v-select>
             <v-file-input
               accept="image/png, image/jpeg, image/bmp"
-              label="Avatar"
-              placeholder="Pick an avatar"
+              label="Select screen image"
+              placeholder="Select screen image"
               prepend-icon="mdi-camera"
               v-model="avatarFile"
             ></v-file-input>
@@ -484,11 +484,11 @@ export default {
 
   props: {
     systemId: {
-      type: String,
+      type: Number,
       default: null,
     },
     projectId: {
-      type: String,
+      type: Number,
       default: null,
     },
   },
@@ -534,7 +534,7 @@ export default {
 
       try {
         const response = await fetch(
-          "http://localhost:7777/user_screens/createUser_screen",
+          `http://localhost:7777/user_screens/createUser_screen`,
           {
             method: "POST",
             headers: {
