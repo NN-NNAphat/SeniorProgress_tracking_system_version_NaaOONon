@@ -129,14 +129,13 @@
         <v-btn color="primary" @click="dialogAddTaskForm = true"
           >Add Task</v-btn
         >
-        <!-- <h3>Progress: {{ ScreenProgress }}</h3> -->
       </div>
       <v-divider></v-divider>
       <!-- Display Task in Card -->
       <v-row>
         <v-col
-          v-for="task in filteredTasks"
-          :key="task.task_id"
+          v-for="(task, index) in paginatedTasks"
+          :key="index"
           cols="12"
           md="6"
           lg="4"
@@ -149,14 +148,15 @@
               <h4 style="margin-left: 10px">ID: {{ task.task_id }}</h4>
             </v-card-title>
             <v-card-text>
-              <v-row>
-                <v-avatar color="grey" size="36">
-                  <v-icon dark>mdi-account</v-icon>
-                </v-avatar>
-                <h4 style="margin-left: 20px; margin-top: 5px">
-                  {{ task.person_in_charge }}
-                </h4>
-              </v-row>
+              <p>Task Detail: {{ task.task_detail }}</p>
+              <p>Status: {{ task.task_status }}</p>
+              <p>Manday: {{ task.task_manday }}</p>
+              <p>Progress: {{ task.task_progress }}</p>
+              <p>Plan Start: {{ task.task_plan_start.slice(0, 10) }}</p>
+              <p>Plan End: {{ task.task_plan_end.slice(0, 10) }}</p>
+              <p>Actual Start: {{ task.task_actual_start }}</p>
+              <p>Actual End: {{ task.task_actual_end }}</p>
+              <p>Member ID: {{ task.task_member_id }}</p>
             </v-card-text>
             <v-card-actions>
               <v-btn
@@ -167,33 +167,19 @@
                 "
                 >Edit</v-btn
               >
-              <v-spacer></v-spacer>
-              <v-btn icon @click="show = !show">
-                <v-icon>{{
-                  show ? "mdi-chevron-up" : "mdi-chevron-down"
-                }}</v-icon>
-              </v-btn>
             </v-card-actions>
-            <v-expand-transition>
-              <div v-show="show" style="margin-left: 10px; margin-right: 10px">
-                <v-divider></v-divider>
-                <v-row>
-                  <v-col cols="6">
-                    <v-card-text
-                      >Plan Start: {{ task.task_plan_start }}</v-card-text
-                    >
-                  </v-col>
-                  <v-col cols="6">
-                    <v-card-text>End: {{ task.task_plan_end }}</v-card-text>
-                  </v-col>
-                </v-row>
-                <v-card-text>Task Detail: {{ task.task_detail }}</v-card-text>
-              </div>
-            </v-expand-transition>
           </v-card>
         </v-col>
       </v-row>
+      <v-row justify="center">
+        <v-pagination
+          v-model="currentPage"
+          :length="totalPages"
+          @input="paginate"
+        ></v-pagination>
+      </v-row>
     </div>
+
     <!-- Edit task dialog -->
     <v-dialog v-model="dialogEditTaskForm" max-width="600px">
       <v-card>
@@ -317,6 +303,9 @@ export default {
 
   data() {
     return {
+      tasks: [],
+      currentPage: 1,
+      pageSize: 12,
       statusOptions: ["start", "stop", "correct", "mistake", "Not started yet"],
       showImageDialog: false,
       screen_plan_start: "",
@@ -368,6 +357,15 @@ export default {
   },
 
   computed: {
+    paginatedTasks() {
+      const startIndex = (this.currentPage - 1) * this.pageSize;
+      const endIndex = startIndex + this.pageSize;
+      return this.tasks.slice(startIndex, endIndex);
+    },
+    // คำนวณจำนวนหน้าทั้งหมด
+    totalPages() {
+      return Math.ceil(this.tasks.length / this.pageSize);
+    },
     filteredTasks() {
       if (this.tasks && Array.isArray(this.tasks)) {
         return this.tasks.filter((task) =>
@@ -384,6 +382,9 @@ export default {
     this.fetchTasks();
   },
   methods: {
+    paginate(page) {
+      this.currentPage = page;
+    },
     closeImageDialog() {
       this.showImageDialog = false;
     },
@@ -461,8 +462,8 @@ export default {
     closeUserListDialog() {
       this.userDialog = false; // ปิด Dialog
     },
-    toggleDetails() {
-      this.showDetails = !this.showDetails;
+    toggleDetails(task) {
+      task.showDetails = !task.showDetails; // เปลี่ยนสถานะ showDetails เมื่อปุ่มถูกคลิก
     },
     //Fetch screen detail
 
@@ -482,7 +483,10 @@ export default {
         }
         const tasks = await response.json();
 
-        this.tasks = tasks; // Set the tasks
+        this.tasks = tasks.map((task) => ({
+          ...task,
+          showDetails: false, // เพิ่ม property showDetails เข้าไปในข้อมูลของแต่ละ task
+        })); // Set the tasks
       } catch (error) {
         console.error("Error fetching tasks:", error);
         // Handle error fetching tasks
@@ -540,6 +544,7 @@ export default {
           });
           this.dialogAddTaskForm = false;
           this.fetchTasks();
+          this.fetchScreenDetail();
         } else {
           throw new Error("Failed to create new task");
         }

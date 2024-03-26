@@ -89,7 +89,6 @@ router.get('/getAll', async (req, res) => {
                     const task_manday = moment.duration(moment(task.task_plan_end).diff(moment(task.task_plan_start))).asDays();
                     if (task.task_manday !== task_manday) {
                         // Update task_manday in the database
-                        await updateTaskManday(task.id, task_manday);
                         // Update task object with new task_manday
                         return {
                             ...task,
@@ -304,18 +303,6 @@ router.get('/searchByScreenId_delete/:screen_id', async (req, res) => {
     }
 });
 
-async function updateTaskManday(taskId, taskManday) {
-    const updateQuery = 'UPDATE Tasks SET task_manday = ? WHERE id = ?';
-    connection.query(updateQuery, [taskManday, taskId], (err, result) => {
-        if (err) {
-            console.error('Error updating task manday:', err);
-            throw err;
-        }
-        console.log('Task manday updated successfully:', result);
-    });
-}
-
-
 // Function to format dates
 function formatDates(tasks) {
     return tasks.map(task => ({
@@ -327,17 +314,7 @@ function formatDates(tasks) {
     }));
 }
 
-// Function to update task_manday
-async function updateTaskManday(taskId, taskManday) {
-    const updateQuery = 'UPDATE Tasks SET task_manday = ? WHERE id = ?';
-    connection.query(updateQuery, [taskManday, taskId], (err, result) => {
-        if (err) {
-            console.error('Error updating task manday:', err);
-            throw err;
-        }
-        console.log('Task manday updated successfully:', result);
-    });
-}
+
 
 // Route for updating task data
 router.put('/updateTasks/:id', async (req, res) => {
