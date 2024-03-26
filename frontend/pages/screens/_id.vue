@@ -3,6 +3,7 @@
   <div class="screen-details">
     <v-row style="margin-bottom: 20px" align="center">
       <v-col cols="12" v-if="screenId">
+        <!-- Card แสดงข้อมูล Screen -->
         <v-card class="mx-auto align-start" max-width="none" hover>
           <v-img
             v-if="screen_pic"
@@ -20,7 +21,7 @@
             <v-card-title>{{ screen_name }}</v-card-title>
             <v-icon
               class="custom-btn"
-              @click="openUserListDialog"
+              @click.stop="openUserListDialog"
               style="margin-right: 25px"
               >mdi-account-multiple</v-icon
             >
@@ -51,6 +52,7 @@
         </v-card>
       </v-col>
 
+      <!-- แสดงรูปภาพ Dialog -->
       <v-dialog
         v-model="showImageDialog"
         max-width="600"
@@ -65,6 +67,7 @@
         ></v-img>
       </v-dialog>
 
+      <!-- แสดง ข้อมูลผู้ใช้ในระบบ Dialog -->
       <v-dialog v-model="userDialog" max-width="500" @keydown.stop>
         <v-card>
           <v-card-title>ข้อมูลผู้ใช้ในระบบ</v-card-title>
@@ -96,6 +99,7 @@
         </v-card>
       </v-dialog>
     </v-row>
+
     <!-- Search bar -->
     <v-row no-gutters>
       <v-col cols="12">
@@ -114,6 +118,7 @@
         />
       </v-col>
     </v-row>
+
     <!-- Task list -->
     <div class="task-list">
       <!-- ScreenName and Progress -->
@@ -232,6 +237,7 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+
     <!-- Create task dialog -->
     <v-dialog v-model="dialogAddTaskForm" max-width="600px">
       <v-card>
@@ -456,7 +462,7 @@ export default {
       this.userDialog = false; // ปิด Dialog
     },
     toggleDetails() {
-      this.$emit("toggleDetails");
+      this.showDetails = !this.showDetails;
     },
     //Fetch screen detail
 
