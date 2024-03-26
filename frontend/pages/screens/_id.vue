@@ -140,7 +140,7 @@
           md="6"
           lg="4"
         >
-          <v-card class="task-card" style="width: auto; height: 750px">
+          <v-card class="task-card" style="width: auto; height: 730px">
             <v-card-title>
               <h3 style="margin-right: 10px">{{ task.task_name }}</h3>
               <v-divider vertical></v-divider>
@@ -170,12 +170,8 @@
                     : "Not determined"
                 }}
               </p>
-              <p>
-                Member ID:
-                {{
-                  task.task_member_id ? task.task_member_id : "Not determined"
-                }}
-              </p>
+
+              <!-- Display User details -->
               <v-card-text v-if="task.memberDetails" elevation="2" outlined>
                 <img
                   :src="task.memberDetails.user_pic"
@@ -187,20 +183,23 @@
                 <p>Position: {{ task.memberDetails.user_position }}</p>
               </v-card-text>
 
-              <v-card-text v-else>
-                <p>User details not available</p>
+              <!-- Display message if User details are not available -->
+              <v-card-text v-else elevation="2" outlined>
+                <p>User not determine</p>
               </v-card-text>
             </v-card-text>
 
-            <v-card-actions>
+            <v-card-actions class="text-right">
               <v-btn
                 color="primary"
                 @click="
                   dialogEditTaskForm = true;
                   editedTask = task;
                 "
-                >Edit</v-btn
               >
+                Edit
+              </v-btn>
+              <v-btn color="primary" @click="deleteTask(task)"> Delete </v-btn>
             </v-card-actions>
           </v-card>
         </v-col>
@@ -234,11 +233,21 @@
               label="Detail"
               required
             ></v-text-field>
-            <v-text-field
+            <v-select
               v-model="editedTask.task_status"
+              :items="[
+                'start',
+                'stop',
+                'correct',
+                'mistake',
+                'Not started yet',
+              ]"
               label="Status"
               required
-            ></v-text-field>
+              outlined
+              dense
+            ></v-select>
+
             <v-text-field
               v-model="editedTask.task_manday"
               label="Manday"
@@ -395,6 +404,16 @@
                 </v-menu>
               </v-col>
             </v-row>
+            <v-select
+              v-model="editedTask.task_member_id"
+              :items="userListCreate"
+              item-value="user_id"
+              item-text="user_name"
+              label="Member ID"
+              outlined
+              dense
+            ></v-select>
+
             <v-btn type="submit">Update</v-btn>
             <v-btn color="error" @click="cancelEdit">Cancel</v-btn>
           </v-form>
@@ -575,6 +594,37 @@ export default {
     this.fetchTasks();
   },
   methods: {
+    async deleteTask(task) {
+      try {
+        const response = await fetch(
+          `http://localhost:7777/tasks/deleteHistoryTasks/${task.id}`,
+          {
+            method: "DELETE",
+          }
+        );
+        if (response.ok) {
+          // ลบงานเรียบร้อย
+          Swal.fire({
+            icon: "success",
+            title: "Task deleted successfully",
+          });
+          // รีเฟรชรายการงานหลังจากลบเสร็จ
+          this.fetchTasks();
+        } else {
+          // แจ้งเตือนเมื่อเกิดข้อผิดพลาดในการลบงาน
+          throw new Error("Failed to delete task");
+        }
+        this.fetchTasks();
+        this.fetchScreenDetail();
+      } catch (error) {
+        console.error("Error deleting task:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error deleting task",
+          text: "Please try again",
+        });
+      }
+    },
     async fetchMemberDetails(memberId) {
       console.log(memberId);
       try {
@@ -713,6 +763,7 @@ export default {
             };
           })
         );
+        this.fetchScreenDetail();
       } catch (error) {
         console.error("Error fetching tasks:", error);
         // Handle error fetching tasks
@@ -822,6 +873,7 @@ export default {
         } else {
           throw new Error("Failed to update task");
         }
+        this.fetchScreenDetail();
       } catch (error) {
         console.error("Error updating task:", error);
         Swal.fire({
@@ -848,5 +900,9 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+}
+.not-available p {
+  width: 100px;
+  height: 100px;
 }
 </style>
