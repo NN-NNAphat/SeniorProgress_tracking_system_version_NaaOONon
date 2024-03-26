@@ -1,4 +1,5 @@
 <template>
+  <!-- Show screen detel -->
   <div class="screen-details">
     <v-row style="margin-bottom: 20px" align="center">
       <v-col cols="12" v-if="screenId">
@@ -187,102 +188,100 @@
           </v-card>
         </v-col>
       </v-row>
-      <!-- Edit task dialog -->
-      <div>
-        <v-dialog v-model="dialogEditTaskForm" max-width="600px">
-          <v-card>
-            <v-card-title>
-              <h2>Edit Task</h2>
-            </v-card-title>
-            <v-card-text>
-              <!-- Edit task form -->
-              <v-form @submit.prevent="updateTask">
-                <!-- Form fields to edit task details -->
-                <v-text-field
-                  v-model="editedTask.task_name"
-                  label="Task Name"
-                  required
-                ></v-text-field>
-                <v-text-field
-                  v-model="editedTask.person_in_charge"
-                  label="Person in Charge"
-                  required
-                ></v-text-field>
-                <v-text-field
-                  v-model="editedTask.task_plan_start"
-                  label="Plan Start"
-                  required
-                ></v-text-field>
-                <v-text-field
-                  v-model="editedTask.task_plan_end"
-                  label="Plan End"
-                  required
-                ></v-text-field>
-                <v-text-field
-                  v-model="editedTask.task_detail"
-                  label="Detail"
-                  required
-                ></v-text-field>
-                <!-- Submit button -->
-                <v-btn type="submit">Update</v-btn>
-                <!-- Cancel button -->
-                <v-btn color="error" @click="cancelEdit">Cancel</v-btn>
-              </v-form>
-            </v-card-text>
-          </v-card>
-        </v-dialog>
-      </div>
-      <!-- Create task dialog -->
-      <v-dialog v-model="dialogAddTaskForm" max-width="600px">
-        <v-card>
-          <v-card-title>
-            <h2>Create New Task</h2>
-          </v-card-title>
-          <v-card-text>
-            <!-- Create task form -->
-            <v-form @submit.prevent="createTask">
-              <!-- Form fields to create a new task -->
-              <v-text-field
-                v-model="newTask.task_id"
-                label="Task ID"
-                required
-              ></v-text-field>
-              <v-text-field
-                v-model="newTask.task_name"
-                label="Task Name"
-                required
-              ></v-text-field>
-              <v-text-field
-                v-model="newTask.person_in_charge"
-                label="Person in Charge"
-                required
-              ></v-text-field>
-              <v-text-field
-                v-model="newTask.task_plan_start"
-                label="Plan Start"
-                type="date"
-                required
-              ></v-text-field>
-              <v-text-field
-                v-model="newTask.task_plan_end"
-                label="Plan End"
-                type="date"
-                required
-              ></v-text-field>
-              <v-text-field
-                v-model="newTask.task_detail"
-                label="Detail"
-                required
-              ></v-text-field>
-              <!-- Submit button -->
-              <v-btn type="submit">Create</v-btn>
-              <!-- Cancel button -->
-              <v-btn color="error" @click="cancel">Cancel</v-btn>
-            </v-form>
-          </v-card-text>
-        </v-card>
-      </v-dialog>
     </div>
+    <!-- Edit task dialog -->
+    <v-dialog v-model="dialogEditTaskForm" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <h2>Edit Task</h2>
+        </v-card-title>
+        <v-card-text>
+          <!-- Edit task form -->
+          <v-form @submit.prevent="updateTask">
+            <!-- Form fields to edit task details -->
+            <v-text-field
+              v-model="editedTask.task_name"
+              label="Task Name"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="editedTask.person_in_charge"
+              label="Person in Charge"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="editedTask.task_plan_start"
+              label="Plan Start"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="editedTask.task_plan_end"
+              label="Plan End"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="editedTask.task_detail"
+              label="Detail"
+              required
+            ></v-text-field>
+            <!-- Submit button -->
+            <v-btn type="submit">Update</v-btn>
+            <!-- Cancel button -->
+            <v-btn color="error" @click="cancelEdit">Cancel</v-btn>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <!-- Create task dialog -->
+    <v-dialog v-model="dialogAddTaskForm" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <h2>Create New Task</h2>
+        </v-card-title>
+        <v-card-text>
+          <!-- Create task form -->
+          <v-form @submit.prevent="createTask">
+            <!-- Form fields to create a new task -->
+            <v-text-field
+              v-model="newTask.task_id"
+              label="Task ID"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newTask.task_name"
+              label="Task Name"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newTask.person_in_charge"
+              label="Person in Charge"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newTask.task_plan_start"
+              label="Plan Start"
+              type="date"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newTask.task_plan_end"
+              label="Plan End"
+              type="date"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newTask.task_detail"
+              label="Detail"
+              required
+            ></v-text-field>
+            <!-- Submit button -->
+            <v-btn type="submit">Create</v-btn>
+            <!-- Cancel button -->
+            <v-btn color="error" @click="cancel">Cancel</v-btn>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 

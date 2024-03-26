@@ -28,19 +28,21 @@ router.post('/createTasks', async (req, res) => {
         const {
             task_id,
             task_name,
-            tasks_detail,
+            task_detail,
             task_status,
             screen_id,
             project_id,
             system_id,
             task_plan_start,
             task_plan_end,
+            task_member_id,
+            task_manday // เพิ่มฟิลด์ task_manday เข้ามา
         } = req.body;
 
-        const id = generateId(); // Using generateId() function to generate ID
+        const id = generateId(); // ใช้ generateId() function เพื่อสร้าง ID
 
         const query =
-            'INSERT INTO Tasks (id, task_id, task_name, tasks_detail, task_status, screen_id, project_id, system_id, task_plan_start, task_plan_end) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            'INSERT INTO tasks (id, task_id, task_name, task_detail, task_status, screen_id, project_id, system_id, task_plan_start, task_plan_end, task_member_id, task_manday) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'; // เพิ่มฟิลด์ task_manday เข้าไปในคำสั่ง SQL
 
         await new Promise((resolve, reject) => {
             connection.query(
@@ -49,13 +51,15 @@ router.post('/createTasks', async (req, res) => {
                     id,
                     task_id,
                     task_name,
-                    tasks_detail,
+                    task_detail,
                     task_status,
                     screen_id,
                     project_id,
                     system_id,
                     task_plan_start,
                     task_plan_end,
+                    task_member_id,
+                    task_manday // เพิ่ม task_manday เข้าไปใน array ของ parameters
                 ],
                 (err, result) => {
                     if (err) reject(err);
@@ -70,6 +74,8 @@ router.post('/createTasks', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
+
 
 // Route for getting all tasks
 router.get('/getAll', async (req, res) => {
