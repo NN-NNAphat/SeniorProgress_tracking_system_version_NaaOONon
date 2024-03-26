@@ -140,7 +140,7 @@
           md="6"
           lg="4"
         >
-          <v-card class="task-card">
+          <v-card class="task-card" style="width: auto; height: 750px">
             <v-card-title>
               <h3 style="margin-right: 10px">{{ task.task_name }}</h3>
               <v-divider vertical></v-divider>
@@ -176,6 +176,20 @@
                   task.task_member_id ? task.task_member_id : "Not determined"
                 }}
               </p>
+              <v-card-text v-if="task.memberDetails" elevation="2" outlined>
+                <img
+                  :src="task.memberDetails.user_pic"
+                  alt="User Pic"
+                  style="width: 100px; height: 100px"
+                />
+                <p>First Name: {{ task.memberDetails.user_firstname }}</p>
+                <p>Last Name: {{ task.memberDetails.user_lastname }}</p>
+                <p>Position: {{ task.memberDetails.user_position }}</p>
+              </v-card-text>
+
+              <v-card-text v-else>
+                <p>User details not available</p>
+              </v-card-text>
             </v-card-text>
 
             <v-card-actions>
@@ -561,6 +575,20 @@ export default {
     this.fetchTasks();
   },
   methods: {
+    async fetchMemberDetails(memberId) {
+      console.log(memberId);
+      try {
+        const response = await fetch(
+          `http://localhost:7777/users/getOne/${memberId}`
+        );
+        const data = await response.json();
+        return data[0]; // สมมติว่า API จะส่งข้อมูลผู้ใช้กลับมาเป็นอาเรย์ โดยมีข้อมูลผู้ใช้เพียงรายการเดียว
+      } catch (error) {
+        console.error("Error fetching member details:", error);
+        return null;
+      }
+    },
+
     formatDate(dateString) {
       if (!dateString) return null;
       const date = new Date(dateString);
@@ -670,10 +698,21 @@ export default {
         }
         const tasks = await response.json();
 
-        this.tasks = tasks.map((task) => ({
-          ...task,
-          showDetails: false, // เพิ่ม property showDetails เข้าไปในข้อมูลของแต่ละ task
-        })); // Set the tasks
+        // แก้ไขโค้ดเพิ่มเติมในการกำหนดค่า showDetails เข้าไปในข้อมูลของแต่ละ task
+        this.tasks = await Promise.all(
+          tasks.map(async (task) => {
+            // เรียกใช้ fetchMemberDetails เพื่อดึงข้อมูลของสมาชิกที่เกี่ยวข้องกับแต่ละงาน
+            const memberDetails = await this.fetchMemberDetails(
+              task.task_member_id
+            );
+            // เพิ่มข้อมูลผู้ใช้ใน memberDetails ของแต่ละงาน
+            return {
+              ...task,
+              showDetails: false,
+              memberDetails: memberDetails, // เก็บข้อมูลผู้ใช้ใน memberDetails
+            };
+          })
+        );
       } catch (error) {
         console.error("Error fetching tasks:", error);
         // Handle error fetching tasks
