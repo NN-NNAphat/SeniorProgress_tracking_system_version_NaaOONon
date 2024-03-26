@@ -253,8 +253,13 @@
               required
             ></v-text-field>
             <v-text-field
-              v-model="newTask.person_in_charge"
-              label="Person in Charge"
+              v-model="newTask.task_detail"
+              label="Detail"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newTask.task_status"
+              label="Status"
               required
             ></v-text-field>
             <v-text-field
@@ -270,8 +275,13 @@
               required
             ></v-text-field>
             <v-text-field
-              v-model="newTask.task_detail"
-              label="Detail"
+              v-model="newTask.task_member_id"
+              label="Member ID"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newTask.task_manday"
+              label="Manday"
               required
             ></v-text-field>
             <!-- Submit button -->
@@ -467,42 +477,38 @@ export default {
     },
     //Create new task
     async createTask() {
-      // Fetch screen detail for screen_id, system_id, and project_id
-      const screenId = this.$route.params.id;
-      const screenResponse = await fetch(
-        `http://localhost:7777/screens/getOne/${screenId}`
-      );
-      const screenData = await screenResponse.json();
-      const screen = screenData[0];
-      // Convert date to correct format
-      let startDate = new Date(this.newTask.task_plan_start);
-      let formattedStartDate = startDate.toISOString().split("T")[0];
-
-      let endDate = new Date(this.newTask.task_plan_end);
-      let formattedEndDate = endDate.toISOString().split("T")[0];
-
-      const requestData = {
-        task_name: this.newTask.task_name,
-        task_id: this.newTask.task_id,
-        person_in_charge: this.newTask.person_in_charge,
-        task_detail: this.newTask.task_detail,
-        task_plan_start: formattedStartDate,
-        task_plan_end: formattedEndDate,
-        screen_id: screenId,
-        project_id: screen.project_id,
-        system_id: screen.system_id,
-      };
-
-      // Create new task
       try {
+        const {
+          task_id,
+          task_name,
+          task_detail,
+          task_status,
+          task_plan_start,
+          task_plan_end,
+          task_member_id,
+          task_manday,
+        } = this.newTask;
+
         const response = await fetch(
-          "http://localhost:7777/tasks/createTasks",
+          `http://localhost:7777/tasks/createTasks`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(requestData), // Use requestData instead of this.newTask
+            body: JSON.stringify({
+              task_id,
+              task_name,
+              task_detail,
+              task_status,
+              screen_id: this.screenId, // ใช้ค่า screenId ที่มาจาก data()
+              project_id: this.project_id, // ใช้ค่า project_id ที่มาจาก data()
+              system_id: this.system_id, // ใช้ค่า system_id ที่มาจาก data()
+              task_plan_start,
+              task_plan_end,
+              task_member_id,
+              task_manday,
+            }),
           }
         );
 
@@ -525,6 +531,7 @@ export default {
         });
       }
     },
+
     //Update task
     async updateTask() {
       try {
