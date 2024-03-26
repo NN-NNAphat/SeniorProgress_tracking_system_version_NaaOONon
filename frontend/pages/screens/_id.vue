@@ -154,10 +154,25 @@
               <p>Progress: {{ task.task_progress }}</p>
               <p>Plan Start: {{ task.task_plan_start.slice(0, 10) }}</p>
               <p>Plan End: {{ task.task_plan_end.slice(0, 10) }}</p>
-              <p>Actual Start: {{ task.task_actual_start }}</p>
-              <p>Actual End: {{ task.task_actual_end }}</p>
+              <p>
+                Actual Start:
+                {{
+                  task.task_actual_start
+                    ? formatDate(task.task_actual_start)
+                    : "Not determined"
+                }}
+              </p>
+              <p>
+                Actual End:
+                {{
+                  task.task_actual_end
+                    ? formatDate(task.task_actual_end)
+                    : "Not determined"
+                }}
+              </p>
               <p>Member ID: {{ task.task_member_id }}</p>
             </v-card-text>
+
             <v-card-actions>
               <v-btn
                 color="primary"
@@ -523,8 +538,10 @@ export default {
     formatDate(dateString) {
       if (!dateString) return null;
       const date = new Date(dateString);
-      const formattedDate = date.toISOString().split("T")[0];
-      return formattedDate;
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     },
     paginate(page) {
       this.currentPage = page;
