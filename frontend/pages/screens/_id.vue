@@ -13,25 +13,20 @@
           ></v-img>
 
           <v-card-item
-            class="d-flex justify-space-between"
+            class="d-flex justify-space-between align-center"
             @click="showDetails = !showDetails"
           >
-            <v-card-title>
-              {{ screen_name }}
-            </v-card-title>
+            <v-card-title>{{ screen_name }}</v-card-title>
             <v-icon
               class="custom-btn"
               @click="openUserListDialog"
               style="margin-right: 25px"
+              >mdi-account-multiple</v-icon
             >
-              mdi-account-multiple
-            </v-icon>
           </v-card-item>
-
           <v-card-subtitle>
             Screen Progress: {{ screen_progress }}
             <v-progress-linear
-              v-if="screen_progress !== null && screen_progress !== undefined"
               color="deep-orange"
               height="10"
               :model-value="screen_progress"
@@ -49,7 +44,6 @@
                 <p>Screen Level: {{ screen_level }}</p>
                 <p>Screen Type: {{ screenType }}</p>
                 <p>Task Count: {{ task_count }}</p>
-           
               </v-card-text>
             </div>
           </v-expand-transition>
@@ -360,7 +354,7 @@ export default {
     },
   },
   async mounted() {
-    await this.fetchScreenDetail(); // เรียกก่อนเพื่อกำหนดค่า project_id และ system_id
+    await this.fetchScreenDetail();
     await this.fetchUserList();
     this.fetchTasks();
   },
