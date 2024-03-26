@@ -230,11 +230,33 @@
               label="Manday"
               required
             ></v-text-field>
-            <v-text-field
-              v-model="editedTask.task_progress"
-              label="Progress"
-              required
-            ></v-text-field>
+            <v-row align="center">
+              <v-col cols="3">
+                <v-text-field
+                  v-model="editedTask.task_progress"
+                  label="Progress"
+                  type="number"
+                  min="0"
+                  max="100"
+                  outlined
+                  dense
+                ></v-text-field>
+              </v-col>
+              <v-col cols="9">
+                <v-slider
+                  v-model="editedTask.task_progress"
+                  :thumb-label="true"
+                  thumb-size="20"
+                  ticks="always"
+                  tick-size="2"
+                  tick-thickness="2"
+                  track-color="primary"
+                  :max="100"
+                  :min="0"
+                  step="1"
+                ></v-slider>
+              </v-col>
+            </v-row>
             <v-row>
               <v-col cols="6">
                 <v-menu
