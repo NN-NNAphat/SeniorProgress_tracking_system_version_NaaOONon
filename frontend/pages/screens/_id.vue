@@ -226,9 +226,9 @@
                 >
                   <template v-slot:activator="{ on }">
                     <v-text-field
-                      :v-model="
-                        editedTask.task_plan_start
-                          ? editedTask.task_plan_start
+                      :value="
+                        formatDate(editedTask.task_plan_start)
+                          ? formatDate(editedTask.task_plan_start)
                               .slice(0, 10)
                               .replace('T', ' ')
                           : null
@@ -256,9 +256,9 @@
                 >
                   <template v-slot:activator="{ on }">
                     <v-text-field
-                      :v-model="
+                      :value="
                         editedTask.task_plan_end
-                          ? editedTask.task_plan_end
+                          ? formatDate(editedTask.task_plan_end)
                               .slice(0, 10)
                               .replace('T', ' ')
                           : null
@@ -288,9 +288,9 @@
                 >
                   <template v-slot:activator="{ on }">
                     <v-text-field
-                      :v-model="
+                      :value="
                         editedTask.task_actual_start
-                          ? editedTask.task_actual_start
+                          ? formatDate(editedTask.task_actual_start)
                               .slice(0, 10)
                               .replace('T', ' ')
                           : null
@@ -318,11 +318,10 @@
                 >
                   <template v-slot:activator="{ on }">
                     <v-text-field
-                      :v-model="
+                      :value="
                         editedTask.task_actual_end
-                          ? editedTask.task_actual_end
+                          ? formatDate(editedTask.task_actual_end)
                               .slice(0, 10)
-                              .replace('T', ' ')
                               .replace('T', ' ')
                           : null
                       "
@@ -521,6 +520,12 @@ export default {
     this.fetchTasks();
   },
   methods: {
+    formatDate(dateString) {
+      if (!dateString) return null;
+      const date = new Date(dateString);
+      const formattedDate = date.toISOString().split("T")[0];
+      return formattedDate;
+    },
     paginate(page) {
       this.currentPage = page;
     },
@@ -697,9 +702,23 @@ export default {
       }
     },
 
-    //Update task
+    // Update task
     async updateTask() {
       try {
+        // Convert task date fields to the correct format
+        this.editedTask.task_plan_start = this.formatDate(
+          this.editedTask.task_plan_start
+        );
+        this.editedTask.task_plan_end = this.formatDate(
+          this.editedTask.task_plan_end
+        );
+        this.editedTask.task_actual_start = this.formatDate(
+          this.editedTask.task_actual_start
+        );
+        this.editedTask.task_actual_end = this.formatDate(
+          this.editedTask.task_actual_end
+        );
+
         const response = await fetch(
           `http://localhost:7777/tasks/updateTasks/${this.editedTask.id}`,
           {
@@ -730,6 +749,7 @@ export default {
         });
       }
     },
+
     cancelEdit() {
       this.dialogEditTaskForm = false;
     },
