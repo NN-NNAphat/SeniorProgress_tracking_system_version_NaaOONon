@@ -150,8 +150,8 @@
             <v-card-text>
               <p>Task Detail: {{ task.task_detail }}</p>
               <p>Status: {{ task.task_status }}</p>
-              <p>Manday: {{ task.task_manday }}</p>
-              <p>Progress: {{ task.task_progress }}</p>
+              <p>Manday: {{ task.task_manday || 0 }}</p>
+              <p>Progress: {{ task.task_progress || 0 }}</p>
               <p>Plan Start: {{ task.task_plan_start.slice(0, 10) }}</p>
               <p>Plan End: {{ task.task_plan_end.slice(0, 10) }}</p>
               <p>
@@ -170,7 +170,12 @@
                     : "Not determined"
                 }}
               </p>
-              <p>Member ID: {{ task.task_member_id }}</p>
+              <p>
+                Member ID:
+                {{
+                  task.task_member_id ? task.task_member_id : "Not determined"
+                }}
+              </p>
             </v-card-text>
 
             <v-card-actions>
@@ -482,7 +487,6 @@ export default {
       dialogEditTaskForm: false,
       dialogAddTaskForm: false,
       show: false,
-      //ScreenProgress: "",
       //Search bar
       searchQuery: "", // ลบออกเนื่องจากซ้ำ
       //Edited Task data
