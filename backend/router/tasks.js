@@ -321,13 +321,15 @@ router.put('/updateTasks/:id', async (req, res) => {
     try {
         const {
             task_name,
+            task_detail,
             task_status,
-            tasks_detail,
+            task_manday,
             task_progress,
             task_plan_start,
             task_plan_end,
             task_actual_start,
             task_actual_end,
+            task_member_id,
         } = req.body;
 
         const { id } = req.params;
@@ -339,14 +341,19 @@ router.put('/updateTasks/:id', async (req, res) => {
             updatedTaskFields.task_name = task_name;
         }
 
+        // Check and add task_detail if provided
+        if (task_detail !== undefined) {
+            updatedTaskFields.task_detail = task_detail;
+        }
+
         // Check and add task_status if provided
         if (task_status !== undefined) {
             updatedTaskFields.task_status = task_status;
         }
 
-        // Check and add tasks_detail if provided
-        if (tasks_detail !== undefined) {
-            updatedTaskFields.tasks_detail = tasks_detail;
+        // Check and add task_manday if provided
+        if (task_manday !== undefined) {
+            updatedTaskFields.task_manday = task_manday;
         }
 
         // Check and add task_progress if provided
@@ -374,6 +381,11 @@ router.put('/updateTasks/:id', async (req, res) => {
             updatedTaskFields.task_actual_end = task_actual_end;
         }
 
+        // Check and add task_member_id if provided
+        if (task_member_id !== undefined) {
+            updatedTaskFields.task_member_id = task_member_id;
+        }
+
         if (Object.keys(updatedTaskFields).length === 0) {
             return res.status(400).json({ error: 'No fields to update' });
         }
@@ -393,6 +405,7 @@ router.put('/updateTasks/:id', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
 
 // Route for deleting a task
 router.delete('/delete/:id', async (req, res) => {

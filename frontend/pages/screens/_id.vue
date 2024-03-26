@@ -10,7 +10,7 @@
             :src="screen_pic"
             alt="Screen PIC"
             width="100%"
-            max-height="450px"
+            max-height="200px"
             @click="showImageDialog = true"
           ></v-img>
 
@@ -196,28 +196,151 @@
               required
             ></v-text-field>
             <v-text-field
-              v-model="editedTask.person_in_charge"
-              label="Person in Charge"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model="editedTask.task_plan_start"
-              label="Plan Start"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model="editedTask.task_plan_end"
-              label="Plan End"
-              required
-            ></v-text-field>
-            <v-text-field
               v-model="editedTask.task_detail"
               label="Detail"
               required
             ></v-text-field>
-            <!-- Submit button -->
+            <v-text-field
+              v-model="editedTask.task_status"
+              label="Status"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="editedTask.task_manday"
+              label="Manday"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="editedTask.task_progress"
+              label="Progress"
+              required
+            ></v-text-field>
+            <v-row>
+              <v-col cols="6">
+                <v-menu
+                  v-model="planStartMenu"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                >
+                  <template v-slot:activator="{ on }">
+                    <v-text-field
+                      :v-model="
+                        editedTask.task_plan_start
+                          ? editedTask.task_plan_start
+                              .slice(0, 10)
+                              .replace('T', ' ')
+                          : null
+                      "
+                      label="Plan Start"
+                      prepend-icon="mdi-calendar"
+                      readonly
+                      v-on="on"
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                    v-model="editedTask.task_plan_start"
+                    no-title
+                    scrollable
+                  ></v-date-picker>
+                </v-menu>
+              </v-col>
+              <v-col cols="6">
+                <v-menu
+                  v-model="planEndMenu"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                >
+                  <template v-slot:activator="{ on }">
+                    <v-text-field
+                      :v-model="
+                        editedTask.task_plan_end
+                          ? editedTask.task_plan_end
+                              .slice(0, 10)
+                              .replace('T', ' ')
+                          : null
+                      "
+                      label="Plan End"
+                      prepend-icon="mdi-calendar"
+                      readonly
+                      v-on="on"
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                    v-model="editedTask.task_plan_end"
+                    no-title
+                    scrollable
+                  ></v-date-picker>
+                </v-menu>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="6">
+                <v-menu
+                  v-model="actualStartMenu"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                >
+                  <template v-slot:activator="{ on }">
+                    <v-text-field
+                      :v-model="
+                        editedTask.task_actual_start
+                          ? editedTask.task_actual_start
+                              .slice(0, 10)
+                              .replace('T', ' ')
+                          : null
+                      "
+                      label="Actual Start"
+                      prepend-icon="mdi-calendar"
+                      readonly
+                      v-on="on"
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                    v-model="editedTask.task_actual_start"
+                    no-title
+                    scrollable
+                  ></v-date-picker>
+                </v-menu>
+              </v-col>
+              <v-col cols="6">
+                <v-menu
+                  v-model="actualEndMenu"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                >
+                  <template v-slot:activator="{ on }">
+                    <v-text-field
+                      :v-model="
+                        editedTask.task_actual_end
+                          ? editedTask.task_actual_end
+                              .slice(0, 10)
+                              .replace('T', ' ')
+                              .replace('T', ' ')
+                          : null
+                      "
+                      label="Actual End"
+                      prepend-icon="mdi-calendar"
+                      readonly
+                      v-on="on"
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                    v-model="editedTask.task_actual_end"
+                    no-title
+                    scrollable
+                  ></v-date-picker>
+                </v-menu>
+              </v-col>
+            </v-row>
             <v-btn type="submit">Update</v-btn>
-            <!-- Cancel button -->
             <v-btn color="error" @click="cancelEdit">Cancel</v-btn>
           </v-form>
         </v-card-text>
@@ -303,6 +426,22 @@ export default {
 
   data() {
     return {
+      planStartMenu: false,
+      planEndMenu: false,
+      actualStartMenu: false,
+      actualEndMenu: false,
+      editedTask: {
+        task_name: "",
+        task_detail: "",
+        task_status: "",
+        task_manday: "",
+        task_progress: "",
+        task_plan_start: "",
+        task_plan_end: "",
+        task_actual_start: "",
+        task_actual_end: "",
+        task_member_id: "",
+      },
       tasks: [],
       currentPage: 1,
       pageSize: 12,
@@ -562,7 +701,7 @@ export default {
     async updateTask() {
       try {
         const response = await fetch(
-          `http://localhost:7777/tasks/updateTask/${this.editedTask.task_id}`,
+          `http://localhost:7777/tasks/updateTasks/${this.editedTask.id}`,
           {
             method: "PUT",
             headers: {
