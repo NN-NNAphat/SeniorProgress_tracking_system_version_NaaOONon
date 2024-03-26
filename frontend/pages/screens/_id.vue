@@ -65,12 +65,12 @@
         ></v-img>
       </v-dialog>
 
-      <v-dialog v-model="userDialog" max-width="500">
+      <v-dialog v-model="userDialog" max-width="500" @keydown.stop>
         <v-card>
           <v-card-title>ข้อมูลผู้ใช้ในระบบ</v-card-title>
           <v-card-text>
             <v-list>
-              <v-list-item v-for="user in userList" :key="user.id">
+              <v-list-item v-for="user in userList" :key="user.user_id">
                 <!-- แสดงรูปโปรไฟล์ของผู้ใช้ -->
                 <v-list-item-avatar>
                   <v-img :src="user.user_pic" alt="User Profile"></v-img>
@@ -257,11 +257,14 @@
               label="Detail"
               required
             ></v-text-field>
-            <v-text-field
+
+            <v-select
               v-model="newTask.task_status"
+              :items="statusOptions"
               label="Status"
               required
-            ></v-text-field>
+            ></v-select>
+
             <v-text-field
               v-model="newTask.task_plan_start"
               label="Plan Start"
@@ -274,16 +277,21 @@
               type="date"
               required
             ></v-text-field>
-            <v-text-field
+            <v-select
               v-model="newTask.task_member_id"
+              :items="userListCreate"
+              item-value="user_id"
+              item-text="user_name"
               label="Member ID"
               required
-            ></v-text-field>
+            ></v-select>
+
             <v-text-field
               v-model="newTask.task_manday"
               label="Manday"
               required
             ></v-text-field>
+
             <!-- Submit button -->
             <v-btn type="submit">Create</v-btn>
             <!-- Cancel button -->
@@ -303,6 +311,7 @@ export default {
 
   data() {
     return {
+      statusOptions: ["start", "stop", "correct", "mistake", "Not started yet"],
       showImageDialog: false,
       screen_plan_start: "",
       screen_plan_end: "",
@@ -315,6 +324,7 @@ export default {
       screen_name: "",
       userDialog: false,
       userList: [],
+      userListCreate: [],
       screenId: "",
       system_id: "",
       project_id: "",
@@ -428,10 +438,15 @@ export default {
 
         // Set the userList data
         this.userList = userList;
+        this.userListCreate = userList.map((user) => ({
+          user_id: user.id,
+          user_name: `${user.user_firstname} ${user.user_lastname}`,
+        }));
       } catch (error) {
         console.error("Error fetching user list:", error);
       }
     },
+
     openUserListDialog() {
       this.fetchUserList();
       this.userDialog = true;
