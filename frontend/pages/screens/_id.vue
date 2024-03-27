@@ -626,7 +626,6 @@ export default {
       }
     },
     async fetchMemberDetails(memberId) {
-      console.log(memberId);
       try {
         const response = await fetch(
           `http://localhost:7777/users/getOne/${memberId}`

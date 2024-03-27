@@ -276,79 +276,19 @@ router.delete("/deleteHistoryProject/:id", async (req, res) => {
   const id = req.params.id;
 
   try {
-    // Delete tasks related to screens with the given project_id
+    // Execute the delete history project trigger
     connection.query(
       `
-      DELETE FROM tasks
-      WHERE screen_id IN (SELECT id FROM screens WHERE project_id = ?)
+      DELETE FROM projects
+      WHERE id = ?
       `,
       [id],
-      async (err, results, fields) => {
+      (err, results, fields) => {
         if (err) {
           console.error(err);
           return res.status(500).send();
         }
-
-        // Now, delete screens related to the project_id
-        connection.query(
-          `
-          DELETE FROM screens
-          WHERE project_id = ?
-          `,
-          [id],
-          async (err, results, fields) => {
-            if (err) {
-              console.error(err);
-              return res.status(500).send();
-            }
-
-            // Now, delete systems related to the project_id
-            connection.query(
-              `
-              DELETE FROM systems
-              WHERE project_id = ?
-              `,
-              [id],
-              async (err, results, fields) => {
-                if (err) {
-                  console.error(err);
-                  return res.status(500).send();
-                }
-
-                // Now, delete user_projects related to the project_id
-                connection.query(
-                  `
-                  DELETE FROM user_projects
-                  WHERE project_id = ?
-                  `,
-                  [id],
-                  async (err, results, fields) => {
-                    if (err) {
-                      console.error(err);
-                      return res.status(500).send();
-                    }
-
-                    // Now, delete the project itself
-                    connection.query(
-                      `
-                      DELETE FROM projects
-                      WHERE id = ?
-                      `,
-                      [id],
-                      (err, results, fields) => {
-                        if (err) {
-                          console.error(err);
-                          return res.status(500).send();
-                        }
-                        return res.status(200).json({ message: "Project and related data deleted successfully!" });
-                      }
-                    );
-                  }
-                );
-              }
-            );
-          }
-        );
+        return res.status(200).json({ message: "Project and related data deleted successfully!" });
       }
     );
   } catch (err) {
@@ -356,6 +296,7 @@ router.delete("/deleteHistoryProject/:id", async (req, res) => {
     return res.status(500).send();
   }
 });
+
 
 
 // Route to add user-project mappings
