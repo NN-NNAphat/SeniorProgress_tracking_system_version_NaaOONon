@@ -558,39 +558,24 @@ router.delete("/delete/:id", async (req, res) => {
   }
 });
 
-// Route to delete a screen and its related data by ID
+// Route to delete a screen by ID
 router.delete("/deleteHistoryScreen/:id", async (req, res) => {
   const id = req.params.id;
 
   try {
-    connection.query("DELETE FROM tasks WHERE screen_id IN (SELECT id FROM screens WHERE id = ?)", [id], async (err, results, fields) => {
+    connection.query("DELETE FROM screens WHERE id = ?", [id], async (err, results, fields) => {
       if (err) {
         console.error(err);
         return res.status(500).send();
       }
 
-      connection.query("DELETE FROM user_screens WHERE screen_id = ?", [id], async (err, results, fields) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).send();
-        }
-
-        connection.query("DELETE FROM screens WHERE id = ?", [id], async (err, results, fields) => {
-          if (err) {
-            console.error(err);
-            return res.status(500).send();
-          }
-
-          return res.status(200).json({ message: "Screen and related data deleted successfully!" });
-        });
-      });
+      return res.status(200).json({ message: "Screen deleted successfully!" });
     });
   } catch (err) {
     console.error(err);
     return res.status(500).send();
   }
 });
-
 
 
 // Route to add multiple screens to a user
