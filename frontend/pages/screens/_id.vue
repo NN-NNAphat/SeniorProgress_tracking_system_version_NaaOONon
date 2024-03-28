@@ -216,7 +216,7 @@
                   >
                     Edit
                   </v-btn>
-                  <v-btn color="primary" @click="deleteTask(task)">
+                  <v-btn color="error" @click="deleteTask(task)">
                     Delete
                   </v-btn>
                 </v-card-actions>
@@ -547,26 +547,33 @@
         <v-card-text>
           <!-- Create task form -->
           <v-form @submit.prevent="createTask">
-            <!-- Form fields to create a new task -->
+            <!-- Task ID -->
             <v-text-field
               v-model="newTask.task_id"
-              :rules="taskIDRules"
               label="Task ID"
               required
+              :rules="[taskIDRules, onlyEnglishNumericSymbolRule]"
+              append-icon="mdi-alert-circle"
+              pattern="[A-Za-z0-9@#$%^&*()-_+=!]+"
             ></v-text-field>
+
+            <!-- Task Name -->
             <v-text-field
               v-model="newTask.task_name"
               :rules="taskNameRules"
               label="Task Name"
               required
+              append-icon="mdi-alert-circle"
             ></v-text-field>
 
+            <!-- Detail -->
             <v-text-field
               v-model="newTask.task_detail"
               label="Detail"
               required
             ></v-text-field>
 
+            <!-- Status -->
             <v-select
               v-model="newTask.task_status"
               :items="statusOptions"
@@ -574,6 +581,7 @@
               required
             ></v-select>
 
+            <!-- Plan Start -->
             <v-text-field
               v-model="newTask.task_plan_start"
               label="Plan Start"
@@ -581,14 +589,18 @@
               required
               @input="calculateManday"
             ></v-text-field>
+
+            <!-- Plan End -->
             <v-text-field
               v-model="newTask.task_plan_end"
               label="Plan End"
               type="date"
               required
               @input="calculateManday"
+              :min="newTask.task_plan_start"
             ></v-text-field>
 
+            <!-- Member ID -->
             <v-select
               v-model="newTask.task_member_id"
               :items="userListCreate"
@@ -596,8 +608,18 @@
               item-text="user_name"
               label="Member ID"
               required
-            ></v-select>
+            >
+              <template v-slot:item="{ item }">
+                <v-list-item-avatar>
+                  <v-img :src="item.user_pic" />
+                </v-list-item-avatar>
+                <v-list-item-content>
+                  <v-list-item-title>{{ item.user_name }}</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-select>
 
+            <!-- Manday -->
             <v-text-field
               v-model="newTask.task_manday"
               label="Manday"
@@ -605,7 +627,12 @@
             ></v-text-field>
 
             <!-- Submit button -->
-            <v-btn type="submit">Create</v-btn>
+            <v-btn color="primary"
+              :disabled="!newTask.task_id || !newTask.task_name"
+              type="submit"
+              >Create</v-btn
+            >
+
             <!-- Cancel button -->
             <v-btn color="error" @click="cancel">Cancel</v-btn>
           </v-form>
@@ -699,8 +726,8 @@ export default {
       taskIDRules: [
         (v) => !!v || "Task ID is required",
         (v) =>
-          (v && v.length <= 10) ||
-          "Task ID must be less than or equal to 10 characters",
+          (v && /^[A-Za-z0-9@#$%^&*()-_+=!]+$/.test(v)) ||
+          "Invalid characters. Only English letters, numbers, and symbols are allowed",
       ],
       taskNameRules: [
         (v) => !!v || "Task Name is required",
@@ -776,6 +803,12 @@ export default {
     },
   },
   methods: {
+    onlyEnglishNumericSymbolRule(v) {
+      return (
+        (v && /^[A-Za-z0-9@#$%^&*()-_+=!]+$/.test(v)) ||
+        "Invalid characters. Only English letters, numbers, and symbols are allowed"
+      );
+    },
     calculateManday() {
       const start = new Date(this.newTask.task_plan_start);
       const end = new Date(this.newTask.task_plan_end);
@@ -900,7 +933,8 @@ export default {
         this.userList = userList;
         this.userListCreate = userList.map((user) => ({
           user_id: user.id,
-          user_name: `${user.user_firstname} ${user.user_lastname}`,
+          user_name: `${user.user_position} : ${user.user_firstname} ${user.user_lastname}`,
+          user_pic: user.user_pic,
         }));
       } catch (error) {
         console.error("Error fetching user list:", error);
