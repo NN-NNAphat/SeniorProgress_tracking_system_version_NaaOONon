@@ -57,7 +57,7 @@
         v-model="showImageDialog"
         max-width="600"
         max-height="800"
-        fullscreen
+        fitscreen
         hide-overlay
       >
         <v-img
@@ -129,6 +129,18 @@
         <v-btn color="primary" @click="dialogAddTaskForm = true"
           >Add Task</v-btn
         >
+      </div>
+
+      <div>
+        <!-- Add Tabs for task status -->
+        <v-tabs>
+          <v-tab>All</v-tab>
+          <v-tab>Start</v-tab>
+          <v-tab>Stop</v-tab>
+          <v-tab>Correct</v-tab>
+          <v-tab>Mistake</v-tab>
+          <v-tab>Not started yet</v-tab>
+        </v-tabs>
       </div>
       <v-divider></v-divider>
       <!-- Display Task in Card -->
