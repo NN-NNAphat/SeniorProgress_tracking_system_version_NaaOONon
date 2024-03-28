@@ -103,19 +103,11 @@
     <!-- Search bar -->
     <v-row no-gutters>
       <v-col cols="12">
-        <input
-          type="text"
+        <v-text-field
           v-model="searchQuery"
-          placeholder="Search..."
-          style="
-            margin-bottom: 10px;
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-          "
-        />
+          label="Search"
+          clearable
+        ></v-text-field>
       </v-col>
     </v-row>
 
@@ -130,23 +122,11 @@
           >Add Task</v-btn
         >
       </div>
-
-      <div>
-        <!-- Add Tabs for task status -->
-        <v-tabs>
-          <v-tab>All</v-tab>
-          <v-tab>Start</v-tab>
-          <v-tab>Stop</v-tab>
-          <v-tab>Correct</v-tab>
-          <v-tab>Mistake</v-tab>
-          <v-tab>Not started yet</v-tab>
-        </v-tabs>
-      </div>
       <v-divider></v-divider>
       <!-- Display Task in Card -->
       <v-row>
         <v-col
-          v-for="(task, index) in paginatedTasks"
+          v-for="(task, index) in filteredTasks"
           :key="index"
           cols="12"
           md="6"
@@ -554,8 +534,7 @@ export default {
       dialogEditTaskForm: false,
       dialogAddTaskForm: false,
       show: false,
-      //Search bar
-      searchQuery: "", // ลบออกเนื่องจากซ้ำ
+      searchQuery: "",
       //Edited Task data
       editedTask: {
         task_id: "",
@@ -592,9 +571,18 @@ export default {
     },
     filteredTasks() {
       if (this.tasks && Array.isArray(this.tasks)) {
-        return this.tasks.filter((task) =>
-          task.task_name.toLowerCase().includes(this.searchQuery.toLowerCase())
-        );
+        return this.tasks.filter((task) => {
+          // ตรวจสอบว่า task.memberDetails มีค่าหรือไม่
+          if (task.memberDetails) {
+            // นำเนื้อหาของ v-card-text ที่เกี่ยวข้องกับ task.memberDetails มาต่อกันเพื่อค้นหา
+            const textContent =
+              `${task.memberDetails.user_firstname} ${task.memberDetails.user_lastname} ${task.memberDetails.user_position}`.toLowerCase();
+            // ค้นหาโดยใช้ searchQuery ที่ผูกกับ input และคืนค่า true เมื่อพบข้อความที่ค้นหา
+            return textContent.includes(this.searchQuery.toLowerCase());
+          } else {
+            return false;
+          }
+        });
       } else {
         return [];
       }
