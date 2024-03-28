@@ -126,14 +126,15 @@
 
       <!-- v-tabs for filtering tasks by status -->
       <v-tabs v-model="selectedStatus">
+        <v-tab>All</v-tab>
         <v-tab v-for="(status, index) in statusOptions" :key="index">{{
           status
         }}</v-tab>
 
-        <v-tab-item v-for="(status, index) in statusOptions" :key="index">
+        <v-tab-item>
           <v-row>
             <v-col
-              v-for="(task, index) in filteredTasksByStatus(status)"
+              v-for="(task, index) in tasks"
               :key="index"
               cols="12"
               md="6"
@@ -206,8 +207,88 @@
             </v-col>
           </v-row>
         </v-tab-item>
+
+        <v-tab-item v-for="(status, index) in statusOptions" :key="index">
+          <v-row>
+            <v-col
+              v-for="(task, index) in filteredTasksByStatus(status)"
+              :key="index"
+              cols="12"
+              md="6"
+              lg="4"
+            >
+              <!-- Your card code here -->
+              <!-- Example -->
+              <v-card class="task-card" style="width: auto; height: 730px">
+                <v-card-title>
+                  <h3 style="margin-right: 10px">{{ task.task_name }}</h3>
+                  <v-divider vertical></v-divider>
+                  <v-spacer></v-spacer>
+                  <h4 style="margin-left: 10px">ID: {{ task.task_id }}</h4>
+                </v-card-title>
+                <v-card-text>
+                  <p>Task Detail: {{ task.task_detail }}</p>
+                  <p>Status: {{ task.task_status }}</p>
+                  <p>Manday: {{ task.task_manday || 0 }}</p>
+                  <p>Progress: {{ task.task_progress || 0 }}</p>
+                  <p>Plan Start: {{ task.task_plan_start.slice(0, 10) }}</p>
+                  <p>Plan End: {{ task.task_plan_end.slice(0, 10) }}</p>
+                  <p>
+                    Actual Start:
+                    {{
+                      task.task_actual_start
+                        ? formatDate(task.task_actual_start)
+                        : "Not determined"
+                    }}
+                  </p>
+                  <p>
+                    Actual End:
+                    {{
+                      task.task_actual_end
+                        ? formatDate(task.task_actual_end)
+                        : "Not determined"
+                    }}
+                  </p>
+
+                  <!-- Display User details -->
+                  <v-card-text v-if="task.memberDetails" elevation="2" outlined>
+                    <img
+                      :src="task.memberDetails.user_pic"
+                      alt="User Pic"
+                      style="width: 100px; height: 100px"
+                    />
+                    <p>First Name: {{ task.memberDetails.user_firstname }}</p>
+                    <p>Last Name: {{ task.memberDetails.user_lastname }}</p>
+                    <p>Position: {{ task.memberDetails.user_position }}</p>
+                  </v-card-text>
+
+                  <!-- Display message if User details are not available -->
+                  <v-card-text v-else elevation="2" outlined>
+                    <p>User not determine</p>
+                  </v-card-text>
+                </v-card-text>
+
+                <v-card-actions class="text-right">
+                  <v-btn
+                    color="primary"
+                    @click="
+                      dialogEditTaskForm = true;
+                      editedTask = task;
+                    "
+                  >
+                    Edit
+                  </v-btn>
+                  <v-btn color="primary" @click="deleteTask(task)">
+                    Delete
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-tab-item>
       </v-tabs>
 
+      <!-- Pagination -->
       <v-row justify="center">
         <v-pagination
           v-model="currentPage"
