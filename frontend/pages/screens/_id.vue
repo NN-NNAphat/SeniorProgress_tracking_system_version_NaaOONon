@@ -40,8 +40,14 @@
             <div v-show="showDetails">
               <v-divider></v-divider>
               <v-card-text>
-                <p>Plan Start: {{ screen_plan_start }}</p>
-                <p>Plan End: {{ screen_plan_end }}</p>
+                <p>
+                  Plan Start:
+                  {{ screen_plan_start ? screen_plan_start : "Not determined" }}
+                </p>
+                <p>
+                  Plan End:
+                  {{ screen_plan_end ? screen_plan_end : "Not determined" }}
+                </p>
                 <p>Screen Manday: {{ screen_manday }}</p>
                 <p>Screen Level: {{ screen_level }}</p>
                 <p>Screen Type: {{ screenType }}</p>
@@ -53,13 +59,7 @@
       </v-col>
 
       <!-- แสดงรูปภาพ Dialog -->
-      <v-dialog
-        v-model="showImageDialog"
-        max-width="600"
-        max-height="800"
-        fitscreen
-        hide-overlay
-      >
+      <v-dialog v-model="showImageDialog" fitscreen hide-overlay>
         <v-img
           :src="screen_pic"
           style="width: 100%; height: 100%; object-fit: contain"
@@ -154,8 +154,23 @@
                   <p>Status: {{ task.task_status }}</p>
                   <p>Manday: {{ task.task_manday || 0 }}</p>
                   <p>Progress: {{ task.task_progress || 0 }}</p>
-                  <p>Plan Start: {{ task.task_plan_start.slice(0, 10) }}</p>
-                  <p>Plan End: {{ task.task_plan_end.slice(0, 10) }}</p>
+                  <p>
+                    Plan Start:
+                    {{
+                      task.task_plan_start
+                        ? task.task_plan_start.slice(0, 10)
+                        : "Not determined"
+                    }}
+                  </p>
+                  <p>
+                    Plan End:
+                    {{
+                      task.task_plan_end
+                        ? task.task_plan_end.slice(0, 10)
+                        : "Not determined"
+                    }}
+                  </p>
+
                   <p>
                     Actual Start:
                     {{
@@ -233,8 +248,23 @@
                   <p>Status: {{ task.task_status }}</p>
                   <p>Manday: {{ task.task_manday || 0 }}</p>
                   <p>Progress: {{ task.task_progress || 0 }}</p>
-                  <p>Plan Start: {{ task.task_plan_start.slice(0, 10) }}</p>
-                  <p>Plan End: {{ task.task_plan_end.slice(0, 10) }}</p>
+                  <p>
+                    Plan Start:
+                    {{
+                      task.task_plan_start
+                        ? task.task_plan_start.slice(0, 10)
+                        : "Not determined"
+                    }}
+                  </p>
+                  <p>
+                    Plan End:
+                    {{
+                      task.task_plan_end
+                        ? task.task_plan_end.slice(0, 10)
+                        : "Not determined"
+                    }}
+                  </p>
+
                   <p>
                     Actual Start:
                     {{
@@ -520,14 +550,17 @@
             <!-- Form fields to create a new task -->
             <v-text-field
               v-model="newTask.task_id"
+              :rules="taskIDRules"
               label="Task ID"
               required
             ></v-text-field>
             <v-text-field
               v-model="newTask.task_name"
+              :rules="taskNameRules"
               label="Task Name"
               required
             ></v-text-field>
+
             <v-text-field
               v-model="newTask.task_detail"
               label="Detail"
@@ -546,13 +579,16 @@
               label="Plan Start"
               type="date"
               required
+              @input="calculateManday"
             ></v-text-field>
             <v-text-field
               v-model="newTask.task_plan_end"
               label="Plan End"
               type="date"
               required
+              @input="calculateManday"
             ></v-text-field>
+
             <v-select
               v-model="newTask.task_member_id"
               :items="userListCreate"
@@ -587,6 +623,11 @@ export default {
 
   data() {
     return {
+      rules: {
+        required: (value) => !!value || "Field is required",
+        maxManday: (value) =>
+          (value && value <= 10) || "Manday must not exceed 10",
+      },
       selectedStatus: "start",
       planStartMenu: false,
       planEndMenu: false,
@@ -647,15 +688,39 @@ export default {
       newTask: {
         task_id: "",
         task_name: "",
+        task_status: "Not started yet",
         person_in_charge: "",
-        task_plan_start: "",
-        task_plan_end: "",
+        task_plan_start: null,
+        task_plan_end: null,
+        task_manday: 0,
         task_detail: "",
       },
+      isEditableManday: true,
+      taskIDRules: [
+        (v) => !!v || "Task ID is required",
+        (v) =>
+          (v && v.length <= 10) ||
+          "Task ID must be less than or equal to 10 characters",
+      ],
+      taskNameRules: [
+        (v) => !!v || "Task Name is required",
+        (v) =>
+          (v && v.length <= 50) ||
+          "Task Name must be less than or equal to 50 characters",
+      ],
     };
   },
 
   computed: {
+    calculatedManday() {
+      // Calculate mandays based on task_plan_start and task_plan_end
+      // This is just a simple example, you may need to adjust this calculation according to your business logic
+      const start = new Date(this.newTask.task_plan_start);
+      const end = new Date(this.newTask.task_plan_end);
+      const differenceInTime = end.getTime() - start.getTime();
+      const differenceInDays = differenceInTime / (1000 * 3600 * 24);
+      return differenceInDays;
+    },
     filteredTasksByStatus() {
       return (status) => {
         if (this.tasks && Array.isArray(this.tasks)) {
@@ -700,7 +765,24 @@ export default {
     await this.fetchUserList();
     this.fetchTasks();
   },
+
+  watch: {
+    // Watcher to update task_manday when task_plan_start or task_plan_end changes
+    newTask: {
+      deep: true,
+      handler(newVal) {
+        this.newTask.task_manday = this.calculatedManday;
+      },
+    },
+  },
   methods: {
+    calculateManday() {
+      const start = new Date(this.newTask.task_plan_start);
+      const end = new Date(this.newTask.task_plan_end);
+      const diffTime = Math.abs(end - start + 1);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      this.newTask.task_manday = diffDays;
+    },
     async deleteTask(task) {
       try {
         const response = await fetch(
@@ -895,7 +977,7 @@ export default {
           task_plan_end,
           task_member_id,
           task_manday,
-        } = this.newTask;
+        } = this.newTask; // ตรวจสอบว่า task_plan_start, task_plan_end, และ task_manday ไม่ว่างเปล่าหรือไม
 
         const response = await fetch(
           `http://localhost:7777/tasks/createTasks`,
@@ -909,9 +991,9 @@ export default {
               task_name,
               task_detail,
               task_status,
-              screen_id: this.screenId, // ใช้ค่า screenId ที่มาจาก data()
-              project_id: this.project_id, // ใช้ค่า project_id ที่มาจาก data()
-              system_id: this.system_id, // ใช้ค่า system_id ที่มาจาก data()
+              screen_id: this.screenId,
+              project_id: this.project_id,
+              system_id: this.system_id,
               task_plan_start,
               task_plan_end,
               task_member_id,
@@ -940,7 +1022,6 @@ export default {
         });
       }
     },
-
     // Update task
     async updateTask() {
       try {
