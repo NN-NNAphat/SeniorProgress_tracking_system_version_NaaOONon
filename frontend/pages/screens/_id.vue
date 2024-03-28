@@ -134,12 +134,14 @@
         <v-tab-item>
           <v-row>
             <v-col
-              v-for="(task, index) in tasks"
+              v-for="(task, index) in filteredTasks"
               :key="index"
               cols="12"
               md="6"
               lg="4"
             >
+              <!-- Your card code here -->
+              <!-- Example -->
               <v-card class="task-card" style="width: auto; height: 730px">
                 <v-card-title>
                   <h3 style="margin-right: 10px">{{ task.task_name }}</h3>
@@ -677,13 +679,13 @@ export default {
     filteredTasks() {
       if (this.tasks && Array.isArray(this.tasks)) {
         return this.tasks.filter((task) => {
-          // ตรวจสอบว่า task.memberDetails มีค่าหรือไม่
-          if (task.memberDetails) {
-            // นำเนื้อหาของ v-card-text ที่เกี่ยวข้องกับ task.memberDetails มาต่อกันเพื่อค้นหา
-            const textContent =
-              `${task.memberDetails.user_firstname} ${task.memberDetails.user_lastname} ${task.memberDetails.user_position}`.toLowerCase();
+          // ตรวจสอบว่า task_name, task_id มีค่าหรือไม่
+          if (task.task_name && task.task_id) {
+            // นำเนื้อหาของ task_name, task_id มาต่อกันเพื่อค้นหา
+            const searchText =
+              `${task.task_name} ${task.task_id}`.toLowerCase();
             // ค้นหาโดยใช้ searchQuery ที่ผูกกับ input และคืนค่า true เมื่อพบข้อความที่ค้นหา
-            return textContent.includes(this.searchQuery.toLowerCase());
+            return searchText.includes(this.searchQuery.toLowerCase());
           } else {
             return false;
           }
