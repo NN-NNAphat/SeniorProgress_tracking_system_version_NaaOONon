@@ -403,7 +403,7 @@
                   <template v-slot:activator="{ on }">
                     <v-text-field
                       :value="
-                        formatDate(editedTask.task_plan_start, 'DD/MM/YYYY')
+                        formatDate(editedTask.task_plan_start, 'DD-MM-YYYY')
                       "
                       label="Plan Start"
                       prepend-icon="mdi-calendar"
@@ -429,7 +429,7 @@
                   <template v-slot:activator="{ on }">
                     <v-text-field
                       :value="
-                        formatDate(editedTask.task_plan_end, 'DD/MM/YYYY')
+                        formatDate(editedTask.task_plan_end, 'DD-MM-YYYY')
                       "
                       label="Plan End"
                       prepend-icon="mdi-calendar"
@@ -462,7 +462,7 @@
                   <template v-slot:activator="{ on }">
                     <v-text-field
                       :value="
-                        formatDate(editedTask.task_actual_start, 'DD/MM/YYYY')
+                        formatDate(editedTask.task_actual_start, 'DD-MM-YYYY')
                       "
                       label="Actual Start"
                       prepend-icon="mdi-calendar"
@@ -489,7 +489,7 @@
                   <template v-slot:activator="{ on }">
                     <v-text-field
                       :value="
-                        formatDate(editedTask.task_actual_end, 'DD/MM/YYYY')
+                        formatDate(editedTask.task_actual_end, 'DD-MM-YYYY')
                       "
                       label="Actual End"
                       prepend-icon="mdi-calendar"
@@ -874,7 +874,7 @@ export default {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
+      return `${day}/${month}/${year}`;
     },
 
     paginate(page) {
@@ -1065,35 +1065,40 @@ export default {
         });
       }
     },
+    formatDisplayDate(dateString) {
+      if (!dateString) return null;
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${day}/${month}/${year}`;
+    },
     // Update task
     async updateTask() {
       try {
         // Convert task dates to the correct format before sending to the server
-        this.editedTask.task_plan_start = this.formatDate(
-          this.editedTask.task_plan_start,
-          "YYYY-MM-DD"
+        const taskData = { ...this.editedTask }; // Clone the editedTask object
+        taskData.task_plan_start = this.formatAPIDate(
+          this.editedTask.task_plan_start
         );
-        this.editedTask.task_plan_end = this.formatDate(
-          this.editedTask.task_plan_end,
-          "YYYY-MM-DD"
+        taskData.task_plan_end = this.formatAPIDate(
+          this.editedTask.task_plan_end
         );
-        this.editedTask.task_actual_start = this.formatDate(
-          this.editedTask.task_actual_start,
-          "YYYY-MM-DD"
+        taskData.task_actual_start = this.formatAPIDate(
+          this.editedTask.task_actual_start
         );
-        this.editedTask.task_actual_end = this.formatDate(
-          this.editedTask.task_actual_end,
-          "YYYY-MM-DD"
+        taskData.task_actual_end = this.formatAPIDate(
+          this.editedTask.task_actual_end
         );
 
         const response = await fetch(
-          `http://localhost:7777/tasks/updateTasks/${this.editedTask.id}`,
+          `http://localhost:7777/tasks/updateTasks/${taskData.id}`,
           {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(this.editedTask),
+            body: JSON.stringify(taskData),
           }
         );
 
@@ -1116,6 +1121,15 @@ export default {
           text: "Please try again",
         });
       }
+    },
+
+    formatAPIDate(dateString) {
+      if (!dateString) return null;
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     },
 
     cancelEdit() {
