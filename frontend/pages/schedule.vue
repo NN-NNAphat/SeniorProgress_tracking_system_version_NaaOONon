@@ -4,40 +4,6 @@
       <v-col class="mt-0 pt-0">
         <v-sheet height="64">
           <v-toolbar flat>
-            <!-- <template>
-              <v-banner
-                class="mt-0 ml-0"
-                style="
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  height: 30px;
-                  border-radius: 30px;
-                  padding: 0 0px;
-                "
-                outlined
-                elevation="2"
-              >
-                <form class="center">
-                  <v-icon class="hidden-sm-and-down" color="purple"
-                    >mdi-magnify</v-icon
-                  >
-                  <input
-                    class="mr-3"
-                    type="text"
-                    v-model="query"
-                    placeholder="Search some task"
-                  />
-                </form>
-              </v-banner>
-            </template>
-
-            <v-divider
-              class="mr-4 ml-4"
-              inset
-              vertical
-              style="background-color: black"
-            ></v-divider> -->
             <v-toolbar-title v-if="$refs.calendar">
               {{ $refs.calendar.title }}
             </v-toolbar-title>
@@ -86,17 +52,7 @@
               >
                 เดือน
               </v-chip>
-              <!-- <v-chip
-                class="mr-2"
-                @click="Click4Day(), (type = '4day')"
-                style="border: none"
-                :style="{
-                  backgroundColor: color4day ? '#5c3efe' : null,
-                  color: color4day ? 'white' : 'black',
-                }"
-              >
-                4 Day
-              </v-chip> -->
+
             </v-chip>
           </v-toolbar>
         </v-sheet>
@@ -153,18 +109,9 @@
             offset-x
           >
             <v-card color="grey lighten-4" min-width="350px" flat>
-              <v-toolbar :color="selectedEvent.color" dark>
-                <!-- <v-btn icon>
-                  <v-icon>mdi-pencil</v-icon>
-                </v-btn> -->
+              <v-toolbar :color="selectedEvent.color" dark>         
                 <v-toolbar-title v-html="selectedEvent.name"></v-toolbar-title>
                 <v-spacer></v-spacer>
-                <!-- <v-btn icon>
-                  <v-icon>mdi-heart</v-icon>
-                </v-btn>
-                <v-btn icon>
-                  <v-icon>mdi-dots-vertical</v-icon>
-                </v-btn> -->
               </v-toolbar>
               <v-card-text>
                 <span v-html="selectedEvent.details"></span>

@@ -63,7 +63,7 @@
               <v-list-item-title
                 ><v-icon color="primary" class="mr-2"
                   >mdi mdi-format-list-bulleted</v-icon
-                >{{ child?.project_name }}</v-list-item-title
+                >{{ child?.project_name_ENG }}</v-list-item-title
               >
             </v-list-item-content>
           </v-list-item>
@@ -94,7 +94,7 @@
               <v-list-item-title
                 ><v-icon color="primary" class="mr-2"
                   >mdi mdi-format-list-bulleted</v-icon
-                >{{ child[0]?.project_name }}</v-list-item-title
+                >{{ child?.project_name_ENG }}</v-list-item-title
               >
             </v-list-item-content>
           </v-list-item>
