@@ -874,7 +874,7 @@ export default {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
-      return `${day}-${month}-${year}`;
+      return `${year}-${month}-${day}`;
     },
 
     paginate(page) {
@@ -1068,18 +1068,22 @@ export default {
     // Update task
     async updateTask() {
       try {
-        // Convert task date fields to the correct format
+        // Convert task dates to the correct format before sending to the server
         this.editedTask.task_plan_start = this.formatDate(
-          this.editedTask.task_plan_start
+          this.editedTask.task_plan_start,
+          "YYYY-MM-DD"
         );
         this.editedTask.task_plan_end = this.formatDate(
-          this.editedTask.task_plan_end
+          this.editedTask.task_plan_end,
+          "YYYY-MM-DD"
         );
         this.editedTask.task_actual_start = this.formatDate(
-          this.editedTask.task_actual_start
+          this.editedTask.task_actual_start,
+          "YYYY-MM-DD"
         );
         this.editedTask.task_actual_end = this.formatDate(
-          this.editedTask.task_actual_end
+          this.editedTask.task_actual_end,
+          "YYYY-MM-DD"
         );
 
         const response = await fetch(
