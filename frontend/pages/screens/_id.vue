@@ -389,6 +389,8 @@
                 ></v-slider>
               </v-col>
             </v-row>
+
+            <!-- Plan -->
             <v-row>
               <v-col cols="6">
                 <v-menu
@@ -401,11 +403,7 @@
                   <template v-slot:activator="{ on }">
                     <v-text-field
                       :value="
-                        formatDate(editedTask.task_plan_start)
-                          ? formatDate(editedTask.task_plan_start)
-                              .slice(0, 10)
-                              .replace('T', ' ')
-                          : null
+                        formatDate(editedTask.task_plan_start, 'DD/MM/YYYY')
                       "
                       label="Plan Start"
                       prepend-icon="mdi-calendar"
@@ -431,26 +429,26 @@
                   <template v-slot:activator="{ on }">
                     <v-text-field
                       :value="
-                        editedTask.task_plan_end
-                          ? formatDate(editedTask.task_plan_end)
-                              .slice(0, 10)
-                              .replace('T', ' ')
-                          : null
+                        formatDate(editedTask.task_plan_end, 'DD/MM/YYYY')
                       "
                       label="Plan End"
                       prepend-icon="mdi-calendar"
                       readonly
                       v-on="on"
+                      :disabled="!editedTask.task_plan_start"
                     ></v-text-field>
                   </template>
                   <v-date-picker
                     v-model="editedTask.task_plan_end"
                     no-title
                     scrollable
+                    :min="editedTask.task_plan_start"
                   ></v-date-picker>
                 </v-menu>
               </v-col>
             </v-row>
+
+            <!-- Actual -->
             <v-row>
               <v-col cols="6">
                 <v-menu
@@ -464,11 +462,7 @@
                   <template v-slot:activator="{ on }">
                     <v-text-field
                       :value="
-                        editedTask.task_actual_start
-                          ? formatDate(editedTask.task_actual_start)
-                              .slice(0, 10)
-                              .replace('T', ' ')
-                          : null
+                        formatDate(editedTask.task_actual_start, 'DD/MM/YYYY')
                       "
                       label="Actual Start"
                       prepend-icon="mdi-calendar"
@@ -495,22 +489,20 @@
                   <template v-slot:activator="{ on }">
                     <v-text-field
                       :value="
-                        editedTask.task_actual_end
-                          ? formatDate(editedTask.task_actual_end)
-                              .slice(0, 10)
-                              .replace('T', ' ')
-                          : null
+                        formatDate(editedTask.task_actual_end, 'DD/MM/YYYY')
                       "
                       label="Actual End"
                       prepend-icon="mdi-calendar"
                       readonly
                       v-on="on"
+                      :disabled="!editedTask.task_actual_start"
                     ></v-text-field>
                   </template>
                   <v-date-picker
                     v-model="editedTask.task_actual_end"
                     no-title
                     scrollable
+                    :min="editedTask.task_actual_start"
                   ></v-date-picker>
                 </v-menu>
               </v-col>
@@ -529,7 +521,18 @@
               label="Member ID"
               outlined
               dense
-            ></v-select>
+            >
+              <template #item="{ item }">
+                <v-list-item-avatar :size="40">
+                  <v-img :src="item.user_pic" contain></v-img>
+                </v-list-item-avatar>
+                <v-list-item-content>
+                  <v-list-item-title
+                    v-text="item.user_name"
+                  ></v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-select>
 
             <v-btn type="submit">Update</v-btn>
             <v-btn color="error" @click="cancelEdit">Cancel</v-btn>
@@ -600,6 +603,13 @@
               :min="newTask.task_plan_start"
             ></v-text-field>
 
+            <!-- Manday -->
+            <v-text-field
+              v-model="newTask.task_manday"
+              label="Manday"
+              required
+            ></v-text-field>
+
             <!-- Member ID -->
             <v-select
               v-model="newTask.task_member_id"
@@ -618,13 +628,6 @@
                 </v-list-item-content>
               </template>
             </v-select>
-
-            <!-- Manday -->
-            <v-text-field
-              v-model="newTask.task_manday"
-              label="Manday"
-              required
-            ></v-text-field>
 
             <!-- Submit button -->
             <v-btn
@@ -741,13 +744,17 @@ export default {
 
   computed: {
     calculatedManday() {
-      // Calculate mandays based on task_plan_start and task_plan_end
-      // This is just a simple example, you may need to adjust this calculation according to your business logic
-      const start = new Date(this.newTask.task_plan_start);
-      const end = new Date(this.newTask.task_plan_end);
-      const differenceInTime = end.getTime() - start.getTime();
-      const differenceInDays = differenceInTime / (1000 * 3600 * 24);
-      return differenceInDays;
+      // Check if both task_plan_start and task_plan_end are selected
+      if (this.newTask.task_plan_start && this.newTask.task_plan_end) {
+        const start = new Date(this.newTask.task_plan_start);
+        const end = new Date(this.newTask.task_plan_end);
+        const differenceInTime = end.getTime() - start.getTime();
+        const differenceInDays = differenceInTime / (1000 * 3600 * 24);
+        return differenceInDays;
+      } else {
+        // If task_plan_end is not selected, return null
+        return null;
+      }
     },
     filteredTasksByStatus() {
       return (status) => {
@@ -867,8 +874,9 @@ export default {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
+      return `${day}-${month}-${year}`;
     },
+
     paginate(page) {
       this.currentPage = page;
     },
