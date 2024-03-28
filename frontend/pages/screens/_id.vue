@@ -130,7 +130,6 @@
         <v-tab v-for="(status, index) in statusOptions" :key="index">{{
           status
         }}</v-tab>
-
         <v-tab-item>
           <v-row>
             <v-col
@@ -140,8 +139,6 @@
               md="6"
               lg="4"
             >
-              <!-- Your card code here -->
-              <!-- Example -->
               <v-card class="task-card" style="width: auto; height: 730px">
                 <v-card-title>
                   <h3 style="margin-right: 10px">{{ task.task_name }}</h3>
@@ -365,11 +362,6 @@
               dense
             ></v-select>
 
-            <v-text-field
-              v-model="editedTask.task_manday"
-              label="Manday"
-              required
-            ></v-text-field>
             <v-row align="center">
               <v-col cols="3">
                 <v-text-field
@@ -462,6 +454,7 @@
             <v-row>
               <v-col cols="6">
                 <v-menu
+                  v-if="editedTask.task_plan_start && editedTask.task_plan_end"
                   v-model="actualStartMenu"
                   :close-on-content-click="false"
                   :nudge-right="40"
@@ -492,6 +485,7 @@
               </v-col>
               <v-col cols="6">
                 <v-menu
+                  v-if="editedTask.task_plan_start && editedTask.task_plan_end"
                   v-model="actualEndMenu"
                   :close-on-content-click="false"
                   :nudge-right="40"
@@ -521,6 +515,12 @@
                 </v-menu>
               </v-col>
             </v-row>
+
+            <v-text-field
+              v-model="editedTask.task_manday"
+              label="Manday"
+              required
+            ></v-text-field>
             <v-select
               v-model="editedTask.task_member_id"
               :items="userListCreate"
@@ -627,7 +627,8 @@
             ></v-text-field>
 
             <!-- Submit button -->
-            <v-btn color="primary"
+            <v-btn
+              color="primary"
               :disabled="!newTask.task_id || !newTask.task_name"
               type="submit"
               >Create</v-btn
