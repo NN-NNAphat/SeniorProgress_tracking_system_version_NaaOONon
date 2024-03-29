@@ -184,19 +184,25 @@
             >
               <v-expansion-panels
                 class="custom-expansion-panels"
-                style="height: 350px; overflow-y: auto"
+                style="height: 430px; overflow-y: auto"
               >
                 <v-expansion-panel>
                   <v-expansion-panel-header class="custom-header">
                     <template v-slot:default="{ open }">
                       <div>
                         <!-- Row 1: Task Name and Progress -->
-                        <div class="d-flex justify-space-between">
+                        <div
+                          class="d-flex justify-space-between"
+                          style="padding: 10px"
+                        >
                           <span>ชื่องาน: {{ task.task_name }}</span>
                           <span>Progress: {{ task.task_progress || 0 }} %</span>
                         </div>
                         <!-- Row 2: Task Detail -->
-                        <p>Task Detail: {{ task.task_detail }}</p>
+                        <p style="font-size: 16px; line-height: 1.5em">
+                          Task Detail: {{ task.task_detail }}
+                        </p>
+
                         <!-- Row 3: User Details -->
                         <div>
                           <v-divider></v-divider>
@@ -239,20 +245,7 @@
                         </div>
 
                         <!-- Row 4: Buttons, Plan Start, Plan End -->
-                        <div class="text-right">
-                          <v-btn
-                            icon
-                            color="primary"
-                            @click="
-                              dialogEditTaskForm = true;
-                              editedTask = task;
-                            "
-                          >
-                            <v-icon>mdi-pencil</v-icon>
-                          </v-btn>
-                          <v-btn icon color="error" @click="deleteTask(task)">
-                            <v-icon>mdi-delete</v-icon>
-                          </v-btn>
+                        <div class="text-right" style="padding: 10px">
                           <p>
                             Plan Start:
                             {{
@@ -269,6 +262,20 @@
                                 : "Not determined"
                             }}
                           </p>
+
+                          <v-btn
+                            icon
+                            color="primary"
+                            @click="
+                              dialogEditTaskForm = true;
+                              editedTask = task;
+                            "
+                          >
+                            <v-icon>mdi-pencil</v-icon>
+                          </v-btn>
+                          <v-btn icon color="error" @click="deleteTask(task)">
+                            <v-icon>mdi-delete</v-icon>
+                          </v-btn>
                         </div>
                       </div>
                     </template>
@@ -336,19 +343,25 @@
             >
               <v-expansion-panels
                 class="custom-expansion-panels"
-                style="height: 350px; overflow-y: auto"
+                style="height: 430px; overflow-y: auto"
               >
                 <v-expansion-panel>
                   <v-expansion-panel-header class="custom-header">
                     <template v-slot:default="{ open }">
                       <div>
                         <!-- Row 1: Task Name and Progress -->
-                        <div class="d-flex justify-space-between">
+                        <div
+                          class="d-flex justify-space-between"
+                          style="padding: 10px"
+                        >
                           <span>ชื่องาน: {{ task.task_name }}</span>
                           <span>Progress: {{ task.task_progress || 0 }} %</span>
                         </div>
                         <!-- Row 2: Task Detail -->
-                        <p>Task Detail: {{ task.task_detail }}</p>
+                        <p style="font-size: 16px; line-height: 1.5em">
+                          Task Detail: {{ task.task_detail }}
+                        </p>
+
                         <!-- Row 3: User Details -->
                         <div>
                           <v-divider></v-divider>
@@ -391,20 +404,7 @@
                         </div>
 
                         <!-- Row 4: Buttons, Plan Start, Plan End -->
-                        <div class="text-right">
-                          <v-btn
-                            icon
-                            color="primary"
-                            @click="
-                              dialogEditTaskForm = true;
-                              editedTask = task;
-                            "
-                          >
-                            <v-icon>mdi-pencil</v-icon>
-                          </v-btn>
-                          <v-btn icon color="error" @click="deleteTask(task)">
-                            <v-icon>mdi-delete</v-icon>
-                          </v-btn>
+                        <div class="text-right" style="padding: 10px">
                           <p>
                             Plan Start:
                             {{
@@ -421,6 +421,20 @@
                                 : "Not determined"
                             }}
                           </p>
+
+                          <v-btn
+                            icon
+                            color="primary"
+                            @click="
+                              dialogEditTaskForm = true;
+                              editedTask = task;
+                            "
+                          >
+                            <v-icon>mdi-pencil</v-icon>
+                          </v-btn>
+                          <v-btn icon color="error" @click="deleteTask(task)">
+                            <v-icon>mdi-delete</v-icon>
+                          </v-btn>
                         </div>
                       </div>
                     </template>
@@ -1408,5 +1422,12 @@ export default {
 .custom-expansion-panels {
   border: 1px solid #ccc; /* ใส่ขอบ */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* เพิ่มเงา */
+}
+
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
 }
 </style>
