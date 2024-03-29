@@ -548,7 +548,7 @@
         </v-card-title>
         <v-card-text>
           <!-- Create task form -->
-          <v-form @submit.prevent="createTask">
+          <v-form @submit.prevent="createTask(newTask)">
             <!-- Task ID -->
             <v-text-field
               v-model="newTask.task_id"
