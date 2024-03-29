@@ -18,15 +18,19 @@
             class="d-flex justify-space-between align-center"
             @click="showDetails = !showDetails"
           >
-            <v-card-title>{{ screen_name }}</v-card-title>
-            <v-icon
-              class="custom-btn"
-              @click.stop="openUserListDialog"
-              style="margin-right: 25px"
-              >mdi-account-multiple</v-icon
-            >
+            <div class="card-title">
+              <v-card-title>{{ screen_name }}</v-card-title>
+            </div>
+            <div class="icon">
+              <v-icon
+                class="custom-btn"
+                @click.stop="openUserListDialog"
+                style="margin-right: 25px"
+                >mdi-account-multiple</v-icon
+              >
+            </div>
           </v-card-item>
-          <v-card-subtitle>
+          <v-card-subtitle @click="showDetails = !showDetails">
             Screen Progress: {{ screen_progress }}
             <v-progress-linear
               color="deep-orange"
