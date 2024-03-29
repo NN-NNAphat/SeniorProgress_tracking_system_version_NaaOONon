@@ -182,86 +182,145 @@
               md="6"
               lg="4"
             >
-              <v-card class="task-card" style="width: auto; height: 730px">
-                <v-card-title>
-                  <h3 style="margin-right: 10px">{{ task.task_name }}</h3>
-                  <v-divider vertical></v-divider>
-                  <v-spacer></v-spacer>
-                  <h4 style="margin-left: 10px">ID: {{ task.task_id }}</h4>
-                </v-card-title>
-                <v-card-text>
-                  <p>Task Detail: {{ task.task_detail }}</p>
-                  <p>Status: {{ task.task_status }}</p>
-                  <p>Manday: {{ task.task_manday || 0 }}</p>
-                  <p>Progress: {{ task.task_progress || 0 }}</p>
-                  <p>
-                    Plan Start:
-                    {{
-                      task.task_plan_start
-                        ? formatDate(task.task_plan_start)
-                        : "Not determined"
-                    }}
-                  </p>
-                  <p>
-                    Plan End:
-                    {{
-                      task.task_plan_end
-                        ? formatDate(task.task_plan_end)
-                        : "Not determined"
-                    }}
-                  </p>
+              <v-expansion-panels
+                class="custom-expansion-panels"
+                style="height: 350px; overflow-y: auto"
+              >
+                <v-expansion-panel>
+                  <v-expansion-panel-header class="custom-header">
+                    <template v-slot:default="{ open }">
+                      <div>
+                        <!-- Row 1: Task Name and Progress -->
+                        <div class="d-flex justify-space-between">
+                          <span>ชื่องาน: {{ task.task_name }}</span>
+                          <span>Progress: {{ task.task_progress || 0 }} %</span>
+                        </div>
+                        <!-- Row 2: Task Detail -->
+                        <p>Task Detail: {{ task.task_detail }}</p>
+                        <!-- Row 3: User Details -->
+                        <div>
+                          <v-divider></v-divider>
+                          <v-list v-if="task.memberDetails">
+                            <v-list-item>
+                              <v-list-item-avatar>
+                                <img
+                                  :src="task.memberDetails.user_pic"
+                                  alt="User Pic"
+                                />
+                              </v-list-item-avatar>
+                              <v-list-item-content>
+                                <v-list-item-title
+                                  >First Name:
+                                  {{
+                                    task.memberDetails.user_firstname
+                                  }}</v-list-item-title
+                                >
+                                <v-list-item-subtitle
+                                  >Last Name:
+                                  {{
+                                    task.memberDetails.user_lastname
+                                  }}</v-list-item-subtitle
+                                >
+                                <v-list-item-subtitle
+                                  >Position:
+                                  {{
+                                    task.memberDetails.user_position
+                                  }}</v-list-item-subtitle
+                                >
+                              </v-list-item-content>
+                            </v-list-item>
+                          </v-list>
+                          <v-card-text v-else>
+                            <div style="text-align: center">
+                              <p>User not determine</p>
+                            </div>
+                          </v-card-text>
+                          <v-divider></v-divider>
+                        </div>
 
-                  <p>
-                    Actual Start:
-                    {{
-                      task.task_actual_start
-                        ? formatDate(task.task_actual_start)
-                        : "Not determined"
-                    }}
-                  </p>
-                  <p>
-                    Actual End:
-                    {{
-                      task.task_actual_end
-                        ? formatDate(task.task_actual_end)
-                        : "Not determined"
-                    }}
-                  </p>
+                        <!-- Row 4: Buttons, Plan Start, Plan End -->
+                        <div class="text-right">
+                          <v-btn
+                            icon
+                            color="primary"
+                            @click="
+                              dialogEditTaskForm = true;
+                              editedTask = task;
+                            "
+                          >
+                            <v-icon>mdi-pencil</v-icon>
+                          </v-btn>
+                          <v-btn icon color="error" @click="deleteTask(task)">
+                            <v-icon>mdi-delete</v-icon>
+                          </v-btn>
+                          <p>
+                            Plan Start:
+                            {{
+                              task.task_plan_start
+                                ? formatDate(task.task_plan_start)
+                                : "Not determined"
+                            }}
+                          </p>
+                          <p>
+                            Plan End:
+                            {{
+                              task.task_plan_end
+                                ? formatDate(task.task_plan_end)
+                                : "Not determined"
+                            }}
+                          </p>
+                        </div>
+                      </div>
+                    </template>
+                  </v-expansion-panel-header>
 
-                  <!-- Display User details -->
-                  <v-card-text v-if="task.memberDetails" elevation="2" outlined>
-                    <img
-                      :src="task.memberDetails.user_pic"
-                      alt="User Pic"
-                      style="width: 100px; height: 100px"
-                    />
-                    <p>First Name: {{ task.memberDetails.user_firstname }}</p>
-                    <p>Last Name: {{ task.memberDetails.user_lastname }}</p>
-                    <p>Position: {{ task.memberDetails.user_position }}</p>
-                  </v-card-text>
-
-                  <v-card-text v-else elevation="2" outlined>
-                    <p>User not determine</p>
-                  </v-card-text>
-                </v-card-text>
-
-                <v-card-actions class="text-right">
-                  <v-btn
-                    icon
-                    color="primary"
-                    @click="
-                      dialogEditTaskForm = true;
-                      editedTask = task;
-                    "
-                  >
-                    <v-icon>mdi-pencil</v-icon>
-                  </v-btn>
-
-                  <v-btn icon color="error" @click="deleteTask(task)">
-                    <v-icon>mdi-delete</v-icon>
-                  </v-btn>
-                </v-card-actions>
-              </v-card>
+                  <v-expansion-panel-content>
+                    <v-card class="task-card">
+                      <v-card-title>
+                        <h4>ID: {{ task.task_id }}</h4>
+                      </v-card-title>
+                      <v-card-text>
+                        <p>Task Detail: {{ task.task_detail }}</p>
+                        <p>Status: {{ task.task_status }}</p>
+                        <p>Manday: {{ task.task_manday || 0 }}</p>
+                        <p>Progress: {{ task.task_progress || 0 }}</p>
+                        <p>
+                          Plan Start:
+                          {{
+                            task.task_plan_start
+                              ? formatDate(task.task_plan_start)
+                              : "Not determined"
+                          }}
+                        </p>
+                        <p>
+                          Plan End:
+                          {{
+                            task.task_plan_end
+                              ? formatDate(task.task_plan_end)
+                              : "Not determined"
+                          }}
+                        </p>
+                        <p>
+                          Actual Start:
+                          {{
+                            task.task_actual_start
+                              ? formatDate(task.task_actual_start)
+                              : "Not determined"
+                          }}
+                        </p>
+                        <p>
+                          Actual End:
+                          {{
+                            task.task_actual_end
+                              ? formatDate(task.task_actual_end)
+                              : "Not determined"
+                          }}
+                        </p>
+                      </v-card-text>
+                    </v-card>
+                  </v-expansion-panel-content>
+                </v-expansion-panel>
+              </v-expansion-panels>
             </v-col>
           </v-row>
         </v-tab-item>
@@ -275,87 +334,145 @@
               md="6"
               lg="4"
             >
-              <!-- Your card code here -->
-              <!-- Example -->
-              <v-card class="task-card" style="width: auto; height: 730px">
-                <v-card-title>
-                  <h3 style="margin-right: 10px">{{ task.task_name }}</h3>
-                  <v-divider vertical></v-divider>
-                  <v-spacer></v-spacer>
-                  <h4 style="margin-left: 10px">ID: {{ task.task_id }}</h4>
-                </v-card-title>
-                <v-card-text>
-                  <p>Task Detail: {{ task.task_detail }}</p>
-                  <p>Status: {{ task.task_status }}</p>
-                  <p>Manday: {{ task.task_manday || 0 }}</p>
-                  <p>Progress: {{ task.task_progress || 0 }}</p>
-                  <p>
-                    Plan Start:
-                    {{
-                      task.task_plan_start
-                        ? task.task_plan_start.slice(0, 10)
-                        : "Not determined"
-                    }}
-                  </p>
-                  <p>
-                    Plan End:
-                    {{
-                      task.task_plan_end
-                        ? task.task_plan_end.slice(0, 10)
-                        : "Not determined"
-                    }}
-                  </p>
+              <v-expansion-panels
+                class="custom-expansion-panels"
+                style="height: 350px; overflow-y: auto"
+              >
+                <v-expansion-panel>
+                  <v-expansion-panel-header class="custom-header">
+                    <template v-slot:default="{ open }">
+                      <div>
+                        <!-- Row 1: Task Name and Progress -->
+                        <div class="d-flex justify-space-between">
+                          <span>ชื่องาน: {{ task.task_name }}</span>
+                          <span>Progress: {{ task.task_progress || 0 }} %</span>
+                        </div>
+                        <!-- Row 2: Task Detail -->
+                        <p>Task Detail: {{ task.task_detail }}</p>
+                        <!-- Row 3: User Details -->
+                        <div>
+                          <v-divider></v-divider>
+                          <v-list v-if="task.memberDetails">
+                            <v-list-item>
+                              <v-list-item-avatar>
+                                <img
+                                  :src="task.memberDetails.user_pic"
+                                  alt="User Pic"
+                                />
+                              </v-list-item-avatar>
+                              <v-list-item-content>
+                                <v-list-item-title
+                                  >First Name:
+                                  {{
+                                    task.memberDetails.user_firstname
+                                  }}</v-list-item-title
+                                >
+                                <v-list-item-subtitle
+                                  >Last Name:
+                                  {{
+                                    task.memberDetails.user_lastname
+                                  }}</v-list-item-subtitle
+                                >
+                                <v-list-item-subtitle
+                                  >Position:
+                                  {{
+                                    task.memberDetails.user_position
+                                  }}</v-list-item-subtitle
+                                >
+                              </v-list-item-content>
+                            </v-list-item>
+                          </v-list>
+                          <v-card-text v-else>
+                            <div style="text-align: center">
+                              <p>User not determine</p>
+                            </div>
+                          </v-card-text>
+                          <v-divider></v-divider>
+                        </div>
 
-                  <p>
-                    Actual Start:
-                    {{
-                      task.task_actual_start
-                        ? formatDate(task.task_actual_start)
-                        : "Not determined"
-                    }}
-                  </p>
-                  <p>
-                    Actual End:
-                    {{
-                      task.task_actual_end
-                        ? formatDate(task.task_actual_end)
-                        : "Not determined"
-                    }}
-                  </p>
+                        <!-- Row 4: Buttons, Plan Start, Plan End -->
+                        <div class="text-right">
+                          <v-btn
+                            icon
+                            color="primary"
+                            @click="
+                              dialogEditTaskForm = true;
+                              editedTask = task;
+                            "
+                          >
+                            <v-icon>mdi-pencil</v-icon>
+                          </v-btn>
+                          <v-btn icon color="error" @click="deleteTask(task)">
+                            <v-icon>mdi-delete</v-icon>
+                          </v-btn>
+                          <p>
+                            Plan Start:
+                            {{
+                              task.task_plan_start
+                                ? formatDate(task.task_plan_start)
+                                : "Not determined"
+                            }}
+                          </p>
+                          <p>
+                            Plan End:
+                            {{
+                              task.task_plan_end
+                                ? formatDate(task.task_plan_end)
+                                : "Not determined"
+                            }}
+                          </p>
+                        </div>
+                      </div>
+                    </template>
+                  </v-expansion-panel-header>
 
-                  <!-- Display User details -->
-                  <v-card-text v-if="task.memberDetails" elevation="2" outlined>
-                    <img
-                      :src="task.memberDetails.user_pic"
-                      alt="User Pic"
-                      style="width: 100px; height: 100px"
-                    />
-                    <p>First Name: {{ task.memberDetails.user_firstname }}</p>
-                    <p>Last Name: {{ task.memberDetails.user_lastname }}</p>
-                    <p>Position: {{ task.memberDetails.user_position }}</p>
-                  </v-card-text>
-
-                  <!-- Display message if User details are not available -->
-                  <v-card-text v-else elevation="2" outlined>
-                    <p>User not determine</p>
-                  </v-card-text>
-                </v-card-text>
-
-                <v-card-actions class="text-right">
-                  <v-btn
-                    color="primary"
-                    @click="
-                      dialogEditTaskForm = true;
-                      editedTask = task;
-                    "
-                  >
-                    Edit
-                  </v-btn>
-                  <v-btn color="primary" @click="deleteTask(task)">
-                    Delete
-                  </v-btn>
-                </v-card-actions>
-              </v-card>
+                  <v-expansion-panel-content>
+                    <v-card class="task-card">
+                      <v-card-title>
+                        <h4>ID: {{ task.task_id }}</h4>
+                      </v-card-title>
+                      <v-card-text>
+                        <p>Task Detail: {{ task.task_detail }}</p>
+                        <p>Status: {{ task.task_status }}</p>
+                        <p>Manday: {{ task.task_manday || 0 }}</p>
+                        <p>Progress: {{ task.task_progress || 0 }}</p>
+                        <p>
+                          Plan Start:
+                          {{
+                            task.task_plan_start
+                              ? formatDate(task.task_plan_start)
+                              : "Not determined"
+                          }}
+                        </p>
+                        <p>
+                          Plan End:
+                          {{
+                            task.task_plan_end
+                              ? formatDate(task.task_plan_end)
+                              : "Not determined"
+                          }}
+                        </p>
+                        <p>
+                          Actual Start:
+                          {{
+                            task.task_actual_start
+                              ? formatDate(task.task_actual_start)
+                              : "Not determined"
+                          }}
+                        </p>
+                        <p>
+                          Actual End:
+                          {{
+                            task.task_actual_end
+                              ? formatDate(task.task_actual_end)
+                              : "Not determined"
+                          }}
+                        </p>
+                      </v-card-text>
+                    </v-card>
+                  </v-expansion-panel-content>
+                </v-expansion-panel>
+              </v-expansion-panels>
             </v-col>
           </v-row>
         </v-tab-item>
@@ -1286,5 +1403,10 @@ export default {
   height: 100%;
   object-fit: contain;
   border: 3px solid #0000002d;
+}
+
+.custom-expansion-panels {
+  border: 1px solid #ccc; /* ใส่ขอบ */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* เพิ่มเงา */
 }
 </style>
