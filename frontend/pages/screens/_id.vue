@@ -19,7 +19,7 @@
             @click="showDetails = !showDetails"
           >
             <div class="card-title">
-              <v-card-title>{{ screen_name }}</v-card-title>
+              <v-card-title> Screen name : {{ screen_name }}</v-card-title>
             </div>
             <div class="icon">
               <v-icon
@@ -31,11 +31,13 @@
             </div>
           </v-card-item>
           <v-card-subtitle @click="showDetails = !showDetails">
-            Screen Progress: {{ screen_progress }}
+            <span style="font-weight: bold; color: black; font-size: 16px">
+              Screen Progress: {{ Math.floor(screen_progress) }}%
+            </span>
             <v-progress-linear
-              color="deep-orange"
-              height="10"
-              :model-value="screen_progress"
+              color="primary"
+              height="50"
+              :value="parseFloat(screen_progress)"
               striped
             ></v-progress-linear>
           </v-card-subtitle>
