@@ -623,7 +623,6 @@
             >
               <template v-slot:activator="{ on }">
                 <v-text-field
-                  v-model="newTask.task_plan_start"
                   label="Plan Start"
                   prepend-icon="mdi-calendar"
                   readonly
@@ -653,7 +652,6 @@
             >
               <template v-slot:activator="{ on }">
                 <v-text-field
-                  v-model="newTask.task_plan_end"
                   label="Plan End"
                   prepend-icon="mdi-calendar"
                   readonly
@@ -673,7 +671,6 @@
                 @input="calculateManday"
               ></v-date-picker>
             </v-menu>
-
             <!-- Manday -->
             <v-text-field
               v-model="newTask.task_manday"
