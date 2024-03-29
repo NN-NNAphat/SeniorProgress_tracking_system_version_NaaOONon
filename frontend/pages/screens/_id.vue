@@ -48,12 +48,21 @@
               <v-card-text>
                 <p>
                   Plan Start:
-                  {{ screen_plan_start ? screen_plan_start : "Not determined" }}
+                  {{
+                    screen_plan_start
+                      ? formatDate(screen_plan_start)
+                      : "Not determined"
+                  }}
                 </p>
                 <p>
                   Plan End:
-                  {{ screen_plan_end ? screen_plan_end : "Not determined" }}
+                  {{
+                    screen_plan_end
+                      ? formatDate(screen_plan_end)
+                      : "Not determined"
+                  }}
                 </p>
+
                 <p>Screen Manday: {{ screen_manday }}</p>
                 <p>Screen Level: {{ screen_level }}</p>
                 <p>Screen Type: {{ screenType }}</p>
@@ -189,7 +198,7 @@
                     Plan Start:
                     {{
                       task.task_plan_start
-                        ? task.task_plan_start.slice(0, 10)
+                        ? formatDate(task.task_plan_start)
                         : "Not determined"
                     }}
                   </p>
@@ -197,7 +206,7 @@
                     Plan End:
                     {{
                       task.task_plan_end
-                        ? task.task_plan_end.slice(0, 10)
+                        ? formatDate(task.task_plan_end)
                         : "Not determined"
                     }}
                   </p>
