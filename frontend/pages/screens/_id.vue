@@ -91,12 +91,13 @@
           </v-card-actions>
           <v-card-text>
             <v-list>
-              <v-list-item v-for="user in filteredUserList" :key="user.user_id">
-                <!-- แสดงรูปโปรไฟล์ของผู้ใช้ -->
+              <v-list-item
+                v-for="user in paginatedUserList"
+                :key="user.user_id"
+              >
                 <v-list-item-avatar>
                   <v-img :src="user.user_pic" alt="User Profile"></v-img>
                 </v-list-item-avatar>
-                <!-- แสดงข้อมูลผู้ใช้ -->
                 <v-list-item-content>
                   <v-list-item-title>
                     {{ user.user_firstname }} {{ user.user_lastname }}
@@ -111,8 +112,17 @@
               </v-list-item>
             </v-list>
           </v-card-text>
-          <v-card-actions>
-            <v-btn color="primary" @click="closeUserListDialog">ปิด</v-btn>
+          <v-card-actions
+            class="pagination"
+            style="display: flex; justify-content: space-between"
+          >
+            <v-pagination
+              v-if="totalPagesUser > 1"
+              v-model="currentPageUser"
+              :length="totalPagesUser"
+              @input="paginateUserList"
+            ></v-pagination>
+            <v-btn color="error" @click="closeUserListDialog">ปิด</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -715,6 +725,9 @@ export default {
 
   data() {
     return {
+      currentPageUser: 1,
+      itemsPerPage: 3,
+      filteredUsers: [],
       searchUser: "",
       rules: {
         required: (value) => !!value || "Field is required",
@@ -805,6 +818,14 @@ export default {
   },
 
   computed: {
+    paginatedUserList() {
+      const start = (this.currentPageUser - 1) * this.itemsPerPage;
+      const end = this.currentPageUser * this.itemsPerPage;
+      return this.filteredUsers.slice(start, end);
+    },
+    totalPagesUser() {
+      return Math.ceil(this.filteredUsers.length / this.itemsPerPage);
+    },
     filteredUserList() {
       return this.userList.filter(
         (user) =>
@@ -890,6 +911,12 @@ export default {
     },
   },
   methods: {
+    paginateUserList(page) {
+      this.currentPageUser = page;
+    },
+    closeUserListDialog() {
+      this.userDialog = false;
+    },
     onlyEnglishNumericSymbolRule(v) {
       return (
         (v && /^[A-Za-z0-9@#$%^&*()-_+=!]+$/.test(v)) ||
@@ -899,8 +926,8 @@ export default {
     calculateManday() {
       const start = new Date(this.newTask.task_plan_start);
       const end = new Date(this.newTask.task_plan_end);
-      const diffTime = Math.abs(end - start + 1);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffTime = Math.abs(end - start);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24) + 1);
       this.newTask.task_manday = diffDays;
     },
     async deleteTask(task) {
@@ -1019,6 +1046,7 @@ export default {
 
         // Set the userList data
         this.userList = userList;
+        this.filteredUsers = userList; // ตรวจสอบว่า filteredUsers ถูกตั้งค่าให้เป็น userList หรือไม่
         this.userListCreate = userList.map((user) => ({
           user_id: user.id,
           user_name: `${user.user_position} : ${user.user_firstname} ${user.user_lastname}`,
