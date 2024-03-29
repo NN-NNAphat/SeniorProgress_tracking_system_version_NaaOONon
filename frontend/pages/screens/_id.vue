@@ -671,11 +671,11 @@
                 @input="calculateManday"
               ></v-date-picker>
             </v-menu>
-            <!-- Manday -->
             <v-text-field
               v-model="newTask.task_manday"
               label="Manday"
               required
+              @change="calculateManday"
             ></v-text-field>
 
             <!-- Member ID -->
@@ -903,7 +903,7 @@ export default {
     newTask: {
       deep: true,
       handler(newVal) {
-        this.newTask.task_manday = this.calculatedManday;
+        this.calculateManday();
       },
     },
   },
@@ -921,12 +921,25 @@ export default {
       );
     },
     calculateManday() {
-      const start = new Date(this.newTask.task_plan_start);
-      const end = new Date(this.newTask.task_plan_end);
-      const diffTime = Math.abs(end - start);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24) + 1);
-      this.newTask.task_manday = diffDays;
+      // Check if both task_plan_start and task_plan_end are selected
+      if (this.newTask.task_plan_start && this.newTask.task_plan_end) {
+        const start = new Date(this.newTask.task_plan_start);
+        const end = new Date(this.newTask.task_plan_end);
+
+        // เพิ่มหนึ่งวันเพื่อครอบคลุมวันสิ้นสุดด้วย
+        end.setDate(end.getDate() + 1);
+
+        // หาความต่างระหว่างวันเริ่มและวันสิ้นสุดและคำนวณ Manday
+        const oneDay = 24 * 60 * 60 * 1000; // หนึ่งวันในมิลลิวินาที
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / oneDay);
+        this.newTask.task_manday = diffDays;
+      } else {
+        // If either task_plan_start or task_plan_end is not selected, set Manday to null
+        this.newTask.task_manday = null;
+      }
     },
+
     async deleteTask(task) {
       try {
         const response = await fetch(
