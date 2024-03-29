@@ -513,23 +513,22 @@
               label="Manday"
               required
             ></v-text-field>
+
+            <!-- Member ID -->
             <v-select
               v-model="editedTask.task_member_id"
               :items="userListCreate"
               item-value="user_id"
               item-text="user_name"
               label="Member ID"
-              outlined
-              dense
+              required
             >
-              <template #item="{ item }">
-                <v-list-item-avatar :size="40">
-                  <v-img :src="item.user_pic" contain></v-img>
+              <template v-slot:item="{ item }">
+                <v-list-item-avatar>
+                  <v-img :src="item.user_pic" />
                 </v-list-item-avatar>
                 <v-list-item-content>
-                  <v-list-item-title
-                    v-text="item.user_name"
-                  ></v-list-item-title>
+                  <v-list-item-title>{{ item.user_name }}</v-list-item-title>
                 </v-list-item-content>
               </template>
             </v-select>
@@ -585,23 +584,66 @@
             ></v-select>
 
             <!-- Plan Start -->
-            <v-text-field
-              v-model="newTask.task_plan_start"
-              label="Plan Start"
-              type="date"
-              required
-              @input="calculateManday"
-            ></v-text-field>
+            <v-menu
+              v-model="planStartMenu"
+              :close-on-content-click="false"
+              :nudge-right="40"
+              transition="scale-transition"
+              offset-y
+              max-width="300px"
+            >
+              <template v-slot:activator="{ on }">
+                <v-text-field
+                  v-model="newTask.task_plan_start"
+                  label="Plan Start"
+                  prepend-icon="mdi-calendar"
+                  readonly
+                  v-on="on"
+                  required
+                  @input="calculateManday"
+                  :value="formatDate(newTask.task_plan_start)"
+                ></v-text-field>
+              </template>
+              <v-date-picker
+                v-model="newTask.task_plan_start"
+                no-title
+                scrollable
+                max-width="300px"
+                @input="calculateManday"
+              ></v-date-picker>
+            </v-menu>
 
             <!-- Plan End -->
-            <v-text-field
-              v-model="newTask.task_plan_end"
-              label="Plan End"
-              type="date"
-              required
-              @input="calculateManday"
-              :min="newTask.task_plan_start"
-            ></v-text-field>
+            <v-menu
+              v-model="planEndMenu"
+              :close-on-content-click="false"
+              :nudge-right="40"
+              transition="scale-transition"
+              offset-y
+              max-width="300px"
+            >
+              <template v-slot:activator="{ on }">
+                <v-text-field
+                  v-model="newTask.task_plan_end"
+                  label="Plan End"
+                  prepend-icon="mdi-calendar"
+                  readonly
+                  v-on="on"
+                  required
+                  :min="newTask.task_plan_start"
+                  @input="calculateManday"
+                  :value="formatDate(newTask.task_plan_end)"
+                ></v-text-field>
+              </template>
+              <v-date-picker
+                v-model="newTask.task_plan_end"
+                no-title
+                scrollable
+                max-width="300px"
+                :min="newTask.task_plan_start"
+                @input="calculateManday"
+              ></v-date-picker>
+            </v-menu>
 
             <!-- Manday -->
             <v-text-field
