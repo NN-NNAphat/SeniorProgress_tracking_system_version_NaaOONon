@@ -162,9 +162,9 @@ router.get("/getOne/:id", async (req, res) => {
         Screens.*,
         AVG(tasks.task_progress) AS screen_progress,
         COUNT(tasks.id) AS task_count,
-        DATE(MIN(Screens.screen_plan_start)) AS screen_plan_start,
-        DATE(MAX(Screens.screen_plan_end)) AS screen_plan_end,
-        DATEDIFF(MAX(tasks.task_plan_end), MIN(tasks.task_plan_start)) AS screen_manday
+        DATE(MIN(tasks.task_plan_start)) AS screen_plan_start,
+          DATE(MAX(tasks.task_plan_end)) AS screen_plan_end,
+          DATEDIFF(MAX(tasks.task_plan_end), MIN(tasks.task_plan_start)) AS screen_manday
       FROM
         Screens
       LEFT JOIN tasks ON Screens.id = tasks.screen_id
