@@ -77,9 +77,21 @@
       <v-dialog v-model="userDialog" max-width="500" @keydown.stop>
         <v-card>
           <v-card-title>ข้อมูลผู้ใช้ในระบบ</v-card-title>
+          <!-- เพิ่มช่องค้นหา User -->
+          <v-card-actions>
+            <v-row no-gutters>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="searchUser"
+                  label="Search"
+                  clearable
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </v-card-actions>
           <v-card-text>
             <v-list>
-              <v-list-item v-for="user in userList" :key="user.user_id">
+              <v-list-item v-for="user in filteredUserList" :key="user.user_id">
                 <!-- แสดงรูปโปรไฟล์ของผู้ใช้ -->
                 <v-list-item-avatar>
                   <v-img :src="user.user_pic" alt="User Profile"></v-img>
@@ -703,6 +715,7 @@ export default {
 
   data() {
     return {
+      searchUser: "",
       rules: {
         required: (value) => !!value || "Field is required",
         maxManday: (value) =>
@@ -792,6 +805,23 @@ export default {
   },
 
   computed: {
+    filteredUserList() {
+      return this.userList.filter(
+        (user) =>
+          user.user_firstname
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_lastname
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_position
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_department
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase())
+      );
+    },
     calculatedManday() {
       // Check if both task_plan_start and task_plan_end are selected
       if (this.newTask.task_plan_start && this.newTask.task_plan_end) {
