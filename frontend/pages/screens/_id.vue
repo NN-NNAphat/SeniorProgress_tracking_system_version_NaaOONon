@@ -65,10 +65,16 @@
       </v-col>
 
       <!-- แสดงรูปภาพ Dialog -->
-      <v-dialog v-model="showImageDialog" fitscreen hide-overlay>
+      <v-dialog
+        v-model="showImageDialog"
+        max-width="1000"
+        max-height="800"
+        fitscreen
+        hide-overlay
+      >
         <v-img
           :src="screen_pic"
-          style="width: 100%; height: 100%; object-fit: contain"
+          class="dialog-image"
           @click="closeImageDialog"
         ></v-img>
       </v-dialog>
@@ -1266,8 +1272,10 @@ export default {
   align-items: center;
   margin-bottom: 10px;
 }
-.not-available p {
-  width: 100px;
-  height: 100px;
+.dialog-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border: 3px solid #0000002d;
 }
 </style>
