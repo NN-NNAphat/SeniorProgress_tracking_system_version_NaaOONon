@@ -203,7 +203,6 @@
                     <p>Position: {{ task.memberDetails.user_position }}</p>
                   </v-card-text>
 
-                  <!-- Display message if User details are not available -->
                   <v-card-text v-else elevation="2" outlined>
                     <p>User not determine</p>
                   </v-card-text>
@@ -211,16 +210,18 @@
 
                 <v-card-actions class="text-right">
                   <v-btn
+                    icon
                     color="primary"
                     @click="
                       dialogEditTaskForm = true;
                       editedTask = task;
                     "
                   >
-                    Edit
+                    <v-icon>mdi-pencil</v-icon>
                   </v-btn>
-                  <v-btn color="error" @click="deleteTask(task)">
-                    Delete
+
+                  <v-btn icon color="error" @click="deleteTask(task)">
+                    <v-icon>mdi-delete</v-icon>
                   </v-btn>
                 </v-card-actions>
               </v-card>
