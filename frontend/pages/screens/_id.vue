@@ -176,7 +176,7 @@
         <v-tab-item>
           <v-row>
             <v-col
-              v-for="(task, index) in filteredTasks"
+              v-for="(task, index) in paginatedTasks"
               :key="index"
               cols="12"
               md="6"
@@ -330,6 +330,11 @@
               </v-expansion-panels>
             </v-col>
           </v-row>
+          <v-pagination
+            v-model="currentPage"
+            :length="numberOfPages"
+            @input="changePage"
+          />
         </v-tab-item>
 
         <v-tab-item v-for="(status, index) in statusOptions" :key="index">
@@ -650,15 +655,6 @@
           </v-row>
         </v-tab-item>
       </v-tabs>
-
-      <!-- Pagination -->
-      <v-row justify="center">
-        <v-pagination
-          v-model="currentPage"
-          :length="totalPages"
-          @input="paginate"
-        ></v-pagination>
-      </v-row>
     </div>
 
     <!-- Edit task dialog -->
@@ -1055,7 +1051,7 @@ export default {
       },
       tasks: [],
       currentPage: 1,
-      pageSize: 12,
+      perPage: 12,
       statusOptions: ["start", "stop", "correct", "mistake", "Not started yet"],
       showImageDialog: false,
       screen_plan_start: "",
@@ -1120,6 +1116,14 @@ export default {
   },
 
   computed: {
+    numberOfPages() {
+      return Math.ceil(this.filteredTasks.length / this.perPage);
+    },
+    paginatedTasks() {
+      const startIndex = (this.currentPage - 1) * this.perPage;
+      const endIndex = startIndex + this.perPage;
+      return this.filteredTasks.slice(startIndex, endIndex);
+    },
     paginatedUserList() {
       const start = (this.currentPageUser - 1) * this.itemsPerPage;
       const end = this.currentPageUser * this.itemsPerPage;
@@ -1169,11 +1173,7 @@ export default {
         }
       };
     },
-    paginatedTasks() {
-      const startIndex = (this.currentPage - 1) * this.pageSize;
-      const endIndex = startIndex + this.pageSize;
-      return this.tasks.slice(startIndex, endIndex);
-    },
+
     // คำนวณจำนวนหน้าทั้งหมด
     totalPages() {
       return Math.ceil(this.tasks.length / this.pageSize);
@@ -1223,6 +1223,9 @@ export default {
     },
   },
   methods: {
+    changePage(page) {
+      this.currentPage = page;
+    },
     getTasksToday() {
       const currentDate = new Date(); // วันที่ปัจจุบัน
       currentDate.setHours(0, 0, 0, 0); // เซ็ตเวลาให้เป็นเที่ยงคืน
