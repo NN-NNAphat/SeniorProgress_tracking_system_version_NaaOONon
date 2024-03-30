@@ -490,6 +490,165 @@
             </v-col>
           </v-row>
         </v-tab-item>
+
+        <v-tab>Task to day</v-tab>
+        <v-tab-item>
+          <v-row>
+            <v-col
+              v-for="(task, index) in tasksToday"
+              :key="index"
+              cols="12"
+              md="6"
+              lg="4"
+            >
+              <v-expansion-panels
+                class="custom-expansion-panels"
+                style="height: 430px; overflow-y: auto"
+              >
+                <v-expansion-panel>
+                  <v-expansion-panel-header class="custom-header">
+                    <template v-slot:default="{ open }">
+                      <div>
+                        <!-- Row 1: Task Name and Progress -->
+                        <div
+                          class="d-flex justify-space-between"
+                          style="padding: 10px"
+                        >
+                          <span>ชื่องาน: {{ task.task_name }}</span>
+                          <span>Progress: {{ task.task_progress || 0 }} %</span>
+                        </div>
+                        <!-- Row 2: Task Detail -->
+                        <p style="font-size: 16px; line-height: 1.5em">
+                          Task Detail: {{ task.task_detail }}
+                        </p>
+
+                        <!-- Row 3: User Details -->
+                        <div>
+                          <v-divider></v-divider>
+                          <v-list v-if="task.memberDetails">
+                            <v-list-item>
+                              <v-list-item-avatar>
+                                <img
+                                  :src="task.memberDetails.user_pic"
+                                  alt="User Pic"
+                                />
+                              </v-list-item-avatar>
+                              <v-list-item-content>
+                                <v-list-item-title
+                                  >First Name:
+                                  {{
+                                    task.memberDetails.user_firstname
+                                  }}</v-list-item-title
+                                >
+                                <v-list-item-subtitle
+                                  >Last Name:
+                                  {{
+                                    task.memberDetails.user_lastname
+                                  }}</v-list-item-subtitle
+                                >
+                                <v-list-item-subtitle
+                                  >Position:
+                                  {{
+                                    task.memberDetails.user_position
+                                  }}</v-list-item-subtitle
+                                >
+                              </v-list-item-content>
+                            </v-list-item>
+                          </v-list>
+                          <v-card-text v-else>
+                            <div style="text-align: center">
+                              <p>User not determine</p>
+                            </div>
+                          </v-card-text>
+                          <v-divider></v-divider>
+                        </div>
+
+                        <!-- Row 4: Buttons, Plan Start, Plan End -->
+                        <div class="text-right" style="padding: 10px">
+                          <p>
+                            Plan Start:
+                            {{
+                              task.task_plan_start
+                                ? formatDate(task.task_plan_start)
+                                : "Not determined"
+                            }}
+                          </p>
+                          <p>
+                            Plan End:
+                            {{
+                              task.task_plan_end
+                                ? formatDate(task.task_plan_end)
+                                : "Not determined"
+                            }}
+                          </p>
+                          <v-btn
+                            icon
+                            color="primary"
+                            @click="
+                              dialogEditTaskForm = true;
+                              editedTask = task;
+                            "
+                          >
+                            <v-icon>mdi-pencil</v-icon>
+                          </v-btn>
+                          <v-btn icon color="error" @click="deleteTask(task)">
+                            <v-icon>mdi-delete</v-icon>
+                          </v-btn>
+                        </div>
+                      </div>
+                    </template>
+                  </v-expansion-panel-header>
+
+                  <v-expansion-panel-content>
+                    <v-card class="task-card">
+                      <v-card-title>
+                        <h4>ID: {{ task.task_id }}</h4>
+                      </v-card-title>
+                      <v-card-text>
+                        <p>Task Detail: {{ task.task_detail }}</p>
+                        <p>Status: {{ task.task_status }}</p>
+                        <p>Manday: {{ task.task_manday || 0 }}</p>
+                        <p>Progress: {{ task.task_progress || 0 }}</p>
+                        <p>
+                          Plan Start:
+                          {{
+                            task.task_plan_start
+                              ? formatDate(task.task_plan_start)
+                              : "Not determined"
+                          }}
+                        </p>
+                        <p>
+                          Plan End:
+                          {{
+                            task.task_plan_end
+                              ? formatDate(task.task_plan_end)
+                              : "Not determined"
+                          }}
+                        </p>
+                        <p>
+                          Actual Start:
+                          {{
+                            task.task_actual_start
+                              ? formatDate(task.task_actual_start)
+                              : "Not determined"
+                          }}
+                        </p>
+                        <p>
+                          Actual End:
+                          {{
+                            task.task_actual_end
+                              ? formatDate(task.task_actual_end)
+                              : "Not determined"
+                          }}
+                        </p>
+                      </v-card-text>
+                    </v-card>
+                  </v-expansion-panel-content>
+                </v-expansion-panel>
+              </v-expansion-panels>
+            </v-col>
+          </v-row>
+        </v-tab-item>
       </v-tabs>
 
       <!-- Pagination -->
@@ -1043,8 +1202,18 @@ export default {
     await this.fetchUserList();
     this.fetchTasks();
   },
-
+  created() {
+    // เรียกใช้ฟังก์ชันเมื่อโหลดหน้า
+    this.getTasksToday();
+  },
   watch: {
+    filteredTasks: {
+      handler() {
+        // เรียกใช้ฟังก์ชันเมื่อมีการเปลี่ยนแปลงใน Task ของคุณ
+        this.getTasksToday();
+      },
+      deep: true,
+    },
     // Watcher to update task_manday when task_plan_start or task_plan_end changes
     newTask: {
       deep: true,
@@ -1054,6 +1223,22 @@ export default {
     },
   },
   methods: {
+    getTasksToday() {
+      const currentDate = new Date(); // วันที่ปัจจุบัน
+      currentDate.setHours(0, 0, 0, 0); // เซ็ตเวลาให้เป็นเที่ยงคืน
+      this.tasksToday = this.filteredTasks.filter((task) => {
+        const startDate = new Date(task.task_plan_start);
+        const endDate = new Date(task.task_plan_end);
+        startDate.setHours(0, 0, 0, 0); // เซ็ตเวลาให้เป็นเที่ยงคืน
+        endDate.setHours(0, 0, 0, 0); // เซ็ตเวลาให้เป็นเที่ยงคืน
+        // ตรวจสอบว่าเวลาของ Task อยู่ในช่วงเวลาปัจจุบันหรือไม่
+        return (
+          startDate.getTime() <= currentDate.getTime() &&
+          endDate.getTime() >= currentDate.getTime()
+        );
+      });
+    },
+
     paginateUserList(page) {
       this.currentPageUser = page;
     },
