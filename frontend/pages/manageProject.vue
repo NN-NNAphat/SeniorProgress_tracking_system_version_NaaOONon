@@ -214,32 +214,38 @@
             solo
             flat
           ></v-text-field>
-          <v-data-table
-            :headers="userProjectsHeaders"
-            :items="filteredUserProjects"
-          >
-            <template v-slot:item="{ item }">
-              <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.user_firstname }}</td>
-                <td>{{ item.user_lastname }}</td>
-                <td>{{ item.user_position }}</td>
-                <td>
-                  <v-img
-                    :src="getBase64Image(item.user_pic)"
-                    height="50"
-                    contain
-                  ></v-img>
-                </td>
-                <td>
-                  <!-- Add trash icon here -->
-                  <v-icon @click="deleteUser(project_id, item)"
-                    >mdi-delete</v-icon
-                  >
-                </td>
-              </tr>
-            </template>
-          </v-data-table>
+          <v-list>
+            <v-list-item v-for="item in displayedUserProjects" :key="item.id">
+              <v-list-item-content>
+                <v-list-item-title
+                  >{{ item.user_firstname }}
+                  {{ item.user_lastname }}</v-list-item-title
+                >
+                <v-list-item-subtitle>{{
+                  item.user_position
+                }}</v-list-item-subtitle>
+              </v-list-item-content>
+
+              <v-list-item-avatar>
+                <v-img
+                  :src="getBase64Image(item.user_pic)"
+                  height="50"
+                  contain
+                ></v-img>
+              </v-list-item-avatar>
+
+              <v-list-item-action>
+                <v-btn icon @click="deleteUser(project_id, item)">
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </v-list-item-action>
+            </v-list-item>
+          </v-list>
+          <v-pagination
+            v-model="currentPage"
+            :length="totalPages"
+            @input="updateDisplayedUserProjects"
+          ></v-pagination>
         </v-card-text>
         <v-card-actions>
           <v-btn color="blue darken-1" text @click="dialogUserProjects = false"
@@ -307,6 +313,9 @@ export default {
   layout: "admin",
   data() {
     return {
+      page: 0,
+      currentPage: 1,
+      itemsPerPage: 2,
       selectedUsersAF: [],
       project_id: null,
       displayText: "",
@@ -369,6 +378,18 @@ export default {
     };
   },
   methods: {
+    updateDisplayedUserProjects() {
+      // อัปเดตหน้าที่แสดงข้อมูลผู้ใช้เมื่อเปลี่ยนหน้า
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+      this.displayedUserProjects = this.filteredUserProjects.slice(
+        startIndex,
+        endIndex
+      );
+    },
+    setPage(pageNumber) {
+      this.currentPage = pageNumber;
+    },
     async manageUserProjects(item) {
       try {
         const project_id = item.id; // ดึง id ของ project จาก item ที่รับเข้ามา
@@ -832,6 +853,14 @@ export default {
     },
   },
   computed: {
+    totalPages() {
+      return Math.ceil(this.filteredUserProjects.length / this.itemsPerPage);
+    },
+    displayedUserProjects() {
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+      return this.filteredUserProjects.slice(startIndex, endIndex);
+    },
     developers() {
       // กรอง availableUsers เพื่อเลือกเฉพาะ user_position เป็น "Developer"
       return this.availableUsers.filter(
