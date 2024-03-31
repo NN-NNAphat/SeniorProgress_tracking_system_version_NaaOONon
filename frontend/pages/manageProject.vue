@@ -18,7 +18,7 @@
     </v-row>
 
     <!-- Search bar -->
-    <v-row no-gutters>
+    <v-row no-gutters justify-content="flex-end" align-items="flex-end">
       <v-col cols="12">
         <input
           type="text"
@@ -26,13 +26,30 @@
           placeholder="Search..."
           style="
             margin-bottom: 10px;
-            width: 100%;
+            width: 70%;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 16px;
           "
         />
+
+        <v-btn
+          color="primary"
+          class="text-none mb-4"
+          @click="goToCreateProject"
+          style="margin-left: 50px; width: 10%; height: 70%"
+        >
+          Create Project
+        </v-btn>
+        <v-btn
+          color="primary"
+          @click="goToHistoryProject"
+          style="margin-left: 10px; width: 10%; height: 70%"
+          class="text-none mb-4"
+        >
+          <v-icon>mdi-delete</v-icon> &nbsp;Bin
+        </v-btn>
       </v-col>
     </v-row>
 
@@ -42,37 +59,39 @@
       :items="filteredProjects"
       :sort-by="[{ key: 'project_id', order: 'asc' }]"
     >
-      <template v-slot:top>
-        <v-toolbar flat>
-          <v-toolbar-title>Project Management</v-toolbar-title>
-          <v-divider class="mx-4" inset vertical></v-divider>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" dark @click="goToCreateProject"
-            >New Project</v-btn
-          >
-          <v-btn
-            color="primary"
-            dark
-            @click="goToHistoryProject"
-            style="margin-left: 10px"
-            >Show History Project</v-btn
-          >
-        </v-toolbar>
-      </template>
-
       <template v-slot:item.actions="{ item }">
-        <v-icon class="me-2" size="20" px @click="openEditDialog(item)">
-          mdi-pencil-circle
-        </v-icon>
-        <v-icon size="20" px @click="softDeleteProject(item)">
-          mdi-delete-empty
-        </v-icon>
-        <v-btn size="30" px @click="viewProjectDetails(item)">
-          ProjectDetails
-        </v-btn>
-        <v-btn size="30" px @click="manageUserProjects(item)">
-          manageUserProjects
-        </v-btn>
+        <div>
+          <!-- Dropdown menu for other actions -->
+          <v-menu offset-y>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn v-bind="attrs" v-on="on" icon>
+                <v-icon size="20" px>mdi-dots-vertical</v-icon>
+              </v-btn>
+            </template>
+            <v-list>
+              <!-- Edit action -->
+              <v-list-item @click="manageUserProjects(item)">
+                <v-list-item-content>Assing</v-list-item-content>
+              </v-list-item>
+              <v-list-item @click="openEditDialog(item)">
+                <v-list-item-content>Edit</v-list-item-content>
+              </v-list-item>
+              <!-- Delete action -->
+              <v-list-item @click="softDeleteProject(item)">
+                <v-list-item-content class="red--text"
+                  >Delete</v-list-item-content
+                >
+              </v-list-item>
+
+              <!-- Manage User Projects action -->
+            </v-list>
+          </v-menu>
+
+          <!-- Icon for "Manage User Projects" -->
+          <v-btn @click="manageUserProjects(item)" icon>
+            <v-icon>mdi-menu-right</v-icon>
+          </v-btn>
+        </div>
       </template>
     </v-data-table>
 
@@ -335,13 +354,13 @@ export default {
         project_name_ENG: "",
       },
       headers: [
-        { text: "Project Code", value: "project_id" },
-        { text: "Project Name (ENG)", value: "project_name_ENG" },
-        { text: "Project Name (TH)", value: "project_name_TH" },
+        { text: "Project ID", value: "project_id" },
+        { text: "Project Name", value: "project_name_ENG" },
+        { text: "Thai Name ", value: "project_name_TH" },
         { text: "Progress (%)", value: "project_progress" },
         { text: "Planned Start", value: "project_plan_start" },
         { text: "Planned End", value: "project_plan_end" },
-        { text: "Actions", value: "actions", sortable: false },
+        { text: "Action", value: "actions", sortable: false },
       ],
       defaultProject: {
         project_name_TH: "",
@@ -350,7 +369,6 @@ export default {
     };
   },
   methods: {
-    
     async manageUserProjects(item) {
       try {
         const project_id = item.id; // ดึง id ของ project จาก item ที่รับเข้ามา
