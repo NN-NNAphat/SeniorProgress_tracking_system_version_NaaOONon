@@ -143,17 +143,6 @@
       </v-dialog>
     </v-row>
 
-    <!-- Search bar -->
-    <v-row no-gutters>
-      <v-col cols="12">
-        <v-text-field
-          v-model="searchQuery"
-          label="Search"
-          clearable
-        ></v-text-field>
-      </v-col>
-    </v-row>
-
     <!-- Task list -->
     <div class="task-list">
       <!-- ScreenName and Progress -->
@@ -167,6 +156,19 @@
       </div>
       <v-divider></v-divider>
 
+      <!-- Search bar -->
+      <v-row no-gutters>
+        <v-col cols="12">
+          <v-text-field
+            v-model="searchQuery"
+            label="Search"
+            clearable
+          ></v-text-field>
+        </v-col>
+      </v-row>
+
+      <v-divider></v-divider>
+
       <!-- v-tabs for filtering tasks by status -->
       <v-tabs v-model="selectedStatus">
         <v-tab>All</v-tab>
@@ -175,6 +177,38 @@
         }}</v-tab>
         <v-tab-item>
           <v-row>
+            <!-- Dropdown for sorting -->
+            <v-col cols="12" class="text-right">
+              <v-menu offset-y>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn text v-bind="attrs" v-on="on" class="text-right">
+                    Filter sort by <v-icon>mdi-menu-down</v-icon>
+                  </v-btn>
+                </template>
+                <v-list>
+                  <v-list-item @click="sortTasks('task_name')"
+                    >Sort by Task Name</v-list-item
+                  >
+                  <v-list-item @click="sortTasks('task_progress')"
+                    >Sort by Progress</v-list-item
+                  >
+                  <v-list-item @click="sortTasks('task_plan_start')"
+                    >Sort by Plan Start first date</v-list-item
+                  >
+                  <v-list-item @click="sortTasks('task_plan_start_last')"
+                    >Sort by Plan Start last date</v-list-item
+                  >
+                  <v-list-item @click="sortTasks('task_plan_end')"
+                    >Sort by Plan End first date</v-list-item
+                  >
+                  <v-list-item @click="sortTasks('task_plan_end_last')"
+                    >Sort by Plan End last date</v-list-item
+                  >
+                  <!-- Add more sorting options as needed -->
+                </v-list>
+              </v-menu>
+            </v-col>
+
             <v-col
               v-for="(task, index) in paginatedTasks"
               :key="index"
@@ -330,6 +364,8 @@
               </v-expansion-panels>
             </v-col>
           </v-row>
+
+          <!-- Pagination -->
           <v-pagination
             v-model="currentPage"
             :length="numberOfPages"
@@ -1223,6 +1259,46 @@ export default {
     },
   },
   methods: {
+    sortTasks(criteria) {
+      // Clone the tasks array to avoid mutating the original array
+      let sortedTasks = [...this.tasks];
+
+      // Sort the tasks based on the selected criteria
+      switch (criteria) {
+        case "task_name":
+          sortedTasks.sort((a, b) => (a.task_name > b.task_name ? 1 : -1));
+          break;
+        case "task_progress":
+          sortedTasks.sort((a, b) => a.task_progress - b.task_progress);
+          break;
+        case "task_plan_start":
+          sortedTasks.sort(
+            (a, b) => new Date(a.task_plan_start) - new Date(b.task_plan_start)
+          );
+          break;
+        case "task_plan_start_last":
+          sortedTasks.sort(
+            (a, b) => new Date(b.task_plan_start) - new Date(a.task_plan_start)
+          );
+          break;
+        case "task_plan_end":
+          sortedTasks.sort(
+            (a, b) => new Date(a.task_plan_end) - new Date(b.task_plan_end)
+          );
+          break;
+        case "task_plan_end_last":
+          sortedTasks.sort(
+            (a, b) => new Date(b.task_plan_end) - new Date(a.task_plan_end)
+          );
+          break;
+        default:
+          // Do nothing if the criteria doesn't match any case
+          break;
+      }
+
+      // Update the tasks with the sorted array
+      this.tasks = sortedTasks;
+    },
     changePage(page) {
       this.currentPage = page;
     },
@@ -1617,5 +1693,8 @@ export default {
   flex-direction: column;
   justify-content: center;
   height: 100%;
+}
+.text-right {
+  text-align: right;
 }
 </style>
