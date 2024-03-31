@@ -12,7 +12,11 @@
     <!-- Greeting and current date/time -->
     <v-row no-gutters class="mt-4">
       <v-col class="text-left" style="margin-right: 16px">
-        <h1 class="text-01">{{ greeting }}, Bee</h1>
+        <h1 class="text-01">{{ greeting }}</h1>
+        <h1>
+          {{ this.$auth.user.user_position }} :
+          {{ this.$auth.user.user_firstname }}
+        </h1>
         <p class="text-01">{{ currentDateTime }}</p>
       </v-col>
     </v-row>
@@ -43,7 +47,7 @@
           Create Project
         </v-btn>
         <v-btn
-          color="primary"
+          color="error"
           @click="goToHistoryProject"
           style="margin-left: 10px; width: 10%; height: 70%"
           class="text-none mb-4"
@@ -88,7 +92,7 @@
           </v-menu>
 
           <!-- Icon for "Manage User Projects" -->
-          <v-btn @click="manageUserProjects(item)" icon>
+          <v-btn @click="viewProjectDetails(item)" icon>
             <v-icon>mdi-menu-right</v-icon>
           </v-btn>
         </div>
@@ -109,14 +113,20 @@
             <v-text-field
               v-model="newProject.project_id"
               label="Project ID"
+              required
+              :rules="[rules.required, rules.projectId]"
             ></v-text-field>
             <v-text-field
               v-model="newProject.project_name_TH"
               label="Project Name (TH)"
+              required
+              :rules="[rules.required]"
             ></v-text-field>
             <v-text-field
               v-model="newProject.project_name_ENG"
               label="Project Name (EN)"
+              required
+              :rules="[rules.required]"
             ></v-text-field>
 
             <!-- New fields for SA, DEV, IMP selection -->
@@ -160,8 +170,10 @@
             </v-select>
 
             <!-- Button to submit -->
-            <v-btn type="submit">Create</v-btn>
-            <v-btn @click="createProjectDialog = false">Cancel</v-btn>
+            <v-btn color="primary" type="submit">Create</v-btn>
+            <v-btn color="error" @click="createProjectDialog = false"
+              >Cancel</v-btn
+            >
           </v-form>
         </v-card-text>
       </v-card>
@@ -194,8 +206,10 @@
             <!-- Add more fields as needed -->
             <!-- You can also add selection fields for system analyst and member -->
             <!-- Add buttons to submit and cancel -->
-            <v-btn type="submit">Update</v-btn>
-            <v-btn @click="editProjectDialog = false">Cancel</v-btn>
+            <v-btn color="primary" type="submit">Update</v-btn>
+            <v-btn color="error" @click="editProjectDialog = false"
+              >Cancel</v-btn
+            >
           </v-form>
         </v-card-text>
       </v-card>
@@ -248,12 +262,10 @@
           ></v-pagination>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="blue darken-1" text @click="dialogUserProjects = false"
-            >Close</v-btn
-          >
           <!-- Button to open nested dialog -->
-          <v-btn color="blue darken-1" text @click="openNestedDialog()"
-            >Assign User</v-btn
+          <v-btn color="primary" @click="openNestedDialog()">Assign User</v-btn>
+          <v-btn color="error" @click="dialogUserProjects = false"
+            >Cancel</v-btn
           >
         </v-card-actions>
       </v-card>
@@ -309,13 +321,23 @@ import Swal from "sweetalert2";
 import axios from "axios";
 
 export default {
+  middleware: "auth",
   name: "ProjectManagement",
   layout: "admin",
   data() {
     return {
+      user: this.$auth.user,
+      loggedIn: this.$auth.loggedIn,
+
+      rules: {
+        required: (value) => !!value || "Please fill this field.",
+        projectId: (value) =>
+          /^[A-Za-z0-9]+$/.test(value) ||
+          "Project ID can only contain letters and numbers.",
+      },
       page: 0,
       currentPage: 1,
-      itemsPerPage: 2,
+      itemsPerPage: 5,
       selectedUsersAF: [],
       project_id: null,
       displayText: "",
