@@ -182,15 +182,21 @@
               <v-menu offset-y>
                 <template v-slot:activator="{ on, attrs }">
                   <v-btn text v-bind="attrs" v-on="on" class="text-right">
-                    Filter sort by <v-icon>mdi-menu-down</v-icon>
+                    sort by <v-icon>mdi-menu-down</v-icon>
                   </v-btn>
                 </template>
                 <v-list>
                   <v-list-item @click="sortTasks('task_name')"
-                    >Sort by Task Name</v-list-item
+                    >Sort by Task Name A-Z</v-list-item
+                  >
+                  <v-list-item @click="sortTasks('-task_name')"
+                    >Sort by Task Name Z-A</v-list-item
                   >
                   <v-list-item @click="sortTasks('task_progress')"
-                    >Sort by Progress</v-list-item
+                    >Sort by Progress (Low to High)</v-list-item
+                  >
+                  <v-list-item @click="sortTasks('-task_progress')"
+                    >Sort by Progress (High to Low)</v-list-item
                   >
                   <v-list-item @click="sortTasks('task_plan_start')"
                     >Sort by Plan Start first date</v-list-item
@@ -293,11 +299,9 @@
                   </div>
                 </v-card-text>
                 <v-card-actions>
-                  <!-- Row 4: Buttons, Plan Start, Plan End -->
-                  <div
-                    class="text-right"
-                    style="padding: 10px; margin-right: auto"
-                  >
+                  <!-- Row 4: Plan Start, Plan End, Buttons -->
+                  <div style="display: flex; flex-direction: column">
+                    <!-- Plan Start -->
                     <p>
                       Plan Start:
                       {{
@@ -306,6 +310,8 @@
                           : "Not determined"
                       }}
                     </p>
+
+                    <!-- Plan End -->
                     <p>
                       Plan End:
                       {{
@@ -314,19 +320,23 @@
                           : "Not determined"
                       }}
                     </p>
-                    <v-btn
-                      icon
-                      color="primary"
-                      @click.stop="
-                        dialogEditTaskForm = true;
-                        editedTask = task;
-                      "
-                    >
-                      <v-icon>mdi-pencil</v-icon>
-                    </v-btn>
-                    <v-btn icon color="error" @click.stop="deleteTask(task)">
-                      <v-icon>mdi-delete</v-icon>
-                    </v-btn>
+
+                    <!-- Buttons -->
+                    <div>
+                      <v-btn
+                        icon
+                        color="primary"
+                        @click.stop="
+                          dialogEditTaskForm = true;
+                          editedTask = task;
+                        "
+                      >
+                        <v-icon>mdi-pencil</v-icon>
+                      </v-btn>
+                      <v-btn icon color="error" @click.stop="deleteTask(task)">
+                        <v-icon>mdi-delete</v-icon>
+                      </v-btn>
+                    </div>
                   </div>
                 </v-card-actions>
               </v-card>
@@ -427,11 +437,9 @@
                   </div>
                 </v-card-text>
                 <v-card-actions>
-                  <!-- Row 4: Buttons, Plan Start, Plan End -->
-                  <div
-                    class="text-right"
-                    style="padding: 10px; margin-right: auto"
-                  >
+                  <!-- Row 4: Plan Start, Plan End, Buttons -->
+                  <div style="display: flex; flex-direction: column">
+                    <!-- Plan Start -->
                     <p>
                       Plan Start:
                       {{
@@ -440,6 +448,8 @@
                           : "Not determined"
                       }}
                     </p>
+
+                    <!-- Plan End -->
                     <p>
                       Plan End:
                       {{
@@ -448,19 +458,23 @@
                           : "Not determined"
                       }}
                     </p>
-                    <v-btn
-                      icon
-                      color="primary"
-                      @click.stop="
-                        dialogEditTaskForm = true;
-                        editedTask = task;
-                      "
-                    >
-                      <v-icon>mdi-pencil</v-icon>
-                    </v-btn>
-                    <v-btn icon color="error" @click.stop="deleteTask(task)">
-                      <v-icon>mdi-delete</v-icon>
-                    </v-btn>
+
+                    <!-- Buttons -->
+                    <div>
+                      <v-btn
+                        icon
+                        color="primary"
+                        @click.stop="
+                          dialogEditTaskForm = true;
+                          editedTask = task;
+                        "
+                      >
+                        <v-icon>mdi-pencil</v-icon>
+                      </v-btn>
+                      <v-btn icon color="error" @click.stop="deleteTask(task)">
+                        <v-icon>mdi-delete</v-icon>
+                      </v-btn>
+                    </div>
                   </div>
                 </v-card-actions>
               </v-card>
@@ -1230,8 +1244,14 @@ export default {
         case "task_name":
           sortedTasks.sort((a, b) => (a.task_name > b.task_name ? 1 : -1));
           break;
+        case "-task_name":
+          sortedTasks.sort((a, b) => (a.task_name < b.task_name ? 1 : -1));
+          break;
         case "task_progress":
           sortedTasks.sort((a, b) => a.task_progress - b.task_progress);
+          break;
+        case "-task_progress":
+          sortedTasks.sort((a, b) => b.task_progress - a.task_progress);
           break;
         case "task_plan_start":
           sortedTasks.sort(
@@ -1261,6 +1281,7 @@ export default {
       // Update the tasks with the sorted array
       this.tasks = sortedTasks;
     },
+
     changePage(page) {
       this.currentPage = page;
     },
