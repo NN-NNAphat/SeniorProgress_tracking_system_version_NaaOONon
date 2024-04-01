@@ -9,7 +9,9 @@
           <v-card-title>
             Project name : {{ project.project_name_ENG }}
             <v-spacer></v-spacer>
-            <v-icon @click.stop="showUserDialog = true"> mdi-account-group </v-icon>
+            <v-icon @click.stop="showUserDialog = true">
+              mdi-account-group
+            </v-icon>
           </v-card-title>
           <v-card-subtitle>
             Project Progress: {{ Math.floor(project.project_progress) }}
@@ -119,7 +121,14 @@
           <td>{{ item.system_nameEN }}</td>
           <td>{{ item.system_shortname }}</td>
           <td>{{ item.screen_count ? item.screen_count : "0" }}</td>
-          <td>{{ item.system_progress ? item.system_progress : "0" }}</td>
+
+          <td
+            :style="{
+              color: getProgressColor(item.system_progress),
+            }"
+          >
+            {{ item.system_progress ? item.system_progress : "0" }}
+          </td>
           <td>
             {{
               item.system_plan_start ? item.system_plan_start : "Not determined"
@@ -131,19 +140,35 @@
           <td>{{ item.system_manday ? item.system_manday : "0" }}</td>
           <!-- เพิ่มปุ่ม manage user systems -->
           <td>
-            <v-icon class="me-2" size="20" px @click="openEditDialog(item)"
-              >mdi-pencil-circle</v-icon
-            >
-            <v-icon size="20" px @click="confirmDeleteSystem(item)"
-              >mdi-delete-empty</v-icon
-            >
-            <v-btn @click="goToSystemsDetail(item.id)" style="margin-left: 10px"
-              >Systems Detail</v-btn
-            >
-            <!-- เพิ่มปุ่ม manage user systems -->
-            <v-btn @click="openManageUserDialog(item)"
-              >Manage User Systems</v-btn
-            >
+            <!-- Dropdown menu for other actions -->
+            <v-menu offset-y>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn v-bind="attrs" v-on="on" icon>
+                  <v-icon size="20" px>mdi-dots-vertical</v-icon>
+                </v-btn>
+              </template>
+              <v-list>
+                <!-- Manage User Systems action -->
+                <v-list-item @click="openManageUserDialog(item)">
+                  <v-list-item-content>Assign</v-list-item-content>
+                </v-list-item>
+                <!-- Edit action -->
+                <v-list-item @click="openEditDialog(item)">
+                  <v-list-item-content>Edit</v-list-item-content>
+                </v-list-item>
+                <!-- Delete action -->
+                <v-list-item @click="confirmDeleteSystem(item)">
+                  <v-list-item-content class="red--text"
+                    >Delete</v-list-item-content
+                  >
+                </v-list-item>
+                <!-- Systems Detail action -->
+              </v-list>
+            </v-menu>
+
+            <v-btn @click="goToSystemsDetail(item.id)" icon>
+              <v-icon>mdi-menu-right</v-icon>
+            </v-btn>
           </td>
         </tr>
       </template>
@@ -163,18 +188,26 @@
             <v-text-field
               v-model="newSystem.system_id"
               label="System ID"
+              required
+              :rules="[(v) => !!v || 'System ID is required']"
             ></v-text-field>
             <v-text-field
               v-model="newSystem.system_nameTH"
               label="System Name (TH)"
+              required
+              :rules="[(v) => !!v || 'System Name (TH) is required']"
             ></v-text-field>
             <v-text-field
               v-model="newSystem.system_nameEN"
               label="System Name (EN)"
+              required
+              :rules="[(v) => !!v || 'System Name (EN) is required']"
             ></v-text-field>
             <v-text-field
               v-model="newSystem.system_shortname"
               label="Short Name"
+              required
+              :rules="[(v) => !!v || 'Short Name is required']"
             ></v-text-field>
 
             <!-- Add v-select for selecting users -->
@@ -185,7 +218,17 @@
               item-value="user_id"
               item-text="displayName"
               multiple
-            ></v-select>
+              required
+              :rules="[
+                (v) => !!v || 'At least one Implementer must be selected',
+              ]"
+            >
+              <template v-slot:prepend-item>
+                <v-list-item @click="selectAllImplementers">
+                  <v-list-item-content>Select All</v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-select>
 
             <v-select
               v-model="selectedUsers"
@@ -194,7 +237,15 @@
               item-value="user_id"
               item-text="displayName"
               multiple
-            ></v-select>
+              required
+              :rules="[(v) => !!v || 'At least one Developer must be selected']"
+            >
+              <template v-slot:prepend-item>
+                <v-list-item @click="selectAllDevelopers">
+                  <v-list-item-content>Select All</v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-select>
 
             <v-select
               v-model="selectedUsers"
@@ -203,10 +254,23 @@
               item-value="user_id"
               item-text="displayName"
               multiple
-            ></v-select>
+              required
+              :rules="[
+                (v) => !!v || 'At least one System Analyst must be selected',
+              ]"
+            >
+              <template v-slot:prepend-item>
+                <v-list-item @click="selectAllSystemAnalysts">
+                  <v-list-item-content>Select All</v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-select>
 
-            <v-btn type="submit">Create</v-btn>
-            <v-btn @click="createSystemDialog = false">Cancel</v-btn>
+            <!-- Buttons to submit -->
+            <v-btn color="primary" type="submit">Create</v-btn>
+            <v-btn color="error" @click="createSystemDialog = false"
+              >Cancel</v-btn
+            >
           </v-form>
         </v-card-text>
       </v-card>
@@ -237,8 +301,10 @@
               label="Short Name"
             ></v-text-field>
 
-            <v-btn type="submit">Update</v-btn>
-            <v-btn @click="editSystemDialog = false">Cancel</v-btn>
+            <v-btn color="primary" type="submit">Update</v-btn>
+            <v-btn color="error" @click="editSystemDialog = false"
+              >Cancel</v-btn
+            >
           </v-form>
         </v-card-text>
       </v-card>
@@ -442,6 +508,47 @@ export default {
     };
   },
   methods: {
+    selectAllImplementers() {
+      const implementers = this.filteredUsers("Implementer").map(
+        (user) => user.user_id
+      );
+      if (this.selectedUsers.length === implementers.length) {
+        this.selectedUsers = [];
+      } else {
+        this.selectedUsers = implementers;
+      }
+    },
+    selectAllDevelopers() {
+      const developers = this.filteredUsers("Developer").map(
+        (user) => user.user_id
+      );
+      if (this.selectedUsers.length === developers.length) {
+        this.selectedUsers = [];
+      } else {
+        this.selectedUsers = developers;
+      }
+    },
+    selectAllSystemAnalysts() {
+      const systemAnalysts = this.filteredUsers("System Analyst").map(
+        (user) => user.user_id
+      );
+      if (this.selectedUsers.length === systemAnalysts.length) {
+        this.selectedUsers = [];
+      } else {
+        this.selectedUsers = systemAnalysts;
+      }
+    },
+    getProgressColor(progress) {
+      if (progress >= 0 && progress <= 40) {
+        return "red"; // สีแดงสำหรับค่า progress 0-40
+      } else if (progress > 40 && progress <= 80) {
+        return "yellow"; // สีเหลืองสำหรับค่า progress 41-80
+      } else if (progress > 80 && progress <= 100) {
+        return "green"; // สีเขียวสำหรับค่า progress 80-100
+      } else {
+        return ""; // สีเริ่มต้นหรือสีที่ไม่ได้กำหนด
+      }
+    },
     filteredUsers(position) {
       return this.projectUsers
         .filter((user) => user.user_position === position)
@@ -689,6 +796,19 @@ export default {
     },
     async createSystem() {
       const projectId = this.$route.params.id;
+      const { system_id, system_nameTH, system_nameEN, system_shortname } =
+        this.newSystem;
+
+      // Check if any required fields are empty
+      if (!system_id || !system_nameTH || !system_nameEN || !system_shortname) {
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Please fill in all required fields",
+        });
+        return; // Stop execution if any required field is empty
+      }
+
       try {
         const response = await fetch(
           `http://localhost:7777/systems/createSystem`,
@@ -734,6 +854,7 @@ export default {
         });
       }
     },
+
     async updateSystem() {
       try {
         const response = await fetch(
