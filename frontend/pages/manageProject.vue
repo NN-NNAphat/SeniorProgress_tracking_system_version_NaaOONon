@@ -462,41 +462,52 @@ export default {
 
     async deleteUser(project_id, item) {
       try {
-        // const projectId = project_id; // ไม่จำเป็นต้องทำเช่นนี้
         if (!project_id) {
           await Swal.fire({
-            icon: "error",
-            title: "Error",
+            icon: "warning",
+            title: "Warning",
             text: "Project ID is undefined",
           });
           console.error("Error deleting user: project_id is undefined");
           return;
         }
 
-        const response = await axios.delete(
-          `http://localhost:7777/user_projects/deleteUserProjectById/${project_id}/${item.user_id}`
-        );
+        // แสดงกล่องข้อความยืนยันก่อนทำการลบผู้ใช้
+        const confirmResult = await Swal.fire({
+          icon: "warning",
+          title: "Are you sure?",
+          text: "Are you sure you want to delete this user?",
+          showCancelButton: true,
+          confirmButtonText: "Yes",
+          cancelButtonText: "No",
+        });
 
-        if (response.status === 200) {
-          // Handle success
-          await Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: response.data.message,
-          });
-          console.log(response.data.message);
-          // อัปเดตตารางผู้ใช้หลังจากลบผู้ใช้เสร็จสิ้น
-          this.fetchAvailableUsers(project_id);
-          this.fetchTeamMembers();
-          this.dialogUserProjects = false;
-        } else {
-          // Handle error
-          await Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "Failed to delete user",
-          });
-          console.error("Failed to delete user:", response.status);
+        if (confirmResult.isConfirmed) {
+          // ทำการลบผู้ใช้เมื่อผู้ใช้ยืนยันการลบ
+          const response = await axios.delete(
+            `http://localhost:7777/user_projects/deleteUserProjectById/${project_id}/${item.user_id}`
+          );
+
+          if (response.status === 200) {
+            // Handle success
+            await Swal.fire({
+              icon: "success",
+              title: "Success",
+              text: response.data.message,
+            });
+            console.log(response.data.message);
+            // อัปเดตตารางผู้ใช้หลังจากลบผู้ใช้เสร็จสิ้น
+            await this.manageUserProjects({ id: project_id }); // เรียกใช้ฟังก์ชัน manageUserProjects เพื่ออัพเดทตารางผู้ใช้
+            await this.fetchAvailableUsers(project_id);
+          } else {
+            // Handle error
+            await Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "Failed to delete user",
+            });
+            console.error("Failed to delete user:", response.status);
+          }
         }
       } catch (error) {
         await Swal.fire({
@@ -572,10 +583,12 @@ export default {
         });
         console.log("Users assigned successfully:", response.data);
         // เมื่อกำหนดผู้ใช้เสร็จสิ้น ให้เรียก fetchAvailableUsers เพื่ออัพเดตตารางผู้ใช้
-        this.fetchAvailableUsers(project_id);
+        await this.manageUserProjects({ id: project_id }); // เรียกใช้ฟังก์ชัน manageUserProjects เพื่ออัพเดทตารางผู้ใช้
+        await this.fetchAvailableUsers(project_id);
         // ปิด Dialog หลังจากกำหนดผู้ใช้เสร็จสิ้น
         this.dialogAssignUser = false;
-        this.dialogUserProjects = false;
+
+        // อัพเดทตารางผู้ใช้หลังจากกำหนดผู้ใช้เสร็จสิ้น
       } catch (error) {
         await Swal.fire({
           icon: "error",
