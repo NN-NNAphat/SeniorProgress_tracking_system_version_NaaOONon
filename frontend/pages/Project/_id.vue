@@ -312,17 +312,28 @@
 
     <!-- Show deleted systems history -->
     <v-dialog v-model="showHistoryDialog" max-width="800">
-      <v-data-table :headers="headersDelete" :items="deletedSystems">
+      <v-data-table
+        v-model:selected="selectedSystems"
+        :headers="headersDelete"
+        :items="deletedSystems"
+        show-select
+      >
         <!-- Define headers for the table -->
         <template v-slot:top>
           <v-toolbar flat>
             <v-toolbar-title>Deleted Systems History</v-toolbar-title>
             <v-divider class="mx-4" inset vertical></v-divider>
             <v-spacer></v-spacer>
+            <v-btn class="mr-3" color="green" @click="restoreSelectedSystems"
+              ><v-icon color="white" >mdi-restore</v-icon></v-btn
+            >
+            <v-btn color="error" @click="deleteSelectedHistorySystems">
+              <v-icon>mdi-delete</v-icon></v-btn
+            >
           </v-toolbar>
         </template>
 
-        <!-- Define actions for each row -->
+        <!-- Define actions for each row
         <template v-slot:item.actions="{ item }">
           <v-icon color="green" @click="restoreSystem(item)"
             >mdi-restore</v-icon
@@ -330,7 +341,7 @@
           <v-icon color="error" @click="confirmDeleteHistorySystem(item)"
             >mdi-delete</v-icon
           >
-        </template>
+        </template> -->
       </v-data-table>
     </v-dialog>
 
@@ -453,6 +464,7 @@ export default {
   layout: "admin",
   data() {
     return {
+      selectedSystems: [],
       selectedUsers: [],
       availableUsers: [],
       assignUserDialog: false,
@@ -515,7 +527,7 @@ export default {
         { text: "System Name (TH)", value: "system_nameTH" },
         { text: "System Name (EN)", value: "system_nameEN" },
         { text: "Short Name", value: "system_shortname" },
-        { text: "Actions", value: "actions", sortable: false },
+        // { text: "Actions", value: "actions", sortable: false },
       ],
     };
   },
@@ -739,64 +751,181 @@ export default {
         // Handle error fetching project
       }
     },
-    async restoreSystem(item) {
+    // async restoreSystem(item) {
+    //   try {
+    //     const confirmResult = await Swal.fire({
+    //       title: "Are you sure?",
+    //       text: "You are about to restore this system.",
+    //       icon: "warning",
+    //       showCancelButton: true,
+    //       confirmButtonColor: "#3085d6",
+    //       cancelButtonColor: "#d33",
+    //       confirmButtonText: "Yes, restore it!",
+    //     });
+
+    //     if (confirmResult.isConfirmed) {
+    //       const systemId = item.id;
+    //       const response = await fetch(
+    //         `http://localhost:7777/systems/updateSystem/${systemId}`,
+    //         {
+    //           method: "PUT",
+    //           headers: {
+    //             "Content-Type": "application/json",
+    //           },
+    //           body: JSON.stringify({
+    //             system_nameTH: item.system_nameTH,
+    //             system_nameEN: item.system_nameEN,
+    //             system_shortname: item.system_shortname,
+    //             project_id: item.project_id,
+    //             is_deleted: 0,
+    //           }),
+    //         }
+    //       );
+
+    //       if (!response.ok) {
+    //         throw new Error("Failed to restore system");
+    //       }
+
+    //       console.log("System restored successfully");
+
+    //       await Swal.fire(
+    //         "Success",
+    //         "System restored successfully.",
+    //         "success"
+    //       );
+
+    //       // Add this line to update the table automatically
+    //     }
+    //     this.fetchDeletedSystems();
+    //     this.fetchSystems();
+    //   } catch (error) {
+    //     console.error("Error restoring system:", error);
+    //     await Swal.fire(
+    //       "Error",
+    //       "An error occurred during the system restoration process.",
+    //       "error"
+    //     );
+    //   }
+    // },
+    // async confirmDeleteHistorySystem(item) {
+    //   try {
+    //     const confirmResult = await Swal.fire({
+    //       title: "Are you sure?",
+    //       text: "You won't be able to revert this!",
+    //       icon: "warning",
+    //       showCancelButton: true,
+    //       confirmButtonColor: "#3085d6",
+    //       cancelButtonColor: "#d33",
+    //       confirmButtonText: "Yes, delete it!",
+    //     });
+    //     if (confirmResult.isConfirmed) {
+    //       const systemId = item.id; // Get the ID of the system to delete
+    //       const response = await fetch(
+    //         `http://localhost:7777/systems/deleteHistorySystems/${systemId}`,
+    //         {
+    //           method: "DELETE",
+    //         }
+    //       );
+    //       if (!response.ok) {
+    //         throw new Error("Failed to delete system");
+    //       }
+    //       await Swal.fire({
+    //         icon: "success",
+    //         title: "Success",
+    //         text: "System and related data deleted successfully",
+    //       });
+    //       this.fetchDeletedSystems(); // Refresh the deleted systems data
+    //     }
+    //   } catch (error) {
+    //     console.error("Error confirming delete history system:", error);
+    //     await Swal.fire({
+    //       icon: "error",
+    //       title: "Error",
+    //       text: "Failed to delete history system",
+    //     });
+    //   }
+    // },
+    async restoreSelectedSystems() {
       try {
+        // Check if any systems are selected
+        if (this.selectedSystems.length === 0) {
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "No systems selected to restore.",
+          });
+          return;
+        }
+
         const confirmResult = await Swal.fire({
           title: "Are you sure?",
-          text: "You are about to restore this system.",
+          text: "You are about to restore the selected systems.",
           icon: "warning",
           showCancelButton: true,
           confirmButtonColor: "#3085d6",
           cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, restore it!",
+          confirmButtonText: "Yes, restore them!",
         });
 
         if (confirmResult.isConfirmed) {
-          const systemId = item.id;
-          const response = await fetch(
-            `http://localhost:7777/systems/updateSystem/${systemId}`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                system_nameTH: item.system_nameTH,
-                system_nameEN: item.system_nameEN,
-                system_shortname: item.system_shortname,
-                project_id: item.project_id,
-                is_deleted: 0,
-              }),
-            }
-          );
+          // Loop through selected systems and restore each one
+          for (const system of this.selectedSystems) {
+            const systemId = system.id;
+            const response = await fetch(
+              `http://localhost:7777/systems/updateSystem/${systemId}`,
+              {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  system_nameTH: system.system_nameTH,
+                  system_nameEN: system.system_nameEN,
+                  system_shortname: system.system_shortname,
+                  project_id: system.project_id,
+                  is_deleted: 0,
+                }),
+              }
+            );
 
-          if (!response.ok) {
-            throw new Error("Failed to restore system");
+            if (!response.ok) {
+              throw new Error("Failed to restore systems");
+            }
           }
 
-          console.log("System restored successfully");
+          console.log("Selected systems restored successfully");
 
           await Swal.fire(
             "Success",
-            "System restored successfully.",
+            "Selected systems restored successfully.",
             "success"
           );
 
-          // Add this line to update the table automatically
+          // Refresh data after restoring systems
+          this.fetchDeletedSystems();
+          this.fetchSystems(); // Update the table after restoring systems
         }
-        this.fetchDeletedSystems();
-        this.fetchSystems();
       } catch (error) {
-        console.error("Error restoring system:", error);
+        console.error("Error restoring selected systems:", error);
         await Swal.fire(
           "Error",
-          "An error occurred during the system restoration process.",
+          "An error occurred during the systems restoration process.",
           "error"
         );
       }
     },
-    async confirmDeleteHistorySystem(item) {
+    async deleteSelectedHistorySystems() {
       try {
+        // Check if any systems are selected
+        if (this.selectedSystems.length === 0) {
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "No systems selected to delete.",
+          });
+          return;
+        }
+
         const confirmResult = await Swal.fire({
           title: "Are you sure?",
           text: "You won't be able to revert this!",
@@ -804,35 +933,43 @@ export default {
           showCancelButton: true,
           confirmButtonColor: "#3085d6",
           cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, delete it!",
+          confirmButtonText: "Yes, delete them!",
         });
+
         if (confirmResult.isConfirmed) {
-          const systemId = item.id; // Get the ID of the system to delete
-          const response = await fetch(
-            `http://localhost:7777/systems/deleteHistorySystems/${systemId}`,
-            {
-              method: "DELETE",
+          // Loop through selected systems and delete each one
+          for (const system of this.selectedSystems) {
+            const systemId = system.id; // Get the ID of the system to delete
+            const response = await fetch(
+              `http://localhost:7777/systems/deleteHistorySystems/${systemId}`,
+              {
+                method: "DELETE",
+              }
+            );
+            if (!response.ok) {
+              throw new Error("Failed to delete systems");
             }
-          );
-          if (!response.ok) {
-            throw new Error("Failed to delete system");
           }
+
           await Swal.fire({
             icon: "success",
             title: "Success",
-            text: "System and related data deleted successfully",
+            text: "Selected systems and related data deleted successfully",
           });
-          this.fetchDeletedSystems(); // Refresh the deleted systems data
+
+          // Refresh deleted systems data after deletion
+          this.fetchDeletedSystems();
         }
       } catch (error) {
-        console.error("Error confirming delete history system:", error);
+        console.error("Error deleting selected history systems:", error);
         await Swal.fire({
           icon: "error",
           title: "Error",
-          text: "Failed to delete history system",
+          text: "Failed to delete selected history systems",
         });
       }
     },
+
     async goToHistorySystems() {
       await this.fetchDeletedSystems();
       this.showHistoryDialog = true;

@@ -40,11 +40,12 @@
           <v-toolbar-title>History Project</v-toolbar-title>
           <v-divider class="mx-4" inset vertical></v-divider>
           <v-spacer></v-spacer>
-          <v-btn color="error" @click="deleteSelectedProjects" class="mr-2">
-            Delete Selected
+
+          <v-btn class="mr-2" color="green" @click="restoreSelectedProjects">
+            <v-icon color="white" > mdi-restore </v-icon>
           </v-btn>
-          <v-btn color="primary" @click="restoreSelectedProjects">
-            Restore Selected
+          <v-btn color="error" @click="deleteSelectedProjects">
+            <v-icon> mdi-delete </v-icon>
           </v-btn>
         </v-toolbar>
       </template>
