@@ -206,6 +206,7 @@
               v-model="editProject.project_id"
               label="Project ID"
               readonly
+              disabled
             ></v-text-field>
             <v-text-field
               v-model="editProject.project_name_TH"
@@ -239,7 +240,11 @@
             hide-details
             solo
             flat
+            outlined
+            color="primary"
+            hint="Search here"
           ></v-text-field>
+
           <v-list>
             <v-list-item v-for="item in displayedUserProjects" :key="item.id">
               <v-list-item-avatar>
