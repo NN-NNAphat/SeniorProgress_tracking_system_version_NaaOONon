@@ -2,8 +2,7 @@
   <!-- Systems Data Table container -->
   <div class="systems-data-table">
     <v-row style="margin-bottom: 20px" align="center">
-      <!-- First v-card -->
-
+      <!-- Card detel Project -->
       <v-card class="mx-auto align-start" width="95%" hover>
         <v-card-item @click="showDetails = !showDetails">
           <v-card-title>
@@ -14,7 +13,7 @@
             </v-icon>
           </v-card-title>
           <v-card-subtitle>
-            Project Progress: {{ Math.floor(project.project_progress) }}
+            Project Progress : {{ Math.floor(project.project_progress) }}
             <v-progress-linear
               color="primary"
               height="50"
@@ -28,15 +27,20 @@
           <div v-show="showDetails">
             <v-divider></v-divider>
             <v-card-text>
-              <p>Project Manday: {{ project.project_manday }}</p>
-              <p>System Count: {{ project.system_count }}</p>
-              <p>Project Plan Start: {{ project.project_plan_start }}</p>
-              <p>Project Plan End: {{ project.project_plan_end }}</p>
+              <p>Project Manday : {{ project.project_manday || 0 }}</p>
+              <p>System Count : {{ project.system_count || 0 }}</p>
+              <p>
+                Project Plan Start :
+                {{ project.project_plan_start || "Not determined" }}
+              </p>
+              <p>
+                Project Plan End :
+                {{ project.project_plan_end || "Not determined" }}
+              </p>
             </v-card-text>
           </div>
         </v-expand-transition>
       </v-card>
-
       <v-dialog v-model="showUserDialog" max-width="600">
         <v-card>
           <v-card-title>รายชื่อคนภายในโปรเจค</v-card-title>
@@ -484,6 +488,7 @@ export default {
       selectedSystemId: "",
       selectedUser: null,
       showUserDialog: false,
+      
       dropdown: false,
       projectUsers: [],
       showDetails: false,
