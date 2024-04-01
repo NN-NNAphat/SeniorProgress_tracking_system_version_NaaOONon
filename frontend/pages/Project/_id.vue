@@ -209,22 +209,21 @@
               required
               :rules="[(v) => !!v || 'Short Name is required']"
             ></v-text-field>
-
             <!-- Add v-select for selecting users -->
             <v-select
               v-model="selectedUsers"
-              :items="filteredUsers('Implementer')"
-              label="Select Implementer"
+              :items="filteredUsers('System Analyst')"
+              label="Select System Analyst"
               item-value="user_id"
               item-text="displayName"
               multiple
               required
               :rules="[
-                (v) => !!v || 'At least one Implementer must be selected',
+                (v) => !!v || 'At least one System Analyst must be selected',
               ]"
             >
               <template v-slot:prepend-item>
-                <v-list-item @click="selectAllImplementers">
+                <v-list-item @click="selectAllSystemAnalysts">
                   <v-list-item-content>Select All</v-list-item-content>
                 </v-list-item>
               </template>
@@ -246,21 +245,20 @@
                 </v-list-item>
               </template>
             </v-select>
-
             <v-select
               v-model="selectedUsers"
-              :items="filteredUsers('System Analyst')"
-              label="Select System Analyst"
+              :items="filteredUsers('Implementer')"
+              label="Select Implementer"
               item-value="user_id"
               item-text="displayName"
               multiple
               required
               :rules="[
-                (v) => !!v || 'At least one System Analyst must be selected',
+                (v) => !!v || 'At least one Implementer must be selected',
               ]"
             >
               <template v-slot:prepend-item>
-                <v-list-item @click="selectAllSystemAnalysts">
+                <v-list-item @click="selectAllImplementers">
                   <v-list-item-content>Select All</v-list-item-content>
                 </v-list-item>
               </template>
@@ -325,7 +323,7 @@
             <v-divider class="mx-4" inset vertical></v-divider>
             <v-spacer></v-spacer>
             <v-btn class="mr-3" color="green" @click="restoreSelectedSystems"
-              ><v-icon color="white" >mdi-restore</v-icon></v-btn
+              ><v-icon color="white">mdi-restore</v-icon></v-btn
             >
             <v-btn color="error" @click="deleteSelectedHistorySystems">
               <v-icon>mdi-delete</v-icon></v-btn
@@ -1017,7 +1015,6 @@ export default {
             body: JSON.stringify({
               project_id: projectId,
               ...this.newSystem,
-              selectedUser: this.selectedUsers, // ส่ง selectedUsers ไปด้วย
             }),
           }
         );
@@ -1045,7 +1042,6 @@ export default {
         this.fetchSystems();
 
         this.createSystemDialog = false;
-        this.selectedUsers = [];
       } catch (error) {
         console.error("Error creating system:", error);
         await Swal.fire({

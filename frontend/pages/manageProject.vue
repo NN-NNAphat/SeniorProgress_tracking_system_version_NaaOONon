@@ -145,7 +145,7 @@
             <v-select
               v-model="selectedSA"
               :items="formatTeamMembers(teamMembersSA)"
-              label="Select SA"
+              label="Select System Analyst"
               multiple
             >
               <template v-slot:prepend-item>
@@ -158,7 +158,7 @@
             <v-select
               v-model="selectedDEV"
               :items="formatTeamMembers(teamMembersDEV)"
-              label="Select DEV"
+              label="Select Developer"
               multiple
             >
               <template v-slot:prepend-item>
@@ -171,7 +171,7 @@
             <v-select
               v-model="selectedIMP"
               :items="formatTeamMembers(teamMembersIMP)"
-              label="Select IMP"
+              label="Select Implementer"
               multiple
             >
               <template v-slot:prepend-item>
