@@ -328,6 +328,7 @@
               v-model="editedSystem.system_id"
               label="System ID"
               readonly
+              disabled
             ></v-text-field>
             <v-text-field
               v-model="editedSystem.system_nameTH"
@@ -398,6 +399,8 @@
             hide-details
             solo
             flat
+            outlined
+            color="primary"
           ></v-text-field>
           <v-list>
             <v-list-item v-for="user in displayedUsers" :key="user.id">
