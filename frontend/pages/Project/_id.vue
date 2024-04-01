@@ -3,76 +3,68 @@
   <div class="systems-data-table">
     <v-row style="margin-bottom: 20px" align="center">
       <!-- First v-card -->
-      <v-col cols="6">
-        <v-card class="mx-auto align-start" max-width="800" hover>
-          <v-card-item @click="showDetails = !showDetails">
-            <v-card-title>
-              {{ project.project_name_ENG }}
-            </v-card-title>
-            <v-card-subtitle>
-              Project Progress: {{ project.project_progress }}
-              <v-progress-linear
-                v-if="
-                  project.project_progress !== null &&
-                  project.project_progress !== undefined
-                "
-                color="deep-orange"
-                height="10"
-                :model-value="project.project_progress"
-                striped
-              ></v-progress-linear>
-            </v-card-subtitle>
-          </v-card-item>
 
-          <v-expand-transition>
-            <div v-show="showDetails">
-              <v-divider></v-divider>
-              <v-card-text>
-                <p>Project Manday: {{ project.project_manday }}</p>
-                <p>System Count: {{ project.system_count }}</p>
-                <p>Project Plan Start: {{ project.project_plan_start }}</p>
-                <p>Project Plan End: {{ project.project_plan_end }}</p>
-              </v-card-text>
-            </div>
-          </v-expand-transition>
-        </v-card>
-      </v-col>
-      <!-- Second v-card -->
-      <v-col cols="6">
-        <v-btn class="custom-btn" @click="showUserDialog = true">
-          แสดงรายชื่อคนภายในโปรเจค
-        </v-btn>
-        <v-dialog v-model="showUserDialog" max-width="600">
-          <v-card>
-            <v-card-title>รายชื่อคนภายในโปรเจค</v-card-title>
+      <v-card class="mx-auto align-start" width="95%" hover>
+        <v-card-item @click="showDetails = !showDetails">
+          <v-card-title>
+            Project name : {{ project.project_name_ENG }}
+            <v-spacer></v-spacer>
+            <v-icon @click.stop="showUserDialog = true"> mdi-account-group </v-icon>
+          </v-card-title>
+          <v-card-subtitle>
+            Project Progress: {{ Math.floor(project.project_progress) }}
+            <v-progress-linear
+              color="primary"
+              height="50"
+              :value="parseFloat(project.project_progress)"
+              striped
+            ></v-progress-linear>
+          </v-card-subtitle>
+        </v-card-item>
+
+        <v-expand-transition>
+          <div v-show="showDetails">
+            <v-divider></v-divider>
             <v-card-text>
-              <v-list>
-                <v-list-item v-for="(user, index) in projectUsers" :key="index">
-                  <v-list-item-avatar>
-                    <img :src="user.user_pic" alt="User Picture" />
-                  </v-list-item-avatar>
-                  <v-list-item-content>
-                    <v-list-item-title>
-                      {{ user.user_position }}: {{ user.user_firstname }}
-                      {{ user.user_lastname }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle
-                      >ตำแหน่ง: {{ user.user_position }}</v-list-item-subtitle
-                    >
-                    <v-list-item-subtitle
-                      >แผนก: {{ user.user_department }}</v-list-item-subtitle
-                    >
-                    <!-- เพิ่มข้อมูลเพิ่มเติมตามต้องการ -->
-                  </v-list-item-content>
-                </v-list-item>
-              </v-list>
+              <p>Project Manday: {{ project.project_manday }}</p>
+              <p>System Count: {{ project.system_count }}</p>
+              <p>Project Plan Start: {{ project.project_plan_start }}</p>
+              <p>Project Plan End: {{ project.project_plan_end }}</p>
             </v-card-text>
-            <v-card-actions>
-              <v-btn color="primary" @click="showUserDialog = false">ปิด</v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-      </v-col>
+          </div>
+        </v-expand-transition>
+      </v-card>
+
+      <v-dialog v-model="showUserDialog" max-width="600">
+        <v-card>
+          <v-card-title>รายชื่อคนภายในโปรเจค</v-card-title>
+          <v-card-text>
+            <v-list>
+              <v-list-item v-for="(user, index) in projectUsers" :key="index">
+                <v-list-item-avatar>
+                  <img :src="user.user_pic" alt="User Picture" />
+                </v-list-item-avatar>
+                <v-list-item-content>
+                  <v-list-item-title>
+                    {{ user.user_position }}: {{ user.user_firstname }}
+                    {{ user.user_lastname }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle
+                    >ตำแหน่ง: {{ user.user_position }}</v-list-item-subtitle
+                  >
+                  <v-list-item-subtitle
+                    >แผนก: {{ user.user_department }}</v-list-item-subtitle
+                  >
+                  <!-- เพิ่มข้อมูลเพิ่มเติมตามต้องการ -->
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="primary" @click="showUserDialog = false">ปิด</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-row>
 
     <!-- Search bar -->
@@ -84,13 +76,30 @@
           placeholder="Search..."
           style="
             margin-bottom: 10px;
-            width: 100%;
+            width: 70%;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 16px;
           "
         />
+
+        <v-btn
+          color="primary"
+          class="text-none mb-4"
+          @click="goToCreateSystem"
+          style="margin-left: 50px; width: 10%; height: 70%"
+          >Create System</v-btn
+        >
+        <!-- เพิ่มปุ่ม Show History System -->
+        <v-btn
+          color="error"
+          class="text-none mb-4"
+          @click="goToHistorySystems"
+          style="margin-left: 10px; width: 10%; height: 70%"
+        >
+          <v-icon>mdi-delete</v-icon> &nbsp;Bin</v-btn
+        >
       </v-col>
     </v-row>
 
@@ -101,28 +110,6 @@
       :items-per-page="5"
       class="elevation-1"
     >
-      <!-- ส่วน Toolbar -->
-      <template v-slot:top>
-        <v-toolbar flat>
-          <!-- ชื่อโปรเจค -->
-          <v-toolbar-title>Systems Management</v-toolbar-title>
-          <!-- ใช้ v-spacer เพื่อชิดปุ่มไปทางขวา -->
-          <v-spacer></v-spacer>
-          <!-- เพิ่มปุ่ม New System -->
-          <v-btn color="primary" dark @click="goToCreateSystem"
-            >New System</v-btn
-          >
-          <!-- เพิ่มปุ่ม Show History System -->
-          <v-btn
-            color="primary"
-            dark
-            @click="goToHistorySystems"
-            style="margin-left: 10px"
-            >Show History System</v-btn
-          >
-        </v-toolbar>
-      </template>
-
       <!-- ส่วนแสดงข้อมูล -->
       <template v-slot:item="{ item }">
         <tr>

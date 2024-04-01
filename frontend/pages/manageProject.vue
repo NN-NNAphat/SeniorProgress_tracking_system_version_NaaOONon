@@ -63,39 +63,51 @@
       :items="filteredProjects"
       :sort-by="[{ key: 'project_id', order: 'asc' }]"
     >
-      <template v-slot:item.actions="{ item }">
-        <div>
-          <!-- Dropdown menu for other actions -->
-          <v-menu offset-y>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn v-bind="attrs" v-on="on" icon>
-                <v-icon size="20" px>mdi-dots-vertical</v-icon>
-              </v-btn>
-            </template>
-            <v-list>
-              <!-- Edit action -->
-              <v-list-item @click="manageUserProjects(item)">
-                <v-list-item-content>Assing</v-list-item-content>
-              </v-list-item>
-              <v-list-item @click="openEditDialog(item)">
-                <v-list-item-content>Edit</v-list-item-content>
-              </v-list-item>
-              <!-- Delete action -->
-              <v-list-item @click="softDeleteProject(item)">
-                <v-list-item-content class="red--text"
-                  >Delete</v-list-item-content
-                >
-              </v-list-item>
+      <template v-slot:item="{ item }">
+        <tr>
+          <td>{{ item.project_id }}</td>
+          <td>{{ item.project_name_TH }}</td>
+          <td>{{ item.project_name_ENG }}</td>
+          <td
+            :style="{
+              color: getProgressColor(item.project_progress),
+            }"
+          >
+            {{ item.project_progress }}
+          </td>
+          <td>{{ item.project_plan_start }}</td>
+          <td>{{ item.project_plan_end }}</td>
+          <td>
+            <!-- Dropdown menu for other actions -->
+            <v-menu offset-y>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn v-bind="attrs" v-on="on" icon>
+                  <v-icon size="20" px>mdi-dots-vertical</v-icon>
+                </v-btn>
+              </template>
+              <v-list>
+                <!-- Edit action -->
+                <v-list-item @click="manageUserProjects(item)">
+                  <v-list-item-content>Assign</v-list-item-content>
+                </v-list-item>
+                <v-list-item @click="openEditDialog(item)">
+                  <v-list-item-content>Edit</v-list-item-content>
+                </v-list-item>
+                <!-- Delete action -->
+                <v-list-item @click="softDeleteProject(item)">
+                  <v-list-item-content class="red--text"
+                    >Delete</v-list-item-content
+                  >
+                </v-list-item>
+              </v-list>
+            </v-menu>
 
-              <!-- Manage User Projects action -->
-            </v-list>
-          </v-menu>
-
-          <!-- Icon for "Manage User Projects" -->
-          <v-btn @click="viewProjectDetails(item)" icon>
-            <v-icon>mdi-menu-right</v-icon>
-          </v-btn>
-        </div>
+            <!-- Icon for "Manage User Projects" -->
+            <v-btn @click="viewProjectDetails(item)" icon>
+              <v-icon>mdi-menu-right</v-icon>
+            </v-btn>
+          </td>
+        </tr>
       </template>
     </v-data-table>
 
@@ -305,11 +317,9 @@
           ></v-select>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="blue darken-1" text @click="closeNestedDialog"
-            >Cancel</v-btn
-          >
           <!-- Button to assign selected users -->
-          <v-btn color="blue darken-1" text @click="assignUserAF">Assign</v-btn>
+          <v-btn color="primary" @click="assignUserAF">Assign</v-btn>
+          <v-btn color="error" @click="closeNestedDialog">Cancel</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -400,6 +410,17 @@ export default {
     };
   },
   methods: {
+    getProgressColor(progress) {
+      if (progress >= 0 && progress <= 40) {
+        return "red"; // สีแดงสำหรับค่า progress 0-40
+      } else if (progress > 40 && progress <= 80) {
+        return "yellow"; // สีเหลืองสำหรับค่า progress 41-80
+      } else if (progress > 80 && progress <= 100) {
+        return "green"; // สีเขียวสำหรับค่า progress 80-100
+      } else {
+        return ""; // สีเริ่มต้นหรือสีที่ไม่ได้กำหนด
+      }
+    },
     updateDisplayedUserProjects() {
       // อัปเดตหน้าที่แสดงข้อมูลผู้ใช้เมื่อเปลี่ยนหน้า
       const startIndex = (this.currentPage - 1) * this.itemsPerPage;
@@ -467,6 +488,8 @@ export default {
           console.log(response.data.message);
           // อัปเดตตารางผู้ใช้หลังจากลบผู้ใช้เสร็จสิ้น
           this.fetchAvailableUsers(project_id);
+          this.fetchTeamMembers();
+          this.dialogUserProjects = false;
         } else {
           // Handle error
           await Swal.fire({
@@ -553,6 +576,7 @@ export default {
         this.fetchAvailableUsers(project_id);
         // ปิด Dialog หลังจากกำหนดผู้ใช้เสร็จสิ้น
         this.dialogAssignUser = false;
+        this.dialogUserProjects = false;
       } catch (error) {
         await Swal.fire({
           icon: "error",
@@ -922,7 +946,7 @@ export default {
       return this.projects
         .map((project) => ({
           ...project,
-          project_progress: project.project_progress || 0,
+          project_progress: Math.round(project.project_progress || 0),
           project_plan_start: project.project_plan_start || "Not determined",
           project_plan_end: project.project_plan_end || "Not determined",
         }))
