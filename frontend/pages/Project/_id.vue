@@ -459,7 +459,7 @@ export default {
       selectedProjectId: null,
       users: [],
       currentPage: 1,
-      perPage: 2, // จำนวนผู้ใช้ที่จะแสดงในหนึ่งหน้า
+      perPage: 5, 
       system_id: "",
       userSystemsHeaders: [
         { text: "ID", value: "id" },
