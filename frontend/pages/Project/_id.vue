@@ -345,32 +345,34 @@
             solo
             flat
           ></v-text-field>
-          <v-data-table
-            :headers="userSystemsHeaders"
-            :items="users"
-            :search="search"
-          >
-            <template v-slot:item="{ item }">
-              <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.user_firstname }}</td>
-                <td>{{ item.user_lastname }}</td>
-                <td>{{ item.user_position }}</td>
-                <td>
-                  <v-img :src="item.user_pic" height="50" contain></v-img>
-                </td>
-                <td>
-                  <!-- Add trash icon here -->
-                  <v-icon
-                    @click="
-                      deleteUser(selectedSystemId, selectedProjectId, item.id)
-                    "
-                    >mdi-delete</v-icon
-                  >
-                </td>
-              </tr>
-            </template>
-          </v-data-table>
+          <v-list>
+            <v-list-item
+              v-for="user in displayedUsers"
+              :key="user.id"
+              @click="deleteUser(selectedSystemId, selectedProjectId, user.id)"
+            >
+              <v-list-item-avatar>
+                <v-img :src="user.user_pic" height="50" contain></v-img>
+              </v-list-item-avatar>
+              <v-list-item-content>
+                <v-list-item-title>{{ user.user_firstname }}</v-list-item-title>
+                <v-list-item-subtitle>{{
+                  user.user_lastname
+                }}</v-list-item-subtitle>
+                <v-list-item-subtitle>{{
+                  user.user_position
+                }}</v-list-item-subtitle>
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-icon>mdi-delete</v-icon>
+              </v-list-item-action>
+            </v-list-item>
+          </v-list>
+          <v-pagination
+            v-model="currentPage"
+            :length="numberOfPages"
+            @input="changePage"
+          ></v-pagination>
         </v-card-text>
         <v-card-actions>
           <v-btn color="blue darken-1" text @click="manageUserDialog = false"
@@ -456,6 +458,8 @@ export default {
       assinguserDalog: false,
       selectedProjectId: null,
       users: [],
+      currentPage: 1,
+      perPage: 2, // จำนวนผู้ใช้ที่จะแสดงในหนึ่งหน้า
       system_id: "",
       userSystemsHeaders: [
         { text: "ID", value: "id" },
@@ -508,6 +512,9 @@ export default {
     };
   },
   methods: {
+    changePage(page) {
+      this.currentPage = page;
+    },
     selectAllImplementers() {
       const implementers = this.filteredUsers("Implementer").map(
         (user) => user.user_id
@@ -955,6 +962,14 @@ export default {
     },
   },
   computed: {
+    numberOfPages() {
+      return Math.ceil(this.users.length / this.perPage);
+    },
+    displayedUsers() {
+      const start = (this.currentPage - 1) * this.perPage;
+      const end = start + this.perPage;
+      return this.users.slice(start, end);
+    },
     filteredSystems() {
       return this.filterSystems();
     },
