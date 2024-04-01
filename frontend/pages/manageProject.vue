@@ -265,7 +265,7 @@
               </v-list-item-content>
 
               <v-list-item-action>
-                <v-btn icon @click="deleteUser(project_id, item)">
+                <v-btn color="error" icon @click="deleteUser(project_id, item)">
                   <v-icon>mdi-delete</v-icon>
                 </v-btn>
               </v-list-item-action>
@@ -294,31 +294,49 @@
         <v-card-text>
           <!-- New field for selecting users -->
           <v-select
-            v-model="selectedUsersAF"
+            v-model="selectedSystemAnalysts"
             :items="systemAnalysts"
             label="Select System Analyst"
             item-text="displayText"
             item-value="id"
             multiple
-          ></v-select>
+          >
+            <template v-slot:prepend-item>
+              <v-list-item @click="selectAllSystemAnalysts">
+                <v-list-item-content>Select All</v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-select>
 
           <v-select
-            v-model="selectedUsersAF"
+            v-model="selectedDevelopers"
             :items="developers"
             label="Select Developer"
             item-text="displayText"
             item-value="id"
             multiple
-          ></v-select>
+          >
+            <template v-slot:prepend-item>
+              <v-list-item @click="selectAllDevelopers">
+                <v-list-item-content>Select All</v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-select>
 
           <v-select
-            v-model="selectedUsersAF"
+            v-model="selectedImplementers"
             :items="implementers"
             label="Select Implementer"
             item-text="displayText"
             item-value="id"
             multiple
-          ></v-select>
+          >
+            <template v-slot:prepend-item>
+              <v-list-item @click="selectAllImplementers">
+                <v-list-item-content>Select All</v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-select>
         </v-card-text>
         <v-card-actions>
           <!-- Button to assign selected users -->
@@ -340,6 +358,9 @@ export default {
   layout: "admin",
   data() {
     return {
+      selectedSystemAnalysts: [],
+      selectedDevelopers: [],
+      selectedImplementers: [],
       user: this.$auth.user,
       loggedIn: this.$auth.loggedIn,
 
@@ -414,6 +435,27 @@ export default {
     };
   },
   methods: {
+    selectAllSystemAnalysts() {
+      if (this.selectedSystemAnalysts.length === this.systemAnalysts.length) {
+        this.selectedSystemAnalysts = [];
+      } else {
+        this.selectedSystemAnalysts = [...this.systemAnalysts];
+      }
+    },
+    selectAllDevelopers() {
+      if (this.selectedDevelopers.length === this.developers.length) {
+        this.selectedDevelopers = [];
+      } else {
+        this.selectedDevelopers = [...this.developers];
+      }
+    },
+    selectAllImplementers() {
+      if (this.selectedImplementers.length === this.implementers.length) {
+        this.selectedImplementers = [];
+      } else {
+        this.selectedImplementers = [...this.implementers];
+      }
+    },
     getProgressColor(progress) {
       if (progress >= 0 && progress <= 40) {
         return "red"; // สีแดงสำหรับค่า progress 0-40
@@ -548,7 +590,11 @@ export default {
 
     async assignUserAF() {
       // ตรวจสอบว่ามีผู้ใช้ที่ถูกเลือกหรือไม่
-      if (this.selectedUsersAF.length === 0) {
+      if (
+        this.selectedSystemAnalysts.length === 0 &&
+        this.selectedDevelopers.length === 0 &&
+        this.selectedImplementers.length === 0
+      ) {
         await Swal.fire({
           icon: "error",
           title: "Error",
@@ -571,7 +617,11 @@ export default {
       }
 
       // ส่งข้อมูลผู้ใช้ที่ถูกเลือกไปยัง API
-      const user_ids = this.selectedUsersAF;
+      const user_ids = [
+        ...this.selectedSystemAnalysts.map((user) => user.id),
+        ...this.selectedDevelopers.map((user) => user.id),
+        ...this.selectedImplementers.map((user) => user.id),
+      ];
 
       try {
         const response = await axios.post(
