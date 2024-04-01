@@ -312,7 +312,7 @@
 
     <!-- Show deleted systems history -->
     <v-dialog v-model="showHistoryDialog" max-width="800">
-      <v-data-table :headers="headers" :items="deletedSystems">
+      <v-data-table :headers="headersDelete" :items="deletedSystems">
         <!-- Define headers for the table -->
         <template v-slot:top>
           <v-toolbar flat>
@@ -324,10 +324,12 @@
 
         <!-- Define actions for each row -->
         <template v-slot:item.actions="{ item }">
-          <v-btn color="primary" @click="restoreSystem(item)"> Restore </v-btn>
-          <v-btn color="error" @click="confirmDeleteHistorySystem(item)">
-            Delete
-          </v-btn>
+          <v-icon color="green" @click="restoreSystem(item)"
+            >mdi-restore</v-icon
+          >
+          <v-icon color="error" @click="confirmDeleteHistorySystem(item)"
+            >mdi-delete</v-icon
+          >
         </template>
       </v-data-table>
     </v-dialog>
@@ -346,11 +348,7 @@
             flat
           ></v-text-field>
           <v-list>
-            <v-list-item
-              v-for="user in displayedUsers"
-              :key="user.id"
-              @click="deleteUser(selectedSystemId, selectedProjectId, user.id)"
-            >
+            <v-list-item v-for="user in displayedUsers" :key="user.id">
               <v-list-item-avatar>
                 <v-img :src="user.user_pic" height="50" contain></v-img>
               </v-list-item-avatar>
@@ -364,7 +362,13 @@
                 }}</v-list-item-subtitle>
               </v-list-item-content>
               <v-list-item-action>
-                <v-icon>mdi-delete</v-icon>
+                <v-icon
+                  color="error "
+                  @click="
+                    deleteUser(selectedSystemId, selectedProjectId, user.id)
+                  "
+                  >mdi-delete</v-icon
+                >
               </v-list-item-action>
             </v-list-item>
           </v-list>
@@ -375,15 +379,12 @@
           ></v-pagination>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="blue darken-1" text @click="manageUserDialog = false"
-            >Close</v-btn
-          >
           <v-btn
-            color="blue darken-1"
-            text
+            color="primary"
             @click="openNestedDialog(selectedSystemId, selectedProjectId)"
             >Assign User</v-btn
           >
+          <v-btn color="error" @click="manageUserDialog = false">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -397,10 +398,10 @@
             v-model="selectedUsers"
             :items="
               availableUsers.filter(
-                (user) => user.user_position === 'Implementer'
+                (user) => user.user_position === 'System Analyst'
               )
             "
-            label="Select Implementer"
+            label="Select System Analyst"
             item-text="displayName"
             item-value="id"
             multiple
@@ -423,10 +424,10 @@
             v-model="selectedUsers"
             :items="
               availableUsers.filter(
-                (user) => user.user_position === 'System Analyst'
+                (user) => user.user_position === 'Implementer'
               )
             "
-            label="Select System Analyst"
+            label="Select Implementer"
             item-text="displayName"
             item-value="id"
             multiple
@@ -459,7 +460,7 @@ export default {
       selectedProjectId: null,
       users: [],
       currentPage: 1,
-      perPage: 5, 
+      perPage: 5,
       system_id: "",
       userSystemsHeaders: [
         { text: "ID", value: "id" },
@@ -507,6 +508,13 @@ export default {
         { text: "Planned Start", value: "system_plan_start" },
         { text: "Planned End", value: "system_plan_end" },
         { text: "Manday", value: "system_manday" },
+        { text: "Actions", value: "actions", sortable: false },
+      ],
+      headersDelete: [
+        { text: "System ID", value: "system_id" },
+        { text: "System Name (TH)", value: "system_nameTH" },
+        { text: "System Name (EN)", value: "system_nameEN" },
+        { text: "Short Name", value: "system_shortname" },
         { text: "Actions", value: "actions", sortable: false },
       ],
     };
@@ -567,7 +575,6 @@ export default {
     async assignUser() {
       try {
         const { selectedUsers, selectedSystemId, selectedProjectId } = this;
-        // เรียก API เพื่อสร้างการเชื่อมต่อระหว่างผู้ใช้และระบบ
         const response = await axios.post(
           `http://localhost:7777/user_systems/createUser_system`,
           {
@@ -576,13 +583,36 @@ export default {
             project_id: selectedProjectId,
           }
         );
-        console.log(response.data.message); // พิมพ์ข้อความจากการสร้างผู้ใช้ระบบใหม่
-        // ปิด Dialog หลังจากที่สร้างผู้ใช้ระบบเรียบร้อย
-        this.assinguserDalog = false;
-        // สามารถดำเนินการอื่นๆ ตามต้องการ เช่น รีเฟรชรายการผู้ใช้หรืออื่นๆ
+
+        console.log(response.data.message);
+
+        this.assignUserDialog = false;
+
+        // Show success message using SweetAlert2
+        await Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "User assigned successfully",
+        });
+
+        // เรียกใช้งานเมธอดเพื่ออัปเดตรายการผู้ใช้
+        await this.fetchUsersBySystemAndProject(
+          selectedSystemId,
+          selectedProjectId
+        );
+
+        // เปิด Dialog ที่ให้ผู้ใช้เลือกผู้ใช้เพิ่มเติมหรือทำการกำหนดผู้ใช้ใหม่
+        await this.openNestedDialog(selectedSystemId, selectedProjectId);
+
+        // Reset selectedUsers
+        this.selectedUsers = [];
       } catch (error) {
         console.error("Error assigning user:", error);
-        // จัดการข้อผิดพลาดหากมีปัญหาในการสร้างผู้ใช้ระบบ
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to assign user",
+        });
       }
     },
 
@@ -628,24 +658,46 @@ export default {
 
     async deleteUser(systemId, projectId, userId) {
       try {
-        const response = await axios.delete(
-          `http://localhost:7777/user_systems/deleteUserSystem/${systemId}/${projectId}/${userId}`
-        );
+        const confirmResult = await Swal.fire({
+          title: "Are you sure?",
+          text: "You are about to delete this user from the system.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, delete it!",
+        });
 
-        // ตรวจสอบว่าคำขอ DELETE สำเร็จหรือไม่
-        if (response.status === 200) {
-          // ลบผู้ใช้ระบบจากตาราง users ใน Vue
-          const index = this.users.findIndex((user) => user.id === userId);
-          if (index !== -1) {
-            this.users.splice(index, 1);
+        if (confirmResult.isConfirmed) {
+          const response = await axios.delete(
+            `http://localhost:7777/user_systems/deleteUserSystem/${systemId}/${projectId}/${userId}`
+          );
+
+          if (response.status === 200) {
+            const index = this.users.findIndex((user) => user.id === userId);
+            if (index !== -1) {
+              this.users.splice(index, 1);
+            }
+            await Swal.fire(
+              "Deleted!",
+              "The user has been deleted from the system.",
+              "success"
+            );
+          } else {
+            await Swal.fire(
+              "Error!",
+              "Failed to delete the user from the system.",
+              "error"
+            );
           }
-          // แสดงข้อความเตือนว่าลบผู้ใช้ระบบสำเร็จ
-        } else {
-          // แสดงข้อความเตือนว่ามีข้อผิดพลาดในการลบผู้ใช้ระบบ
         }
       } catch (error) {
-        // แสดงข้อความเตือนว่ามีข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์
         console.error("Error deleting user system:", error);
+        await Swal.fire(
+          "Error!",
+          "An error occurred while deleting the user from the system.",
+          "error"
+        );
       }
     },
 
@@ -731,8 +783,9 @@ export default {
           );
 
           // Add this line to update the table automatically
-          this.fetchDeletedSystems();
         }
+        this.fetchDeletedSystems();
+        this.fetchSystems();
       } catch (error) {
         console.error("Error restoring system:", error);
         await Swal.fire(
@@ -835,23 +888,27 @@ export default {
           throw new Error("Failed to create system");
         }
 
-        // Clear the form and show success message
+        // Clear the form
         this.newSystem = {
           system_id: "",
           system_nameTH: "",
           system_nameEN: "",
           system_shortname: "",
         };
-        const confirmResult = await Swal.fire({
+
+        // Show success message
+        await Swal.fire({
           icon: "success",
           title: "Success",
-          text: "New system and users assigned successfully",
+          text: "New system created successfully",
           showConfirmButton: true,
           allowOutsideClick: false,
         });
-        if (confirmResult.isConfirmed) {
-          this.fetchSystems();
-        }
+        // Fetch systems again to update the list
+        this.fetchSystems();
+
+        this.createSystemDialog = false;
+        this.selectedUsers = [];
       } catch (error) {
         console.error("Error creating system:", error);
         await Swal.fire({

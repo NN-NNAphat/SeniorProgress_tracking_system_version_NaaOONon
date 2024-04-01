@@ -242,6 +242,13 @@
           ></v-text-field>
           <v-list>
             <v-list-item v-for="item in displayedUserProjects" :key="item.id">
+              <v-list-item-avatar>
+                <v-img
+                  :src="getBase64Image(item.user_pic)"
+                  height="50"
+                  contain
+                ></v-img>
+              </v-list-item-avatar>
               <v-list-item-content>
                 <v-list-item-title
                   >{{ item.user_firstname }}
@@ -251,14 +258,6 @@
                   item.user_position
                 }}</v-list-item-subtitle>
               </v-list-item-content>
-
-              <v-list-item-avatar>
-                <v-img
-                  :src="getBase64Image(item.user_pic)"
-                  height="50"
-                  contain
-                ></v-img>
-              </v-list-item-avatar>
 
               <v-list-item-action>
                 <v-btn icon @click="deleteUser(project_id, item)">
@@ -292,7 +291,7 @@
           <v-select
             v-model="selectedUsersAF"
             :items="systemAnalysts"
-            label="Select SA"
+            label="Select System Analyst"
             item-text="displayText"
             item-value="id"
             multiple
@@ -301,7 +300,7 @@
           <v-select
             v-model="selectedUsersAF"
             :items="developers"
-            label="Select DEV"
+            label="Select Developer"
             item-text="displayText"
             item-value="id"
             multiple
@@ -310,7 +309,7 @@
           <v-select
             v-model="selectedUsersAF"
             :items="implementers"
-            label="Select IMP"
+            label="Select Implementer"
             item-text="displayText"
             item-value="id"
             multiple
