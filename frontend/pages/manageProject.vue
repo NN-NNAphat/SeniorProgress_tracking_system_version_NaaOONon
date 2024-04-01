@@ -229,7 +229,7 @@
     </v-dialog>
 
     <!-- Manage project users dialog -->
-    <v-dialog v-model="dialogUserProjects" max-width="800px">
+    <v-dialog v-model="dialogUserProjects" max-width="600px">
       <v-card>
         <v-card-title>User Projects</v-card-title>
         <v-card-text>

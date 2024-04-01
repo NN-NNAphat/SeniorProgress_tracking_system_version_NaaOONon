@@ -41,30 +41,69 @@
           </div>
         </v-expand-transition>
       </v-card>
+      <!-- Dialog แสดง User ในโปรเจค -->
       <v-dialog v-model="showUserDialog" max-width="600">
         <v-card>
-          <v-card-title>รายชื่อคนภายในโปรเจค</v-card-title>
+          <v-card-title>User Projects</v-card-title>
           <v-card-text>
+            <v-text-field
+              v-model="searchprojectUser"
+              label="Search"
+              dense
+              hide-details
+              solo
+              flat
+              outlined
+              color="primary"
+              hint="Search here"
+            ></v-text-field>
             <v-list>
-              <v-list-item v-for="(user, index) in projectUsers" :key="index">
-                <v-list-item-avatar>
-                  <img :src="user.user_pic" alt="User Picture" />
-                </v-list-item-avatar>
-                <v-list-item-content>
-                  <v-list-item-title>
-                    {{ user.user_position }}: {{ user.user_firstname }}
-                    {{ user.user_lastname }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle
-                    >ตำแหน่ง: {{ user.user_position }}</v-list-item-subtitle
-                  >
-                  <v-list-item-subtitle
-                    >แผนก: {{ user.user_department }}</v-list-item-subtitle
-                  >
-                  <!-- เพิ่มข้อมูลเพิ่มเติมตามต้องการ -->
-                </v-list-item-content>
+              <v-list-item
+                v-for="(user, index) in displayedUsersprojectUser"
+                :key="index"
+              >
+                <!-- ตรงนี้คือการเพิ่มเงื่อนไขในการกรองผู้ใช้งาน -->
+                <template
+                  v-if="
+                    user.user_position
+                      .toLowerCase()
+                      .includes(searchprojectUser.toLowerCase()) ||
+                    user.user_firstname
+                      .toLowerCase()
+                      .includes(searchprojectUser.toLowerCase()) ||
+                    user.user_lastname
+                      .toLowerCase()
+                      .includes(searchprojectUser.toLowerCase()) ||
+                    user.user_department
+                      .toLowerCase()
+                      .includes(searchprojectUser.toLowerCase())
+                  "
+                >
+                  <v-list-item-avatar>
+                    <img :src="user.user_pic" alt="User Picture" />
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      {{ user.user_position }}: {{ user.user_firstname }}
+                      {{ user.user_lastname }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle>{{
+                      user.user_position
+                    }}</v-list-item-subtitle>
+                    <v-list-item-subtitle>{{
+                      user.user_department
+                    }}</v-list-item-subtitle>
+                    <!-- เพิ่มข้อมูลเพิ่มเติมตามต้องการ -->
+                  </v-list-item-content>
+                </template>
               </v-list-item>
             </v-list>
+
+            <v-pagination
+              v-model="currentPageprojectUser"
+              :length="numberOfPagesprojectUser"
+              @input="changePageprojectUser"
+            ></v-pagination>
           </v-card-text>
           <v-card-actions>
             <v-btn color="primary" @click="showUserDialog = false">ปิด</v-btn>
@@ -488,9 +527,12 @@ export default {
       selectedSystemId: "",
       selectedUser: null,
       showUserDialog: false,
-      
+
       dropdown: false,
       projectUsers: [],
+      searchprojectUser: "",
+      currentPageprojectUser: 1,
+      perPageprojectUser: 5,
       showDetails: false,
       project: {},
       projectNameENG: "",
@@ -535,6 +577,9 @@ export default {
     };
   },
   methods: {
+    changePageprojectUser(page) {
+      this.currentPageprojectUser = page;
+    },
     changePage(page) {
       this.currentPage = page;
     },
@@ -1157,6 +1202,16 @@ export default {
     },
   },
   computed: {
+    numberOfPagesprojectUser() {
+      // เปลี่ยนชื่อ computed numberOfPages เพื่อไม่ให้ซ้ำกับชื่ออื่น
+      return Math.ceil(this.projectUsers.length / this.perPageprojectUser);
+    },
+    displayedUsersprojectUser() {
+      // เปลี่ยนชื่อ computed displayedUsers เพื่อไม่ให้ซ้ำกับชื่ออื่น
+      const start = (this.currentPageprojectUser - 1) * this.perPageprojectUser;
+      const end = start + this.perPageprojectUser;
+      return this.projectUsers.slice(start, end);
+    },
     numberOfPages() {
       return Math.ceil(this.users.length / this.perPage);
     },
