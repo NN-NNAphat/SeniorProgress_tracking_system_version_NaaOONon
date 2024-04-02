@@ -157,14 +157,8 @@
                 :src="getBase64Image(screen.screen_pic)"
                 cover
               >
-                <v-card-title>
-                  <div
-                    style="
-                      padding: 1.4px;
-                      background-color: rgba(0, 0, 0, 0.4);
-                      color: white;
-                    "
-                  >
+                <v-card-title class="card-title">
+                  <div class="title-text">
                     {{ screen.screen_name }}
                   </div>
                 </v-card-title>
@@ -1348,5 +1342,16 @@ export default {
 .custom-btn {
   width: 100%;
   height: 50%;
+}
+
+.card-title {
+  padding: 1.4px;
+  background-color: rgba(0, 0, 0, 0.4);
+  color: white;
+}
+
+.title-text {
+  width: 100%; /* กำหนดความกว้างของตัวหนังสือให้เท่ากับความกว้างของพื้นที่ในการแสดงรูปภาพ */
+  text-align: center; /* จัดตำแหน่งตัวหนังสือให้อยู่กลาง */
 }
 </style>
