@@ -1,22 +1,24 @@
 <template>
   <div>
-    <v-row style="margin-bottom: 20px" align="center">
-      <v-col cols="6">
-        <v-card class="mx-auto align-start" max-width="800" hover>
+    <div>
+      <v-row style="margin-bottom: 20px" align="center">
+        <!-- Card detel Systems -->
+        <v-card class="mx-auto align-start" width="95%" hover>
           <v-card-item @click="showDetails = !showDetails">
             <v-card-title>
-              {{ system.system_nameEN }}
+              System name : {{ system.system_nameEN }}
+              <v-spacer></v-spacer>
+              <v-icon @click.stop="showUserDialog = true">
+                mdi-account-group</v-icon
+              >
             </v-card-title>
+
             <v-card-subtitle>
               Systems Progress: {{ system.system_progress }}
               <v-progress-linear
-                v-if="
-                  system.system_progress !== null &&
-                  system.system_progress !== undefined
-                "
-                color="deep-orange"
-                height="10"
-                :model-value="system.system_progress"
+                color="primary"
+                height="50"
+                :value="parseFloat(system.system_progress)"
                 striped
               ></v-progress-linear>
             </v-card-subtitle>
@@ -26,22 +28,22 @@
             <div v-show="showDetails">
               <v-divider></v-divider>
               <v-card-text>
-                <p>System Manday: {{ system.system_manday }}</p>
-                <p>Screen Count: {{ system.screen_count }}</p>
-                <p>System Plan Start: {{ system.system_plan_start }}</p>
-                <p>System Plan End: {{ system.system_plan_end }}</p>
+                <p>System Manday: {{ system.system_manday || 0 }}</p>
+                <p>Screen Count: {{ system.screen_count || 0 }}</p>
+                <p>
+                  System Plan Start:
+                  {{ system.system_plan_start || "Not determined" }}
+                </p>
+                <p>
+                  System Plan End:
+                  {{ system.system_plan_end || "Not determined" }}
+                </p>
               </v-card-text>
             </div>
           </v-expand-transition>
         </v-card>
-      </v-col>
 
-      <!-- แสดงรายชื่อ USser systems -->
-      <v-col>
-        <v-btn class="custom-btn" @click="showUserDialog = true">
-          แสดงรายชื่อผู้ใช้ในระบบ
-        </v-btn>
-
+        <!-- แสดงรายชื่อ USser Dialog -->
         <v-dialog v-model="showUserDialog" max-width="600">
           <v-card>
             <v-card-title>รายชื่อผู้ใช้ในระบบ</v-card-title>
@@ -72,8 +74,8 @@
             </v-card-actions>
           </v-card>
         </v-dialog>
-      </v-col>
-    </v-row>
+      </v-row>
+    </div>
 
     <!-- Search bar -->
     <v-row no-gutters>
