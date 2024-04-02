@@ -121,10 +121,21 @@
 
     <!-- ปุ่ม -->
     <v-row style="margin-bottom: 20px" justify="end">
-      <v-btn color="primary" dark @click="goToCreateScreen">New Screen</v-btn>
+      <v-btn
+        color="primary"
+        class="text-none mb-4"
+        @click="goToCreateScreen"
+        style="margin-left: 50px; width: 10%; height: 40px"
+        >Create System</v-btn
+      >
       &nbsp;&nbsp;&nbsp;
-      <v-btn color="primary" @click="showSystemIdDialog"
-        >Show History Screen</v-btn
+      <v-btn
+        color="error"
+        class="text-none mb-4"
+        @click="showSystemIdDialog"
+        style="margin-left: 10px; width: 10%; height: 40px"
+      >
+        <v-icon>mdi-delete</v-icon> &nbsp;Bin</v-btn
       >
     </v-row>
 
@@ -224,16 +235,19 @@
       <v-card>
         <v-card-title>Create New Screen</v-card-title>
         <v-card-text>
-          <v-form @submit.prevent="createScreen()">
+          <v-form ref="screenForm" @submit.prevent="createScreen()">
             <!-- Existing fields -->
             <v-text-field
               v-model="newScreen.screen_id"
+              :rules="[(v) => !!v || 'Screen ID is required']"
               label="Screen ID"
             ></v-text-field>
             <v-text-field
               v-model="newScreen.screen_name"
+              :rules="[(v) => !!v || 'Screen Name is required']"
               label="Screen Name"
             ></v-text-field>
+
             <v-select
               v-model="newScreen.screen_level"
               label="Screen Level"
@@ -246,6 +260,18 @@
               prepend-icon="mdi-camera"
               v-model="avatarFile"
             ></v-file-input>
+
+            <v-select
+              v-model="newScreen.screen_status"
+              label="Screen Status"
+              :items="[
+                'Not started yet',
+                'design',
+                'develop',
+                'correct',
+                'finish',
+              ]"
+            ></v-select>
 
             <!-- New field for selecting users -->
             <v-select
@@ -486,7 +512,8 @@ export default {
         screen_id: "",
         screen_name: "",
         screen_manday: "",
-        screen_level: "",
+        screen_level: "Simple",
+        screen_status: "Not started yet",
         screen_pic: "",
         screen_plan_start: "",
         screen_plan_end: "",
@@ -698,13 +725,18 @@ export default {
       const systemId = this.$route.params.id;
 
       try {
-        // Check if an avatar file is selected
-        if (!this.avatarFile) {
-          throw new Error("Please select an avatar file.");
+        // Validate form fields
+        const valid = await this.$refs.screenForm.validate();
+        if (!valid) {
+          // If form is not valid, return early
+          return;
         }
 
-        // Convert image to Base64
-        const base64Image = await this.imageToBase64(this.avatarFile);
+        // Check if an avatar file is selected
+        let base64Image = null;
+        if (this.avatarFile) {
+          base64Image = await this.imageToBase64(this.avatarFile);
+        }
 
         // Fetch system data to get project_id
         const systemResponse = await fetch(
@@ -721,15 +753,15 @@ export default {
         const requestData = {
           screen_id: this.newScreen.screen_id,
           screen_name: this.newScreen.screen_name,
-          screen_status: "default_status", // Update with your default status
+          screen_status: this.newScreen.screen_status,
           screen_level: this.newScreen.screen_level,
-          screen_pic: base64Image, // Update with your default pic
+          screen_pic: base64Image,
           system_id: systemId,
-          screen_progress: 0, // Update with your default progress
-          screen_plan_start: this.newScreen.screen_plan_start || null, // Use null if empty
-          screen_plan_end: this.newScreen.screen_plan_end || null, // Use null if empty
-          project_id: projectId, // Use the fetched project_id
-          assignedUsers: this.newScreen.selectedUsers, // Add selectedUsers to the
+          screen_progress: 0,
+          screen_plan_start: this.newScreen.screen_plan_start || null,
+          screen_plan_end: this.newScreen.screen_plan_end || null,
+          project_id: projectId,
+          assignedUsers: this.newScreen.selectedUsers,
         };
 
         // Make the request to create a new screen
@@ -752,6 +784,9 @@ export default {
             text: "The new screen has been created successfully.",
             timer: 3000, // Set the timer to 3 seconds (3000 milliseconds)
           });
+
+          // Reset the form
+          this.$refs.screenForm.reset();
         } else {
           throw new Error("Failed to create screen");
         }
