@@ -42,14 +42,30 @@
             </div>
           </v-expand-transition>
         </v-card>
-
         <!-- แสดงรายชื่อ USser Dialog -->
         <v-dialog v-model="showUserDialog" max-width="600">
           <v-card>
-            <v-card-title>รายชื่อผู้ใช้ในระบบ</v-card-title>
+            <v-card-title>User Systems</v-card-title>
+            <!-- เพิ่มช่องค้นหา -->
+            <v-card-text>
+              <v-text-field
+                v-model="searchprojectUser"
+                label="Search"
+                dense
+                hide-details
+                solo
+                flat
+                outlined
+                color="primary"
+                hint="Search here"
+              ></v-text-field>
+            </v-card-text>
             <v-card-text>
               <v-list>
-                <v-list-item v-for="(user, index) in systemUsers" :key="index">
+                <v-list-item
+                  v-for="(user, index) in filteredsearchprojectUser"
+                  :key="index"
+                >
                   <v-list-item-avatar>
                     <img :src="user.user_pic" alt="User Picture" />
                   </v-list-item-avatar>
@@ -68,9 +84,16 @@
                   </v-list-item-content>
                 </v-list-item>
               </v-list>
+              <v-pagination
+                v-model="paginationPageUserSystems"
+                :length="totalPagesUserSystems"
+                @input="changePageUserSystems"
+                color="primary"
+              ></v-pagination>
             </v-card-text>
+            <!-- เพิ่ม pagination -->
             <v-card-actions>
-              <v-btn color="primary" @click="showUserDialog = false">ปิด</v-btn>
+              <v-btn color="error" @click="showUserDialog = false">Close</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -447,7 +470,10 @@ export default {
       itemsPerPage: 12,
       projectUsers: [],
       showUserDialog: false,
+      searchprojectUser: "",
       systemUsers: [],
+      paginationPageUserSystems: 1,
+      itemsPerPageUserSystems: 5, // จำนวนรายการผู้ใช้ต่อหน้า
       system: {},
       showDetails: false,
       dateStartMenu: false,
@@ -502,6 +528,9 @@ export default {
     this.fetchSystemUsers(this.systemId, this.projectId);
   },
   methods: {
+    changePageUserSystems(page) {
+      this.paginationPageUserSystems = page;
+    },
     deleteUser(userId) {
       const { systemId, projectId, screenId } = this; // สมมติว่าคุณมีตัวแปรเหล่านี้ใน Vue instance อยู่แล้ว
       try {
@@ -1215,6 +1244,49 @@ export default {
     },
   },
   computed: {
+    filteredsearchprojectUser() {
+      const startIndex =
+        (this.paginationPageUserSystems - 1) * this.itemsPerPageUserSystems;
+      const endIndex = startIndex + this.itemsPerPageUserSystems;
+      return this.systemUsers
+        .filter((user) => {
+          return (
+            user.user_firstname
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_lastname
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_position
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_department
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase())
+          );
+        })
+        .slice(startIndex, endIndex);
+    },
+    totalPagesUserSystems() {
+      return Math.ceil(
+        this.systemUsers.filter((user) => {
+          return (
+            user.user_firstname
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_lastname
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_position
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_department
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase())
+          );
+        }).length / this.itemsPerPageUserSystems
+      );
+    },
     paginatedScreens() {
       const startIndex = (this.currentPage - 1) * this.itemsPerPage;
       const endIndex = startIndex + this.itemsPerPage;

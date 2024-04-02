@@ -106,7 +106,7 @@
             ></v-pagination>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="primary" @click="showUserDialog = false">ปิด</v-btn>
+            <v-btn color="error" @click="showUserDialog = false">Close</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
