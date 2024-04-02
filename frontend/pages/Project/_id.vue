@@ -393,7 +393,7 @@
         <v-card-title>Manage User Systems</v-card-title>
         <v-card-text>
           <v-text-field
-            v-model="search"
+            v-model="searchUser"
             label="Search"
             dense
             hide-details
@@ -403,7 +403,7 @@
             color="primary"
           ></v-text-field>
           <v-list>
-            <v-list-item v-for="user in displayedUsers" :key="user.id">
+            <v-list-item v-for="user in filteredUsersList" :key="user.id">
               <v-list-item-avatar>
                 <v-img :src="user.user_pic" height="50" contain></v-img>
               </v-list-item-avatar>
@@ -418,7 +418,7 @@
               </v-list-item-content>
               <v-list-item-action>
                 <v-icon
-                  color="error "
+                  color="error"
                   @click="
                     deleteUser(selectedSystemId, selectedProjectId, user.id)
                   "
@@ -449,8 +449,9 @@
       <v-card>
         <v-card-title>Assign User</v-card-title>
         <v-card-text>
+          <!-- Select System Analyst -->
           <v-select
-            v-model="selectedUsers"
+            v-model="selectedSystemAnalysts"
             :items="
               availableUsers.filter(
                 (user) => user.user_position === 'System Analyst'
@@ -460,10 +461,17 @@
             item-text="displayName"
             item-value="id"
             multiple
-          ></v-select>
+          >
+            <template v-slot:prepend-item>
+              <v-list-item @click="selectAllSystemAnalystAF">
+                <v-list-item-content>Select All</v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-select>
 
+          <!-- Select Developer -->
           <v-select
-            v-model="selectedUsers"
+            v-model="selectedDevelopers"
             :items="
               availableUsers.filter(
                 (user) => user.user_position === 'Developer'
@@ -473,10 +481,17 @@
             item-text="displayName"
             item-value="id"
             multiple
-          ></v-select>
+          >
+            <template v-slot:prepend-item>
+              <v-list-item @click="selectAllDevelopersAF">
+                <v-list-item-content>Select All</v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-select>
 
+          <!-- Select Implementer -->
           <v-select
-            v-model="selectedUsers"
+            v-model="selectedImplementers"
             :items="
               availableUsers.filter(
                 (user) => user.user_position === 'Implementer'
@@ -486,7 +501,13 @@
             item-text="displayName"
             item-value="id"
             multiple
-          ></v-select>
+          >
+            <template v-slot:prepend-item>
+              <v-list-item @click="selectAllImplementersAF">
+                <v-list-item-content>Select All</v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-select>
         </v-card-text>
         <v-card-actions>
           <v-btn color="blue darken-1" text @click="assinguserDalog = false"
@@ -508,11 +529,16 @@ export default {
   layout: "admin",
   data() {
     return {
+      searchUser: "",
+      assinguserDalog: false,
+      selectedSystemAnalysts: [],
+      selectedDevelopers: [],
+      selectedImplementers: [],
       selectedSystems: [],
       selectedUsers: [],
       availableUsers: [],
       assignUserDialog: false,
-      assinguserDalog: false,
+
       selectedProjectId: null,
       users: [],
       currentPage: 1,
@@ -580,6 +606,23 @@ export default {
     };
   },
   methods: {
+    selectAllSystemAnalystAF() {
+      this.selectedSystemAnalysts = this.availableUsers
+        .filter((user) => user.user_position === "System Analyst")
+        .map((user) => user.id);
+    },
+    // ฟังก์ชันเลือกทุก Developer
+    selectAllDevelopersAF() {
+      this.selectedDevelopers = this.availableUsers
+        .filter((user) => user.user_position === "Developer")
+        .map((user) => user.id);
+    },
+    // ฟังก์ชันเลือกทุก Implementer
+    selectAllImplementersAF() {
+      this.selectedImplementers = this.availableUsers
+        .filter((user) => user.user_position === "Implementer")
+        .map((user) => user.id);
+    },
     changePageprojectUser(page) {
       this.currentPageprojectUser = page;
     },
@@ -637,7 +680,18 @@ export default {
     },
     async assignUser() {
       try {
-        const { selectedUsers, selectedSystemId, selectedProjectId } = this;
+        const {
+          selectedSystemAnalysts,
+          selectedDevelopers,
+          selectedImplementers,
+          selectedSystemId,
+          selectedProjectId,
+        } = this;
+        const selectedUsers = [
+          ...selectedSystemAnalysts,
+          ...selectedDevelopers,
+          ...selectedImplementers,
+        ];
         const response = await axios.post(
           `http://localhost:7777/user_systems/createUser_system`,
           {
@@ -668,7 +722,9 @@ export default {
         await this.openNestedDialog(selectedSystemId, selectedProjectId);
 
         // Reset selectedUsers
-        this.selectedUsers = [];
+        this.selectedSystemAnalysts = [];
+        this.selectedDevelopers = [];
+        this.selectedImplementers = [];
       } catch (error) {
         console.error("Error assigning user:", error);
         await Swal.fire({
@@ -802,100 +858,7 @@ export default {
         // Handle error fetching project
       }
     },
-    // async restoreSystem(item) {
-    //   try {
-    //     const confirmResult = await Swal.fire({
-    //       title: "Are you sure?",
-    //       text: "You are about to restore this system.",
-    //       icon: "warning",
-    //       showCancelButton: true,
-    //       confirmButtonColor: "#3085d6",
-    //       cancelButtonColor: "#d33",
-    //       confirmButtonText: "Yes, restore it!",
-    //     });
 
-    //     if (confirmResult.isConfirmed) {
-    //       const systemId = item.id;
-    //       const response = await fetch(
-    //         `http://localhost:7777/systems/updateSystem/${systemId}`,
-    //         {
-    //           method: "PUT",
-    //           headers: {
-    //             "Content-Type": "application/json",
-    //           },
-    //           body: JSON.stringify({
-    //             system_nameTH: item.system_nameTH,
-    //             system_nameEN: item.system_nameEN,
-    //             system_shortname: item.system_shortname,
-    //             project_id: item.project_id,
-    //             is_deleted: 0,
-    //           }),
-    //         }
-    //       );
-
-    //       if (!response.ok) {
-    //         throw new Error("Failed to restore system");
-    //       }
-
-    //       console.log("System restored successfully");
-
-    //       await Swal.fire(
-    //         "Success",
-    //         "System restored successfully.",
-    //         "success"
-    //       );
-
-    //       // Add this line to update the table automatically
-    //     }
-    //     this.fetchDeletedSystems();
-    //     this.fetchSystems();
-    //   } catch (error) {
-    //     console.error("Error restoring system:", error);
-    //     await Swal.fire(
-    //       "Error",
-    //       "An error occurred during the system restoration process.",
-    //       "error"
-    //     );
-    //   }
-    // },
-    // async confirmDeleteHistorySystem(item) {
-    //   try {
-    //     const confirmResult = await Swal.fire({
-    //       title: "Are you sure?",
-    //       text: "You won't be able to revert this!",
-    //       icon: "warning",
-    //       showCancelButton: true,
-    //       confirmButtonColor: "#3085d6",
-    //       cancelButtonColor: "#d33",
-    //       confirmButtonText: "Yes, delete it!",
-    //     });
-    //     if (confirmResult.isConfirmed) {
-    //       const systemId = item.id; // Get the ID of the system to delete
-    //       const response = await fetch(
-    //         `http://localhost:7777/systems/deleteHistorySystems/${systemId}`,
-    //         {
-    //           method: "DELETE",
-    //         }
-    //       );
-    //       if (!response.ok) {
-    //         throw new Error("Failed to delete system");
-    //       }
-    //       await Swal.fire({
-    //         icon: "success",
-    //         title: "Success",
-    //         text: "System and related data deleted successfully",
-    //       });
-    //       this.fetchDeletedSystems(); // Refresh the deleted systems data
-    //     }
-    //   } catch (error) {
-    //     console.error("Error confirming delete history system:", error);
-    //     await Swal.fire({
-    //       icon: "error",
-    //       title: "Error",
-    //       text: "Failed to delete history system",
-    //     });
-    //   }
-    // },
     async restoreSelectedSystems() {
       try {
         // Check if any systems are selected
@@ -1205,6 +1168,13 @@ export default {
     },
   },
   computed: {
+    filteredUsersList() {
+      return this.displayedUsers.filter((user) => {
+        const fullName =
+          `${user.user_firstname} ${user.user_lastname}`.toLowerCase();
+        return fullName.includes(this.searchUser.toLowerCase());
+      });
+    },
     numberOfPagesprojectUser() {
       // เปลี่ยนชื่อ computed numberOfPages เพื่อไม่ให้ซ้ำกับชื่ออื่น
       return Math.ceil(this.projectUsers.length / this.perPageprojectUser);
