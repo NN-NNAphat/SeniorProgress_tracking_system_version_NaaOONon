@@ -344,6 +344,7 @@
               v-model="editScreen.screen_id"
               label="Screen ID"
               readonly
+              disabled
             ></v-text-field>
             <v-text-field
               v-model="editScreen.screen_name"
@@ -993,20 +994,14 @@ export default {
 
     async updateScreen() {
       try {
-        // Convert image to base64
-        let base64Image = null;
-        if (this.editScreen.screen_pic) {
-          base64Image = await this.imageToBase64Edit(
-            this.editScreen.screen_pic
-          );
-          // Remove data URI prefix
-          base64Image = base64Image.replace(
-            /^data:image\/(png|jpeg|jpg);base64,/,
-            ""
-          );
+        const requestData = { ...this.editScreen };
+        if (this.editScreen.screen_pic instanceof File) {
+          // Check if screen_pic is a file
+          const file = this.editScreen.screen_pic;
+          const imageUrl = URL.createObjectURL(file); // Create URL for the selected file
+          requestData.screen_pic = imageUrl; // Assign the URL to requestData instead of the file itself
         }
 
-        // Make request to update screen
         const response = await fetch(
           `http://localhost:7777/screens/updateScreen/${this.editScreen.id}`,
           {
@@ -1014,14 +1009,7 @@ export default {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              screen_name: this.editScreen.screen_name,
-              screen_status: this.editScreen.screen_status,
-              screen_level: this.editScreen.screen_level,
-              screen_pic: base64Image,
-              is_deleted: this.editScreen.is_deleted,
-              // Add more fields as needed
-            }),
+            body: JSON.stringify(requestData),
           }
         );
 
@@ -1039,6 +1027,7 @@ export default {
         this.fetchScreens();
       } catch (error) {
         console.error("Error updating screen:", error);
+
         await Swal.fire({
           icon: "error",
           title: "Error",
@@ -1046,6 +1035,7 @@ export default {
         });
       }
     },
+
     async imageToBase64Edit(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
