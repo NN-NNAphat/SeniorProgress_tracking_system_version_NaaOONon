@@ -150,7 +150,11 @@
             v-for="(screen, index) in paginatedScreens"
             :key="index"
           >
-            <v-card class="mx-auto full-width" max-width="400">
+            <v-card
+              class="mx-auto full-width"
+              max-width="400"
+              @click="goToScreensDetail(screen.id)"
+            >
               <v-img
                 class="align-end text-white"
                 height="200"
@@ -180,7 +184,7 @@
                 <v-btn
                   color="orange"
                   class="small"
-                  @click="openEditDialog(screen)"
+                  @click.stop="openEditDialog(screen)"
                 >
                   <v-icon>mdi-pencil</v-icon>
                 </v-btn>
@@ -188,7 +192,7 @@
                 <v-btn
                   color="orange"
                   class="small"
-                  @click="confirmDeleteScreen(screen)"
+                  @click.stop="confirmDeleteScreen(screen)"
                 >
                   <v-icon>mdi-delete</v-icon>
                 </v-btn>
@@ -196,15 +200,11 @@
                 <v-btn
                   color="orange"
                   class="small"
-                  @click="
+                  @click.stop="
                     getUserScreenManagement(projectId, systemId, screen.id)
                   "
                 >
                   <v-icon>mdi-account-multiple</v-icon>
-                </v-btn>
-
-                <v-btn class="small" @click="goToScreensDetail(screen.id)">
-                  <v-icon>mdi-information</v-icon>
                 </v-btn>
               </v-card-actions>
             </v-card>
@@ -267,37 +267,67 @@
               ]"
             ></v-select>
 
-            <!-- New field for selecting users -->
             <v-select
-              v-model="newScreen.selectedUsers"
-              :items="filteredUsers('Implementer')"
-              label="Select Implementer"
-              item-value="id"
-              item-text="userText"
-              multiple
-            ></v-select>
-
-            <v-select
-              v-model="newScreen.selectedUsers"
-              :items="filteredUsers('Developer')"
-              label="Select Developer"
-              item-value="id"
-              item-text="userText"
-              multiple
-            ></v-select>
-
-            <v-select
-              v-model="newScreen.selectedUsers"
+              v-model="selectedSystemAnalysts"
               :items="filteredUsers('System Analyst')"
               label="Select System Analyst"
               item-value="id"
               item-text="userText"
               multiple
-            ></v-select>
+              required
+              :rules="[
+                (v) => !!v || 'At least one System Analyst must be selected',
+              ]"
+            >
+              <template v-slot:prepend-item>
+                <v-list-item @click="selectAllSystemAnalysts">
+                  <v-list-item-content>Select All</v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-select>
+
+            <v-select
+              v-model="selectedDevelopers"
+              :items="filteredUsers('Developer')"
+              label="Select Developer"
+              item-value="id"
+              item-text="userText"
+              multiple
+              required
+              :rules="[(v) => !!v || 'At least one Developer must be selected']"
+            >
+              <template v-slot:prepend-item>
+                <v-list-item @click="selectAllDevelopers">
+                  <v-list-item-content>Select All</v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-select>
+
+            <v-select
+              v-model="selectedImplementers"
+              :items="filteredUsers('Implementer')"
+              label="Select Implementer"
+              item-value="id"
+              item-text="userText"
+              multiple
+              required
+              :rules="[
+                (v) => !!v || 'At least one Implementer must be selected',
+              ]"
+            >
+              <template v-slot:prepend-item>
+                <v-list-item @click="selectAllImplementers">
+                  <v-list-item-content>Select All</v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-select>
 
             <!-- Buttons -->
-            <v-btn type="submit">Create</v-btn>
-            <v-btn @click="createScreenDialog = false">Cancel</v-btn>
+            <v-btn color="primary" type="submit">Create</v-btn>
+
+            <v-btn color="error" @click="createScreenDialog = false"
+              >Cancel</v-btn
+            >
           </v-form>
         </v-card-text>
       </v-card>
@@ -460,6 +490,9 @@ export default {
   layout: "admin",
   data() {
     return {
+      selectedSystemAnalysts: [],
+      selectedDevelopers: [],
+      selectedImplementers: [],
       implementers: [],
       developers: [],
       systemAnalysts: [],
@@ -548,10 +581,125 @@ export default {
     this.fetchSystemNameENG();
     this.fetchSystemUsers(this.systemId, this.projectId);
   },
+  created() {
+    this.fetchSystemUsers(this.systemId, this.projectId);
+  },
+
   methods: {
+    filteredUsers(position) {
+      return this.filteredUserList(position);
+    }, // ฟังก์ชันที่ใช้ในการเลือกผู้ใช้ทั้งหมดในตำแหน่งนั้นๆ
+
+    selectAllDevelopers() {
+      this.selectedDevelopers = this.filteredUsers("Developer").map(
+        (user) => user.id
+      );
+    },
+    selectAllImplementers() {
+      this.selectedImplementers = this.filteredUsers("Implementer").map(
+        (user) => user.id
+      );
+    },
+    selectAllSystemAnalysts() {
+      const users = this.filteredUsers("System Analyst");
+      this.selectedSystemAnalysts = users.map((user) => user.id);
+    },
+
+    async createScreen() {
+      const systemId = this.$route.params.id;
+
+      try {
+        // Validate form fields
+        const valid = await this.$refs.screenForm.validate();
+        if (!valid) {
+          // If form is not valid, return early
+          return;
+        }
+
+        // Check if an avatar file is selected
+        let base64Image = null;
+        if (this.avatarFile) {
+          base64Image = await this.imageToBase64(this.avatarFile);
+        }
+
+        // Fetch system data to get project_id
+        const systemResponse = await fetch(
+          `http://localhost:7777/systems/getOne/${systemId}`
+        );
+        if (!systemResponse.ok) {
+          throw new Error("Failed to fetch system data");
+        }
+
+        const systemData = await systemResponse.json();
+        const projectId = systemData.project_id;
+
+        // Prepare data to send
+        const requestData = {
+          screen_id: this.newScreen.screen_id,
+          screen_name: this.newScreen.screen_name,
+          screen_status: this.newScreen.screen_status,
+          screen_level: this.newScreen.screen_level,
+          screen_pic: base64Image,
+          system_id: systemId,
+          screen_progress: 0,
+          screen_plan_start: this.newScreen.screen_plan_start || null,
+          screen_plan_end: this.newScreen.screen_plan_end || null,
+          project_id: projectId,
+          assignedUsers: [
+            // Use selected users for each position
+            ...this.selectedSystemAnalysts,
+            ...this.selectedDevelopers,
+            ...this.selectedImplementers,
+          ],
+        };
+
+        // Make the request to create a new screen
+        const response = await fetch(
+          `http://localhost:7777/screens/createScreen`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestData),
+          }
+        );
+
+        // Check if the screen was created successfully
+        if (response.ok) {
+          await Swal.fire({
+            icon: "success",
+            title: "Screen Created!",
+            text: "The new screen has been created successfully.",
+            timer: 3000, // Set the timer to 3 seconds (3000 milliseconds)
+          });
+
+          // Reset the form
+          this.$refs.screenForm.reset();
+        } else {
+          throw new Error("Failed to create screen");
+        }
+        this.fetchScreens();
+        this.fetchSystemNameENG();
+        this.fetchSystem();
+      } catch (error) {
+        console.error("Error creating screen", error);
+
+        // Show error message using SweetAlert2
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text:
+            error.message || "Failed to create the screen. Please try again.",
+          timer: 3000, // Set the timer to 3 seconds (3000 milliseconds)
+        });
+      }
+    },
+
     changePageUserSystems(page) {
       this.paginationPageUserSystems = page;
     },
+
     deleteUser(userId) {
       const { systemId, projectId, screenId } = this; // สมมติว่าคุณมีตัวแปรเหล่านี้ใน Vue instance อยู่แล้ว
       try {
@@ -614,6 +762,7 @@ export default {
         // จัดการข้อผิดพลาดที่เกิดขึ้น
       }
     },
+
     openAssignUserDialog(projectId, systemId, screenId) {
       // เรียกใช้งาน assignUser ที่นี่หลังจากกำหนดค่า projectId, systemId, screenId
       this.assignProjectId = projectId;
@@ -622,9 +771,11 @@ export default {
       this.fetchUsersNOTINScreen(); // เรียกใช้งาน assignUser ที่นี่
       this.dialogVisible = true;
     },
+
     closeAssignUserDialog() {
       this.dialogVisible = false;
     },
+
     async fetchUsersNOTINScreen() {
       const projectId = this.assignProjectId;
       const systemId = this.assignSystemId;
@@ -667,6 +818,7 @@ export default {
         // จัดการข้อผิดพลาดการดึงข้อมูลผู้ใช้
       }
     },
+
     async getUserScreenManagement(projectId, systemId, screenId) {
       try {
         const response = await fetch(
@@ -704,6 +856,7 @@ export default {
         console.error("Error fetching deleted screens by system ID:", error);
       }
     },
+
     async showSystemIdDialog() {
       this.systemIdDialog = true;
       await this.fetchDeletedScreensBySystemId(); // Fetch deleted screens when opening the dialog
@@ -711,94 +864,6 @@ export default {
 
     closeSystemIdDialog() {
       this.systemIdDialog = false;
-    },
-    filteredUsers(position) {
-      return this.systemUsers.filter((user) => user.user_position === position);
-    },
-    async createScreen() {
-      const systemId = this.$route.params.id;
-
-      try {
-        // Validate form fields
-        const valid = await this.$refs.screenForm.validate();
-        if (!valid) {
-          // If form is not valid, return early
-          return;
-        }
-
-        // Check if an avatar file is selected
-        let base64Image = null;
-        if (this.avatarFile) {
-          base64Image = await this.imageToBase64(this.avatarFile);
-        }
-
-        // Fetch system data to get project_id
-        const systemResponse = await fetch(
-          `http://localhost:7777/systems/getOne/${systemId}`
-        );
-        if (!systemResponse.ok) {
-          throw new Error("Failed to fetch system data");
-        }
-
-        const systemData = await systemResponse.json();
-        const projectId = systemData.project_id;
-
-        // Prepare data to send
-        const requestData = {
-          screen_id: this.newScreen.screen_id,
-          screen_name: this.newScreen.screen_name,
-          screen_status: this.newScreen.screen_status,
-          screen_level: this.newScreen.screen_level,
-          screen_pic: base64Image,
-          system_id: systemId,
-          screen_progress: 0,
-          screen_plan_start: this.newScreen.screen_plan_start || null,
-          screen_plan_end: this.newScreen.screen_plan_end || null,
-          project_id: projectId,
-          assignedUsers: this.newScreen.selectedUsers,
-        };
-
-        // Make the request to create a new screen
-        const response = await fetch(
-          `http://localhost:7777/screens/createScreen`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(requestData),
-          }
-        );
-
-        // Check if the screen was created successfully
-        if (response.ok) {
-          await Swal.fire({
-            icon: "success",
-            title: "Screen Created!",
-            text: "The new screen has been created successfully.",
-            timer: 3000, // Set the timer to 3 seconds (3000 milliseconds)
-          });
-
-          // Reset the form
-          this.$refs.screenForm.reset();
-        } else {
-          throw new Error("Failed to create screen");
-        }
-        this.fetchScreens();
-        this.fetchSystemNameENG();
-        this.fetchSystem();
-      } catch (error) {
-        console.error("Error creating screen", error);
-
-        // Show error message using SweetAlert2
-        await Swal.fire({
-          icon: "error",
-          title: "Error",
-          text:
-            error.message || "Failed to create the screen. Please try again.",
-          timer: 3000, // Set the timer to 3 seconds (3000 milliseconds)
-        });
-      }
     },
 
     async imageToBase64(imageFile) {
@@ -817,6 +882,7 @@ export default {
         reader.readAsDataURL(imageFile); // Read file as base64
       });
     },
+
     getBase64Image(base64Data) {
       return "data:image/jpeg;base64," + base64Data;
     },
@@ -842,16 +908,14 @@ export default {
         console.error("Error sending avatar data:", error);
       }
     },
+
     onPageChange(newPage) {
       this.currentPage = newPage;
     },
+
     async fetchSystemUsers(systemId, projectId) {
       try {
-        // Check if systemId and projectId are not null
-        if (systemId === null || projectId === null) {
-          throw new Error("System ID or Project ID is null");
-        }
-
+        // เรียกข้อมูลผู้ใช้จาก API โดยใช้ systemId และ projectId
         const response = await fetch(
           `http://localhost:7777/user_systems/getUserBySystemAndProject/${systemId}/${projectId}`
         );
@@ -859,6 +923,7 @@ export default {
           throw new Error("Failed to fetch system users");
         }
         const users = await response.json();
+        // แปลงข้อมูลผู้ใช้เป็นรูปแบบที่ต้องการและกำหนดให้กับตัวแปร systemUsers
         this.systemUsers = users.map((user) => ({
           user_pic: user.user_pic,
           user_position: user.user_position,
@@ -870,6 +935,7 @@ export default {
         }));
       } catch (error) {
         console.error("Error fetching system users:", error);
+        // กรณีเกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้ กำหนดให้ systemUsers เป็น array ว่าง
         this.systemUsers = [];
       }
     },
@@ -923,9 +989,11 @@ export default {
         // Handle error fetching Screen
       }
     },
+
     async goToScreensDetail(screenId) {
       await this.$router.push({ path: `/screens/${screenId}` });
     },
+
     async updateScreen() {
       try {
         const response = await fetch(
@@ -957,16 +1025,19 @@ export default {
         });
       }
     },
+
     goToScreensDetails(screen) {
       this.$router.push({
         path: `/Screen/${screen.id}`,
         params: { selectedScreen: screen },
       });
     },
+
     openEditDialog(screen) {
       this.editScreen = { ...screen };
       this.editScreenDialog = true;
     },
+
     async softDeleteScreen(screen) {
       try {
         const confirmResult = await Swal.fire({
@@ -1007,10 +1078,12 @@ export default {
         );
       }
     },
+
     async goToCreateScreen() {
       // Open the create system dialog first
       this.createScreenDialog = true;
     },
+
     async saveEditedScreen() {
       try {
         const response = await fetch(
@@ -1049,6 +1122,7 @@ export default {
         });
       }
     },
+
     updateDateTime() {
       const now = new Date();
       const options = {
@@ -1065,6 +1139,7 @@ export default {
       this.greeting = this.getGreeting(now);
       this.currentDateTime = now.toLocaleDateString("en-US", options);
     },
+
     getGreeting(date) {
       const hour = date.getHours();
 
@@ -1273,6 +1348,10 @@ export default {
     },
   },
   computed: {
+    filteredUserList() {
+      return (position) =>
+        this.systemUsers.filter((user) => user.user_position === position);
+    },
     filteredsearchprojectUser() {
       const startIndex =
         (this.paginationPageUserSystems - 1) * this.itemsPerPageUserSystems;
