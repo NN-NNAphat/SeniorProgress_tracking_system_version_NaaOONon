@@ -182,7 +182,7 @@
 
               <v-card-actions>
                 <v-btn
-                  color="orange"
+                  color="primary"
                   class="small"
                   @click.stop="openEditDialog(screen)"
                 >
@@ -190,21 +190,21 @@
                 </v-btn>
 
                 <v-btn
-                  color="orange"
-                  class="small"
-                  @click.stop="confirmDeleteScreen(screen)"
-                >
-                  <v-icon>mdi-delete</v-icon>
-                </v-btn>
-
-                <v-btn
-                  color="orange"
+                  color="primary"
                   class="small"
                   @click.stop="
                     getUserScreenManagement(projectId, systemId, screen.id)
                   "
                 >
                   <v-icon>mdi-account-multiple</v-icon>
+                </v-btn>
+
+                <v-btn
+                  color="error"
+                  class="small"
+                  @click.stop="confirmDeleteScreen(screen)"
+                >
+                  <v-icon>mdi-delete</v-icon>
                 </v-btn>
               </v-card-actions>
             </v-card>
@@ -354,6 +354,25 @@
               label="Screen Level"
               :items="['Hard', 'Moderate', 'Easy', 'Simple']"
             ></v-select>
+            <v-select
+              v-model="editScreen.screen_status"
+              label="Screen Status"
+              :items="[
+                'Not started yet',
+                'design',
+                'develop',
+                'correct',
+                'finish',
+              ]"
+            ></v-select>
+            <v-file-input
+              accept="image/png, image/jpeg, image/bmp"
+              label="Select screen image"
+              placeholder="Select screen image"
+              prepend-icon="mdi-camera"
+              v-model="editScreen.screen_pic"
+            ></v-file-input>
+            <!-- Add more fields as needed -->
             <v-btn type="submit">Update</v-btn>
             <v-btn @click="editScreenDialog = false">Cancel</v-btn>
           </v-form>
@@ -887,28 +906,6 @@ export default {
       return "data:image/jpeg;base64," + base64Data;
     },
 
-    async sendAvatarDataToAPI(base64Data) {
-      // Send the base64Data to your API
-      // Example:
-      try {
-        const response = await fetch("YOUR_API_ENDPOINT", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ avatar: base64Data }),
-        });
-
-        if (response.ok) {
-          console.log("Avatar data sent successfully");
-        } else {
-          throw new Error("Failed to send avatar data");
-        }
-      } catch (error) {
-        console.error("Error sending avatar data:", error);
-      }
-    },
-
     onPageChange(newPage) {
       this.currentPage = newPage;
     },
@@ -996,6 +993,20 @@ export default {
 
     async updateScreen() {
       try {
+        // Convert image to base64
+        let base64Image = null;
+        if (this.editScreen.screen_pic) {
+          base64Image = await this.imageToBase64Edit(
+            this.editScreen.screen_pic
+          );
+          // Remove data URI prefix
+          base64Image = base64Image.replace(
+            /^data:image\/(png|jpeg|jpg);base64,/,
+            ""
+          );
+        }
+
+        // Make request to update screen
         const response = await fetch(
           `http://localhost:7777/screens/updateScreen/${this.editScreen.id}`,
           {
@@ -1003,17 +1014,27 @@ export default {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(this.editScreen),
+            body: JSON.stringify({
+              screen_name: this.editScreen.screen_name,
+              screen_status: this.editScreen.screen_status,
+              screen_level: this.editScreen.screen_level,
+              screen_pic: base64Image,
+              is_deleted: this.editScreen.is_deleted,
+              // Add more fields as needed
+            }),
           }
         );
+
         if (!response.ok) {
           throw new Error("Failed to update screen");
         }
+
         await Swal.fire({
           icon: "success",
           title: "Success",
           text: "Screen updated successfully",
         });
+
         this.editScreenDialog = false;
         this.fetchScreens();
       } catch (error) {
@@ -1024,6 +1045,14 @@ export default {
           text: "Failed to update screen",
         });
       }
+    },
+    async imageToBase64Edit(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+      });
     },
 
     goToScreensDetails(screen) {
