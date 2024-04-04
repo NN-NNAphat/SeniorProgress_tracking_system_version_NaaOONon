@@ -9,7 +9,7 @@
               System name : {{ system.system_nameEN }}
               <v-spacer></v-spacer>
               <v-icon @click.stop="showUserDialog = true">
-                mdi-account-group</v-icon
+                mdi-account-multiple</v-icon
               >
             </v-card-title>
 
@@ -162,23 +162,34 @@
                 cover
               >
                 <v-card-title class="card-title">
-                  <div class="title-text">
+                  <div>
                     {{ screen.screen_name }}
                   </div>
                 </v-card-title>
               </v-img>
 
               <v-card-subtitle class="pt-4">
-                <span style="font-weight: bold">Screen Name:</span>
-                {{ screen.screen_name }}
+                <span style="font-weight: bold">Progress :</span>
+                {{ Math.floor(screen.screen_progress) }} %
+
+                <v-progress-linear
+                  color="primary"
+                  height="10"
+                  :value="parseFloat(screen.screen_progress)"
+                  striped
+                ></v-progress-linear>
               </v-card-subtitle>
 
               <v-card-text>
-                <!-- <h1>screen ID: {{ screen.id }}</h1> -->
-                <div><b>Due Date:</b> {{ screen.screen_plan_end }}</div>
-                <div><b>Screen Level:</b> {{ screen.screen_level }}</div>
+                <div><b>Manday:</b> {{ screen.screen_manday }} Days</div>
+
+                <div><b>Task Count:</b> {{ screen.task_count || 0 }}</div>
                 <div>
-                  <b>Progress:</b> {{ Math.floor(screen.screen_progress) }} %
+                  <b>Planned Start:</b>
+                  {{ formatDate(screen.screen_plan_start) }}
+                </div>
+                <div>
+                  <b>Planned End:</b> {{ formatDate(screen.screen_plan_end) }}
                 </div>
               </v-card-text>
 
@@ -260,13 +271,7 @@
             <v-select
               v-model="newScreen.screen_status"
               label="Screen Status"
-              :items="[
-                'Not started yet',
-                'design',
-                'develop',
-                'correct',
-                'finish',
-              ]"
+              :items="['Not started yet', 'design', 'develop', 'finish']"
             ></v-select>
 
             <v-select
@@ -360,13 +365,7 @@
             <v-select
               v-model="editScreen.screen_status"
               label="Screen Status"
-              :items="[
-                'Not started yet',
-                'design',
-                'develop',
-                'correct',
-                'finish',
-              ]"
+              :items="['Not started yet', 'design', 'develop', 'finish']"
             ></v-select>
             <v-file-input
               accept="image/png, image/jpeg, image/bmp"
@@ -638,6 +637,16 @@ export default {
   },
 
   methods: {
+    formatDate(dateString) {
+      const date = new Date(dateString);
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      const formattedDate = `${day.toString().padStart(2, "0")}/${month
+        .toString()
+        .padStart(2, "0")}/${year}`;
+      return formattedDate;
+    },
     filteredScreenUsers() {
       // กรองผู้ใช้โดยใช้คำค้นหา
       return this.screenUsers.filter(
@@ -1608,7 +1617,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .full-width {
   display: flex;
   flex-wrap: wrap;
@@ -1622,6 +1631,8 @@ export default {
   padding: 1.4px;
   background-color: rgba(0, 0, 0, 0.4);
   color: white;
+  display: grid; /* เปลี่ยนเป็น grid layout */
+  place-items: center; /* ให้อยู่ตรงกลางทั้งแนวนอนและแนวตั้ง */
 }
 
 .title-text {
