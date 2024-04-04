@@ -429,10 +429,25 @@
     <!-- User Screen Managementdialog -->
     <v-dialog v-model="showUserManagementDialog" max-width="600">
       <v-card>
-        <v-card-title> User Screen Management </v-card-title>
+        <v-card-title> Manage User Screens </v-card-title>
         <v-card-text>
+          <!-- Search field -->
+          <v-text-field
+            v-model="searchUser"
+            label="Search"
+            dense
+            hide-details
+            solo
+            flat
+            outlined
+            color="primary"
+          ></v-text-field>
+
           <v-list>
-            <v-list-item v-for="(user, index) in screenUsers" :key="user.id">
+            <v-list-item
+              v-for="(user, index) in filteredScreenUsers"
+              :key="user.id"
+            >
               <v-list-item-avatar>
                 <v-img :src="user.user_pic" width="40" height="40"></v-img>
               </v-list-item-avatar>
@@ -444,7 +459,7 @@
                   {{ user.user_position }} - {{ user.user_department }}
                 </v-list-item-subtitle>
               </v-list-item-content>
-              <!-- ปุ่มลบ -->
+              <!-- Delete button -->
               <v-list-item-action>
                 <v-btn icon @click="deleteUser(user.id)">
                   <v-icon>mdi-delete</v-icon>
@@ -467,6 +482,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
     <!-- Assign Userdialog -->
     <v-dialog v-model="dialogVisible" max-width="400">
       <v-card>
@@ -510,6 +526,7 @@ export default {
   layout: "admin",
   data() {
     return {
+      searchUser: "",
       selectedSystemAnalysts: [],
       selectedDevelopers: [],
       selectedImplementers: [],
@@ -1367,6 +1384,24 @@ export default {
     },
   },
   computed: {
+    filteredScreenUsers() {
+      // กรองผู้ใช้โดยใช้คำค้นหา
+      return this.screenUsers.filter(
+        (user) =>
+          user.user_firstname
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_lastname
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_position
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_department
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase())
+      );
+    },
     filteredUserList() {
       return (position) =>
         this.systemUsers.filter((user) => user.user_position === position);
