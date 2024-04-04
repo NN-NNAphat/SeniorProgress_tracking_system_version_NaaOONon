@@ -196,7 +196,18 @@ router.get('/getOne/:id', async (req, res) => {
   const id = req.params.id;
   try {
     connection.query(
-      'SELECT * FROM systems WHERE id = ?',
+      `SELECT 
+          Systems.*, 
+          COUNT(Screens.screen_id) AS screen_count, 
+          AVG(Screens.screen_progress) AS system_progress,
+          DATE_FORMAT(MIN(Screens.screen_plan_start), '%Y-%m-%d') AS system_plan_start,
+          DATE_FORMAT(MAX(Screens.screen_plan_end), '%Y-%m-%d') AS system_plan_end,
+          DATEDIFF(MAX(Screens.screen_plan_end), MIN(Screens.screen_plan_start)) AS system_manday,
+          Systems.is_deleted
+      FROM Systems 
+      LEFT JOIN Screens ON Systems.id = Screens.system_id
+      WHERE Systems.id = ?
+      GROUP BY Systems.id`,
       [id],
       (err, results, fields) => {
         if (err) {

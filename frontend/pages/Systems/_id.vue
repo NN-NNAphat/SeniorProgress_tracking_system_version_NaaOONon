@@ -14,7 +14,7 @@
             </v-card-title>
 
             <v-card-subtitle>
-              Systems Progress: {{ system.system_progress }}
+              Systems Progress: {{ Math.floor(system.system_progress) }} %
               <v-progress-linear
                 color="primary"
                 height="50"
@@ -177,7 +177,9 @@
                 <!-- <h1>screen ID: {{ screen.id }}</h1> -->
                 <div><b>Due Date:</b> {{ screen.screen_plan_end }}</div>
                 <div><b>Screen Level:</b> {{ screen.screen_level }}</div>
-                <div><b>Progress:</b> {{ screen.screen_progress }}</div>
+                <div>
+                  <b>Progress:</b> {{ Math.floor(screen.screen_progress) }} %
+                </div>
               </v-card-text>
 
               <v-card-actions>
@@ -384,44 +386,40 @@
     <!-- Dialog for displaying SystemId -->
     <v-dialog v-model="systemIdDialog" max-width="800">
       <v-card>
-        <v-card-title>System ID: {{ systemId }}</v-card-title>
-        <v-list>
-          <v-list-item-group>
-            <v-list-item v-for="(screen, index) in deletedScreens" :key="index">
-              <v-list-item-content>
-                <v-list-item-title>{{ screen.screen_id }}</v-list-item-title>
-                <v-list-item-subtitle>{{
-                  screen.screen_name
-                }}</v-list-item-subtitle>
-                <v-list-item-subtitle>{{
-                  screen.screen_plan_end
-                }}</v-list-item-subtitle>
-                <v-list-item-subtitle>{{
-                  screen.screen_level
-                }}</v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-avatar>
-                <v-img
-                  :src="getBase64Image(screen.screen_pic)"
-                  height="50"
-                  contain
-                ></v-img>
-              </v-list-item-avatar>
-              <v-list-item-action>
-                <v-btn icon @click="confirmDeleteScreenHistory(screen.id)">
-                  <v-icon color="red darken-2">mdi-delete</v-icon>
-                </v-btn>
-              </v-list-item-action>
-              <v-list-item-action>
-                <v-btn icon @click="restoreScreen(screen.id)">
-                  <v-icon color="green darken-2">mdi-restore</v-icon>
-                </v-btn>
-              </v-list-item-action>
-            </v-list-item>
-          </v-list-item-group>
-        </v-list>
+        <v-data-table
+          v-model="selectedDeletedScreens"
+          :headers="tableHeaders"
+          :items="deletedScreens"
+          item-key="id"
+          show-select
+        >
+          <!-- Define headers for the table -->
+          <template v-slot:top>
+            <v-toolbar flat>
+              <v-toolbar-title>Deleted Screen History</v-toolbar-title>
+              <v-divider class="mx-4" inset vertical></v-divider>
+              <v-spacer></v-spacer>
+              <v-btn class="mr-3" color="green" @click="restoreSelectedScreen"
+                ><v-icon color="white">mdi-restore</v-icon></v-btn
+              >
+              <v-btn color="error" @click="deleteSelectedHistoryScreen">
+                <v-icon>mdi-delete</v-icon></v-btn
+              >
+            </v-toolbar>
+          </template>
+
+          <template v-slot:item.screen_pic="{ item }">
+            <v-img
+              :src="getBase64Image(item.screen_pic)"
+              max-width="50px"
+              max-height="50px"
+              contain
+            ></v-img>
+          </template>
+        </v-data-table>
+
         <v-card-actions>
-          <v-btn color="primary" @click="closeSystemIdDialog">Close</v-btn>
+          <v-btn color="error" @click="closeSystemIdDialog">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -533,6 +531,13 @@ export default {
   layout: "admin",
   data() {
     return {
+      tableHeaders: [
+        { text: "Screen Picture", align: "start", value: "screen_pic" },
+        { text: "Screen ID", value: "screen_id" },
+        { text: "Screen Name", value: "screen_name" },
+      ],
+
+      selectedDeletedScreens: [],
       itemsPerPageUserScreen: 5,
       paginationPageUserScreen: 1,
 
@@ -1311,6 +1316,117 @@ export default {
         );
       }
     },
+    async restoreSelectedScreen() {
+      try {
+        const confirmResult = await Swal.fire({
+          title: "Are you sure?",
+          text: "You are about to restore the selected screens.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, restore them!",
+        });
+
+        if (confirmResult.isConfirmed) {
+          const restorePromises = this.selectedDeletedScreens.map(
+            async (screen) => {
+              const response = await fetch(
+                `http://localhost:7777/screens/updateScreen/${screen.id}`,
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    screen_name: screen.screen_name,
+                    screen_id: screen.screen_id,
+                    is_deleted: 0,
+                  }),
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error("Failed to restore screen");
+              }
+
+              console.log("Screen restored successfully");
+              return screen.id;
+            }
+          );
+
+          await Promise.all(restorePromises);
+
+          await Swal.fire(
+            "Success",
+            "Selected screens restored successfully.",
+            "success"
+          );
+
+          this.fetchDeletedScreens();
+          this.fetchScreens();
+        }
+      } catch (error) {
+        console.error("Error restoring screens:", error);
+        await Swal.fire(
+          "Error",
+          "An error occurred during the screens restoration process.",
+          "error"
+        );
+      }
+    },
+    async deleteSelectedHistoryScreen() {
+      try {
+        const confirmResult = await Swal.fire({
+          title: "Are you sure?",
+          text: "You won't be able to revert this!",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, delete them!",
+        });
+
+        if (confirmResult.isConfirmed) {
+          const deletePromises = this.selectedDeletedScreens.map(
+            async (screen) => {
+              const response = await fetch(
+                `http://localhost:7777/screens/deleteHistoryScreen/${screen.id}`,
+                {
+                  method: "DELETE",
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error("Failed to delete screen");
+              }
+
+              console.log("Screen deleted successfully");
+              return screen.id;
+            }
+          );
+
+          await Promise.all(deletePromises);
+
+          await Swal.fire(
+            "Success",
+            "Selected screens deleted successfully.",
+            "success"
+          );
+
+          this.fetchDeletedScreens();
+        }
+      } catch (error) {
+        console.error("Error deleting screens:", error);
+
+        await Swal.fire(
+          "Error",
+          "An error occurred during the screens deletion process.",
+          "error"
+        );
+      }
+    },
+
     async fetchDeletedScreens() {
       try {
         const systemId = this.$route.params.id;
