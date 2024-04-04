@@ -445,7 +445,7 @@
 
           <v-list>
             <v-list-item
-              v-for="(user, index) in filteredScreenUsers"
+              v-for="(user, index) in paginatedScreenUsers"
               :key="user.id"
             >
               <v-list-item-avatar>
@@ -461,23 +461,30 @@
               </v-list-item-content>
               <!-- Delete button -->
               <v-list-item-action>
-                <v-btn icon @click="deleteUser(user.id)">
+                <v-btn color="error" icon @click="deleteUser(user.id)">
                   <v-icon>mdi-delete</v-icon>
                 </v-btn>
               </v-list-item-action>
             </v-list-item>
           </v-list>
+
+          <!-- Pagination -->
+          <v-pagination
+            v-model="paginationPageUserScreen"
+            :length="totalPagesUserScreen"
+            @input="changePageUserScreen"
+          ></v-pagination>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="primary" @click="showUserManagementDialog = false"
-            >Close</v-btn
-          >
           <v-btn
             color="primary"
             @click="
               openAssignUserDialog(projectId, systemId, screenId), assignUser
             "
             >Assign User</v-btn
+          >
+          <v-btn color="error" @click="showUserManagementDialog = false"
+            >Close</v-btn
           >
         </v-card-actions>
       </v-card>
@@ -508,10 +515,10 @@
           ></v-select>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="primary" @click="closeAssignUserDialog">Close</v-btn>
           <v-btn color="primary" @click="assignUsersToScreen"
             >Assign User</v-btn
           >
+          <v-btn color="error" @click="closeAssignUserDialog">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -526,6 +533,9 @@ export default {
   layout: "admin",
   data() {
     return {
+      itemsPerPageUserScreen: 5,
+      paginationPageUserScreen: 1,
+
       searchUser: "",
       selectedSystemAnalysts: [],
       selectedDevelopers: [],
@@ -623,6 +633,27 @@ export default {
   },
 
   methods: {
+    filteredScreenUsers() {
+      // กรองผู้ใช้โดยใช้คำค้นหา
+      return this.screenUsers.filter(
+        (user) =>
+          user.user_firstname
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_lastname
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_position
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_department
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase())
+      );
+    },
+    changePageUserScreen(page) {
+      this.paginationPageUserScreen = page;
+    },
     filteredUsers(position) {
       return this.filteredUserList(position);
     }, // ฟังก์ชันที่ใช้ในการเลือกผู้ใช้ทั้งหมดในตำแหน่งนั้นๆ
@@ -1384,24 +1415,18 @@ export default {
     },
   },
   computed: {
-    filteredScreenUsers() {
-      // กรองผู้ใช้โดยใช้คำค้นหา
-      return this.screenUsers.filter(
-        (user) =>
-          user.user_firstname
-            .toLowerCase()
-            .includes(this.searchUser.toLowerCase()) ||
-          user.user_lastname
-            .toLowerCase()
-            .includes(this.searchUser.toLowerCase()) ||
-          user.user_position
-            .toLowerCase()
-            .includes(this.searchUser.toLowerCase()) ||
-          user.user_department
-            .toLowerCase()
-            .includes(this.searchUser.toLowerCase())
+    paginatedScreenUsers() {
+      const start =
+        (this.paginationPageUserScreen - 1) * this.itemsPerPageUserScreen;
+      const end = start + this.itemsPerPageUserScreen;
+      return this.filteredScreenUsers().slice(start, end);
+    },
+    totalPagesUserScreen() {
+      return Math.ceil(
+        this.filteredScreenUsers().length / this.itemsPerPageUserScreen
       );
     },
+
     filteredUserList() {
       return (position) =>
         this.systemUsers.filter((user) => user.user_position === position);
