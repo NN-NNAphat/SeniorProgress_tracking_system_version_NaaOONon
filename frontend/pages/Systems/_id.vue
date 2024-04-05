@@ -168,22 +168,39 @@
                 </v-card-title>
               </v-img>
 
-              <v-card-subtitle class="pt-4">
-                <span style="font-weight: bold">Progress :</span>
-                {{ Math.floor(screen.screen_progress) }} %
-
-                <v-progress-linear
-                  color="primary"
-                  height="10"
-                  :value="parseFloat(screen.screen_progress)"
-                  striped
-                ></v-progress-linear>
+              <v-card-subtitle class="pt-4" style="width: 100%">
+                <span
+                  style="font-weight: bold; display: flex; align-items: center"
+                >
+                  Progress :
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      justify-content: flex-end;
+                      flex-grow: 1;
+                    "
+                  >
+                    <v-progress-linear
+                      color="primary"
+                      height="15"
+                      :value="parseFloat(screen.screen_progress)"
+                      :style="{ width: '95%' }"
+                      striped
+                    >
+                      <strong :style="{ color: 'white' }"
+                        >{{ parseFloat(screen.screen_progress) }}%</strong
+                      ></v-progress-linear
+                    >
+                  </div>
+                </span>
               </v-card-subtitle>
 
               <v-card-text>
                 <div><b>Manday:</b> {{ screen.screen_manday }} Days</div>
 
                 <div><b>Task Count:</b> {{ screen.task_count || 0 }}</div>
+                <p>Status: {{ screen.screen_status }}</p>
                 <div>
                   <b>Planned Start:</b>
                   {{ formatDate(screen.screen_plan_start) }}
@@ -375,8 +392,10 @@
               v-model="editScreen.screen_pic"
             ></v-file-input>
             <!-- Add more fields as needed -->
-            <v-btn type="submit">Update</v-btn>
-            <v-btn @click="editScreenDialog = false">Cancel</v-btn>
+            <v-btn color="primary" type="submit">Update</v-btn>
+            <v-btn color="error" @click="editScreenDialog = false"
+              >Cancel</v-btn
+            >
           </v-form>
         </v-card-text>
       </v-card>

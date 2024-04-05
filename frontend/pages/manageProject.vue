@@ -61,22 +61,30 @@
     <v-data-table
       :headers="headers"
       :items="filteredProjects"
-      :sort-by="[{ key: 'project_id', order: 'asc' }]"
+      :sort-by="[{ key: 'project_id', order: 'desc' }]"
     >
       <template v-slot:item="{ item }">
-        <tr>
+        <tr @click="viewProjectDetails(item)">
           <td>{{ item.project_id }}</td>
           <td>{{ item.project_name_TH }}</td>
           <td>{{ item.project_name_ENG }}</td>
-          <td
-            :style="{
-              color: getProgressColor(item.project_progress),
-            }"
-          >
-            {{ item.project_progress }}
+          <td>
+            <v-progress-linear
+              color="primary"
+              height="20"
+              :value="parseFloat(item.project_progress)"
+              :style="{ width: '100%' }"
+              striped
+            >
+              <strong :style="{ color: 'white' }"
+                >{{ parseFloat(item.project_progress) }}%</strong
+              ></v-progress-linear
+            >
           </td>
-          <td>{{ item.project_plan_start }}</td>
-          <td>{{ item.project_plan_end }}</td>
+
+          <td>{{ formatDate(item.project_plan_start) }}</td>
+          <td>{{ formatDate(item.project_plan_end) }}</td>
+
           <td>
             <!-- Dropdown menu for other actions -->
             <v-menu offset-y>
@@ -101,11 +109,6 @@
                 </v-list-item>
               </v-list>
             </v-menu>
-
-            <!-- Icon for "Manage User Projects" -->
-            <v-btn @click="viewProjectDetails(item)" icon>
-              <v-icon>mdi-menu-right</v-icon>
-            </v-btn>
           </td>
         </tr>
       </template>
@@ -435,6 +438,17 @@ export default {
     };
   },
   methods: {
+    formatDate(dateString) {
+      if (!dateString) {
+        return "Not determined";
+      }
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return "Not determined";
+      }
+      const options = { day: "2-digit", month: "2-digit", year: "numeric" };
+      return date.toLocaleDateString("en-GB", options);
+    },
     selectAllSystemAnalysts() {
       if (this.selectedSystemAnalysts.length === this.systemAnalysts.length) {
         this.selectedSystemAnalysts = [];
@@ -456,17 +470,7 @@ export default {
         this.selectedImplementers = [...this.implementers];
       }
     },
-    getProgressColor(progress) {
-      if (progress >= 0 && progress <= 40) {
-        return "red"; // สีแดงสำหรับค่า progress 0-40
-      } else if (progress > 40 && progress <= 80) {
-        return "yellow"; // สีเหลืองสำหรับค่า progress 41-80
-      } else if (progress > 80 && progress <= 100) {
-        return "green"; // สีเขียวสำหรับค่า progress 80-100
-      } else {
-        return ""; // สีเริ่มต้นหรือสีที่ไม่ได้กำหนด
-      }
-    },
+
     updateDisplayedUserProjects() {
       // อัปเดตหน้าที่แสดงข้อมูลผู้ใช้เมื่อเปลี่ยนหน้า
       const startIndex = (this.currentPage - 1) * this.itemsPerPage;

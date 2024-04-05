@@ -65,7 +65,7 @@
 
                 <p>Screen Manday: {{ screen_manday }}</p>
                 <p>Screen Level: {{ screen_level }}</p>
-                <p>Screen Type: {{ screenType }}</p>
+
                 <p>Task Count: {{ task_count }}</p>
               </v-card-text>
             </div>
@@ -238,8 +238,8 @@
                     <v-row>
                       <v-col>
                         <span style="margin-right: auto; font-size: 17px"
-                          >Progress : {{ task.task_progress || 0 }} %</span
-                        >
+                          >Progress :
+                        </span>
                       </v-col>
                       <v-col>
                         <v-progress-linear
@@ -247,16 +247,22 @@
                           height="15"
                           :value="parseFloat(task.task_progress)"
                           striped
-                          style="margin-left: auto"
-                        ></v-progress-linear>
+                          :style="{ width: '100%' }"
+                        >
+                          <strong :style="{ color: 'white' }"
+                            >{{ parseFloat(task.task_progress) }}%</strong
+                          ></v-progress-linear
+                        >
                       </v-col>
                     </v-row>
                   </div>
 
                   <!-- Row 2: Task Detail -->
                   <p style="font-size: 16px; line-height: 1.5em; height: 170px">
-                    Task Detail: {{ task.task_detail }}
+                    Task Detail:
+                    {{ task.task_detail ? task.task_detail : "Not determined" }}
                   </p>
+
                   <!-- Row 3: User Details -->
                   <div style="height: 100px">
                     <v-divider></v-divider>
@@ -301,6 +307,7 @@
                 <v-card-actions>
                   <!-- Row 4: Plan Start, Plan End, Buttons -->
                   <div style="display: flex; flex-direction: column">
+                    <p>Status : {{ task.task_status }}</p>
                     <!-- Plan Start -->
                     <p>
                       Plan Start:

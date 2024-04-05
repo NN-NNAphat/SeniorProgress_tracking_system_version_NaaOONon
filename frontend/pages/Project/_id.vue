@@ -9,7 +9,7 @@
             Project name : {{ project.project_name_ENG }}
             <v-spacer></v-spacer>
             <v-icon @click.stop="showUserDialog = true">
-              mdi-account-group
+              mdi-account-multiple
             </v-icon>
           </v-card-title>
           <v-card-subtitle>
@@ -152,12 +152,11 @@
     <v-data-table
       :headers="headers"
       :items="filteredSystems"
-      :items-per-page="5"
-      class="elevation-1"
+      :sort-by="[{ key: 'system_id', order: 'desc' }]"
     >
       <!-- ส่วนแสดงข้อมูล -->
       <template v-slot:item="{ item }">
-        <tr>
+        <tr @click="goToSystemsDetail(item.id)">
           <!-- แสดงข้อมูลต่าง ๆ -->
           <td>{{ item.system_id }}</td>
           <td>{{ item.system_nameTH }}</td>
@@ -165,21 +164,24 @@
           <td>{{ item.system_shortname }}</td>
           <td>{{ item.screen_count ? item.screen_count : "0" }}</td>
 
-          <td
-            :style="{
-              color: getProgressColor(item.system_progress),
-            }"
-          >
-            {{ item.system_progress ? item.system_progress : "0" }}
-          </td>
           <td>
-            {{
-              item.system_plan_start ? item.system_plan_start : "Not determined"
-            }}
+            <v-progress-linear
+              color="primary"
+              height="20"
+              :value="parseFloat(item.system_progress)"
+              :style="{ width: '100%' }"
+              striped
+            >
+              <strong :style="{ color: 'white' }"
+                >{{
+                  item.system_progress ? parseFloat(item.system_progress) : 0
+                }}%</strong
+              >
+            </v-progress-linear>
           </td>
-          <td>
-            {{ item.system_plan_end ? item.system_plan_end : "Not determined" }}
-          </td>
+          <td>{{ formatDate(item.system_plan_start) }}</td>
+          <td>{{ formatDate(item.system_plan_end) }}</td>
+
           <td>{{ item.system_manday ? item.system_manday : "0" }}</td>
           <!-- เพิ่มปุ่ม manage user systems -->
           <td>
@@ -208,10 +210,6 @@
                 <!-- Systems Detail action -->
               </v-list>
             </v-menu>
-
-            <v-btn @click="goToSystemsDetail(item.id)" icon>
-              <v-icon>mdi-menu-right</v-icon>
-            </v-btn>
           </td>
         </tr>
       </template>
@@ -374,16 +372,6 @@
             >
           </v-toolbar>
         </template>
-
-        <!-- Define actions for each row
-        <template v-slot:item.actions="{ item }">
-          <v-icon color="green" @click="restoreSystem(item)"
-            >mdi-restore</v-icon
-          >
-          <v-icon color="error" @click="confirmDeleteHistorySystem(item)"
-            >mdi-delete</v-icon
-          >
-        </template> -->
       </v-data-table>
     </v-dialog>
 
@@ -606,6 +594,17 @@ export default {
     };
   },
   methods: {
+    formatDate(dateString) {
+      if (!dateString) {
+        return "Not determined";
+      }
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return "Not determined";
+      }
+      const options = { day: "2-digit", month: "2-digit", year: "numeric" };
+      return date.toLocaleDateString("en-GB", options);
+    },
     selectAllSystemAnalystAF() {
       this.selectedSystemAnalysts = this.availableUsers
         .filter((user) => user.user_position === "System Analyst")
