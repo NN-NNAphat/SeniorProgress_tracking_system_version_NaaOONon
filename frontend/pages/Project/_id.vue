@@ -17,7 +17,7 @@
             <v-progress-linear
               color="primary"
               height="50"
-              :value="parseFloat(project.project_progress)"
+              :value="parseInt(project.project_progress)"
               striped
             ></v-progress-linear>
           </v-card-subtitle>
@@ -31,11 +31,11 @@
               <p>System Count : {{ project.system_count || 0 }}</p>
               <p>
                 Project Plan Start :
-                {{ project.project_plan_start || "Not determined" }}
+                {{ formatDate(project.project_plan_start) || "Not determined" }}
               </p>
               <p>
                 Project Plan End :
-                {{ project.project_plan_end || "Not determined" }}
+                {{ formatDate(project.project_plan_end) || "Not determined" }}
               </p>
             </v-card-text>
           </div>
@@ -168,13 +168,13 @@
             <v-progress-linear
               color="primary"
               height="20"
-              :value="parseFloat(item.system_progress)"
+              :value="parseInt(item.system_progress)"
               :style="{ width: '100%' }"
               striped
             >
               <strong :style="{ color: 'white' }"
                 >{{
-                  item.system_progress ? parseFloat(item.system_progress) : 0
+                  item.system_progress ? parseInt(item.system_progress) : 0
                 }}%</strong
               >
             </v-progress-linear>

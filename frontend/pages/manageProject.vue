@@ -72,12 +72,12 @@
             <v-progress-linear
               color="primary"
               height="20"
-              :value="parseFloat(item.project_progress)"
+              :value="parseInt(item.project_progress)"
               :style="{ width: '100%' }"
               striped
             >
               <strong :style="{ color: 'white' }"
-                >{{ parseFloat(item.project_progress) }}%</strong
+                >{{ parseInt(item.project_progress) }}%</strong
               ></v-progress-linear
             >
           </td>

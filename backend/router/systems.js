@@ -67,7 +67,6 @@ router.get('/getAll', async (req, res) => {
   }
 });
 
-
 router.get('/getOne/:id', async (req, res) => {
   const id = req.params.id;
   try {
@@ -123,7 +122,8 @@ async function updateSystem(system) {
     // Prepare updated system data
     const updatedSystem = {
       screen_count: system.screen_count,
-      system_progress: system.system_progress,
+      // Check if system_progress is null, then set it to 0
+      system_progress: system.system_progress !== null ? system.system_progress : 0,
       // Check if screen_progress is null, then set it to 0
       screen_progress: system.screen_progress || 0,
       // Check if system_plan_start and system_plan_end are null, then keep them as null
@@ -146,6 +146,7 @@ async function updateSystem(system) {
     throw err;
   }
 }
+
 
 
 // Route to get all systems by project_id
@@ -231,7 +232,6 @@ router.get('/getAllHistorySystem', async (req, res) => {
   }
 });
 
-// Route to search systems by project_id
 router.get('/searchByProjectId/:project_id', async (req, res) => {
   try {
     const { project_id } = req.params;
@@ -244,11 +244,11 @@ router.get('/searchByProjectId/:project_id', async (req, res) => {
              Systems.system_nameEN,
              Systems.system_shortname,
              Systems.is_deleted,
-             COUNT(Screens.screen_id) AS screen_count, 
-             AVG(screens.screen_progress) AS system_progress,
-             DATE_FORMAT(MIN(Screens.screen_plan_start), '%Y-%m-%d') AS system_plan_start,
-             DATE_FORMAT(MAX(Screens.screen_plan_end), '%Y-%m-%d') AS system_plan_end,
-             DATEDIFF(MAX(Screens.screen_plan_end), MIN(Screens.screen_plan_start)) AS system_manday
+             COUNT(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_id ELSE NULL END) AS screen_count, 
+             IFNULL(SUM(CASE WHEN Screens.is_deleted = 0 THEN IFNULL(screens.screen_progress, 0) ELSE 0 END) / NULLIF(COUNT(CASE WHEN Screens.is_deleted = 0 THEN screens.screen_progress END), 0), 0) AS system_progress,
+             DATE_FORMAT(MIN(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_start END), '%Y-%m-%d') AS system_plan_start,
+             DATE_FORMAT(MAX(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_end END), '%Y-%m-%d') AS system_plan_end,
+             DATEDIFF(MAX(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_end END), MIN(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_start END)) AS system_manday
       FROM Systems 
       LEFT JOIN Screens ON Systems.id = Screens.system_id 
       WHERE Systems.project_id = ? AND Systems.is_deleted = false

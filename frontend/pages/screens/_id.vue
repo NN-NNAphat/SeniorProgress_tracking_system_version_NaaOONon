@@ -37,7 +37,7 @@
             <v-progress-linear
               color="primary"
               height="50"
-              :value="parseFloat(screen_progress)"
+              :value="parseInt(screen_progress)"
               striped
             ></v-progress-linear>
           </v-card-subtitle>
@@ -245,12 +245,12 @@
                         <v-progress-linear
                           color="primary"
                           height="15"
-                          :value="parseFloat(task.task_progress)"
+                          :value="parseInt(task.task_progress)"
                           striped
                           :style="{ width: '100%' }"
                         >
                           <strong :style="{ color: 'white' }"
-                            >{{ parseFloat(task.task_progress) }}%</strong
+                            >{{ parseInt(task.task_progress) }}%</strong
                           ></v-progress-linear
                         >
                       </v-col>
@@ -390,7 +390,7 @@
                         <v-progress-linear
                           color="primary"
                           height="15"
-                          :value="parseFloat(task.task_progress)"
+                          :value="parseInt(task.task_progress)"
                           striped
                           style="margin-left: auto"
                         ></v-progress-linear>
@@ -522,7 +522,7 @@
                         <v-progress-linear
                           color="primary"
                           height="15"
-                          :value="parseFloat(task.task_progress)"
+                          :value="parseInt(task.task_progress)"
                           striped
                           style="margin-left: auto"
                         ></v-progress-linear>

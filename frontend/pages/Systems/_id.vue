@@ -18,7 +18,7 @@
               <v-progress-linear
                 color="primary"
                 height="50"
-                :value="parseFloat(system.system_progress)"
+                :value="parseInt(system.system_progress)"
                 striped
               ></v-progress-linear>
             </v-card-subtitle>
@@ -193,14 +193,14 @@
                           <v-progress-linear
                             color="primary"
                             height="15"
-                            :value="parseFloat(screen.screen_progress)"
+                            :value="parseInt(screen.screen_progress)"
                             :style="{ width: '95%' }"
                             striped
                           >
                             <strong :style="{ color: 'white' }">
                               {{
                                 screen.screen_progress
-                                  ? parseFloat(screen.screen_progress) + "%"
+                                  ? parseInt(screen.screen_progress) + "%"
                                   : "0%"
                               }}
                             </strong>
