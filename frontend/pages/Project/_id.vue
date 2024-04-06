@@ -596,6 +596,7 @@ export default {
       ],
     };
   },
+
   methods: {
     formatDate(dateString) {
       if (!dateString) {
@@ -1229,6 +1230,10 @@ export default {
   created() {
     this.fetchProjectNameENG();
     this.fetchProjectUsers();
+    this.fetchSystems();
+  },
+  mounted() {
+    this.fetchProjectNameENG();
     this.fetchSystems();
   },
 };

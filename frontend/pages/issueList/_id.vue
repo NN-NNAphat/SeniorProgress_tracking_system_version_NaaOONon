@@ -20,7 +20,7 @@
         v-for="(system, index) in systemsList"
         :key="index"
       >
-        <v-expansion-panel-header style="background-color: #5c3efe">
+        <v-expansion-panel-header style="background-color: #009933">
           <template v-slot:actions>
             <v-icon color="white"> $expand </v-icon>
           </template>
@@ -1322,6 +1322,7 @@ export default {
   },
   data() {
     return {
+      project_name_ENG: "",
       yourSearchData: "",
       //auth
       user: this.$auth.user,

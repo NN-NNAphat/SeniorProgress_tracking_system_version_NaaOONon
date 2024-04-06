@@ -23,7 +23,7 @@
                 @click="ClickDay(), (type = 'day')"
                 style="border: none"
                 :style="{
-                  backgroundColor: colorday ? '#5c3efe' : null,
+                  backgroundColor: colorday ? '#009933' : null,
                   color: colorday ? 'white' : 'black',
                 }"
                 class="mr-2"
@@ -35,7 +35,7 @@
                 @click="ClickWeek(), (type = 'week')"
                 style="border: none"
                 :style="{
-                  backgroundColor: colorweek ? '#5c3efe' : null,
+                  backgroundColor: colorweek ? '#009933' : null,
                   color: colorweek ? 'white' : 'black',
                 }"
               >
@@ -46,13 +46,12 @@
                 @click="ClickMonth(), (type = 'month')"
                 style="border: none"
                 :style="{
-                  backgroundColor: colormonth ? '#5c3efe' : null,
+                  backgroundColor: colormonth ? '#009933' : null,
                   color: colormonth ? 'white' : 'black',
                 }"
               >
                 เดือน
               </v-chip>
-
             </v-chip>
           </v-toolbar>
         </v-sheet>
@@ -109,7 +108,7 @@
             offset-x
           >
             <v-card color="grey lighten-4" min-width="350px" flat>
-              <v-toolbar :color="selectedEvent.color" dark>         
+              <v-toolbar :color="selectedEvent.color" dark>
                 <v-toolbar-title v-html="selectedEvent.name"></v-toolbar-title>
                 <v-spacer></v-spacer>
               </v-toolbar>
@@ -202,15 +201,17 @@ export default {
   },
   methods: {
     async getUser() {
-      await this.$axios.get("/users/getOne/" + this.$auth.user.id).then((res) => {
-        this.user_id = res.data[0].user_id;
-        this.user_firstname = res.data[0].user_firstname;
-        this.user_lastname = res.data[0].user_lastname;
-        this.user_status = res.data[0].user_status;
-        this.user_pic = res.data[0].user_pic;
-        this.user_role = res.data[0].user_role;
-        this.user_position = res.data[0].user_position;
-      });
+      await this.$axios
+        .get("/users/getOne/" + this.$auth.user.id)
+        .then((res) => {
+          this.user_id = res.data[0].user_id;
+          this.user_firstname = res.data[0].user_firstname;
+          this.user_lastname = res.data[0].user_lastname;
+          this.user_status = res.data[0].user_status;
+          this.user_pic = res.data[0].user_pic;
+          this.user_role = res.data[0].user_role;
+          this.user_position = res.data[0].user_position;
+        });
     },
     ClickDay() {
       this.colorday = true;

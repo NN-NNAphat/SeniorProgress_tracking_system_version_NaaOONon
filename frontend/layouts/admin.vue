@@ -325,6 +325,11 @@ export default {
           title: "จัดการโครงการ",
           to: "/manageProject",
         });
+        items.splice(0, 0, {
+          icon: "mdi-border-all",
+          title: "จัดการงาน",
+          to: "/task_management",
+        });
 
         return items;
       } else {

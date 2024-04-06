@@ -91,7 +91,7 @@ router.get("/getAll", async (req, res) => {
         return res.status(400).send();
       }
 
-      results.forEach(screen => {
+      results.forEach(async screen => {
         // Format dates
         if (screen.min_task_plan_start && screen.max_task_plan_end) {
           screen.screen_plan_start = new Date(screen.min_task_plan_start).toISOString().split('T')[0];
@@ -102,6 +102,13 @@ router.get("/getAll", async (req, res) => {
           endDate.setDate(endDate.getDate() + 1);
           screen.screen_plan_start = startDate.toISOString().split('T')[0];
           screen.screen_plan_end = endDate.toISOString().split('T')[0];
+        }
+
+        // Update screen data in the database
+        try {
+          await updateScreen(screen);
+        } catch (updateErr) {
+          console.error(updateErr);
         }
       });
 
@@ -144,10 +151,17 @@ router.get("/getOne/:id", async (req, res) => {
         return res.status(404).json({ message: "No screen with that ID!" });
       }
 
-      results.forEach(screen => {
+      results.forEach(async screen => {
         if (screen.min_task_plan_start && screen.max_task_plan_end) {
           screen.screen_plan_start = new Date(screen.min_task_plan_start).toISOString().split('T')[0];
           screen.screen_plan_end = new Date(screen.max_task_plan_end).toISOString().split('T')[0];
+        }
+
+        // Update screen data in the database
+        try {
+          await updateScreen(screen);
+        } catch (updateErr) {
+          console.error(updateErr);
         }
       });
 
@@ -196,6 +210,8 @@ async function updateScreen(screen) {
     throw error;
   }
 }
+
+
 
 
 // Route to get all historical screens

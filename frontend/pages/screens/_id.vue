@@ -621,7 +621,7 @@
       <!-- Dialog for Task Details -->
       <v-dialog v-model="dialog" max-width="500px">
         <v-card>
-          <v-card-title>Updates Task History </v-card-title>
+          <v-card-title>Updates Task History  </v-card-title>
           <v-card-text>
             <p>Task ID: {{ dialogTaskDetails.task_id }}</p>
             <p>Task Detail: {{ dialogTaskDetails.task_detail }}</p>

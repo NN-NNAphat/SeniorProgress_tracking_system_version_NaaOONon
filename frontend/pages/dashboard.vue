@@ -6,7 +6,7 @@
         v-model="selectedOption"
         :items="
           projects.map((project) => ({
-            text: project.project_name,
+            text: project.project_name_ENG,
             value: project.id,
           }))
         "
@@ -20,7 +20,7 @@
         :key="project.id"
         v-if="selectedOption === project.id"
       >
-        <h1>{{ project.project_name }} : {{ project.project_id }}</h1>
+        <h1>{{ project.project_name_ENG }} : {{ project.project_id }}</h1>
         <!-- You can customize the content for each option here -->
       </div>
       <div v-for="(system, index) in systems" :key="system.id">

@@ -105,6 +105,50 @@ router.get('/getOne/:id', async (req, res) => {
   }
 });
 
+
+router.get('/searchByProjectId/:project_id', async (req, res) => {
+  try {
+    const { project_id } = req.params;
+
+    let query = `
+      SELECT Systems.id, 
+             Systems.project_id,
+             Systems.system_id,
+             Systems.system_nameTH,
+             Systems.system_nameEN,
+             Systems.system_shortname,
+             Systems.is_deleted,
+             COUNT(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_id ELSE NULL END) AS screen_count, 
+             IFNULL(SUM(CASE WHEN Screens.is_deleted = 0 THEN IFNULL(screens.screen_progress, 0) ELSE 0 END) / NULLIF(COUNT(CASE WHEN Screens.is_deleted = 0 THEN screens.screen_progress END), 0), 0) AS system_progress,
+             DATE_FORMAT(MIN(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_start END), '%Y-%m-%d') AS system_plan_start,
+             DATE_FORMAT(MAX(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_end END), '%Y-%m-%d') AS system_plan_end,
+             DATEDIFF(MAX(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_end END), MIN(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_start END)) AS system_manday
+      FROM Systems 
+      LEFT JOIN Screens ON Systems.id = Screens.system_id 
+      WHERE Systems.project_id = ? AND Systems.is_deleted = false
+      GROUP BY Systems.id
+    `;
+
+    // Execute the query
+    connection.query(query, [project_id], async (err, results, fields) => {
+      if (err) {
+        console.error(err);
+        return res.status(400).send();
+      }
+      // Format system_plan_start and system_plan_end to contain only date
+      for (const system of results) {
+        const updatedSystem = await updateSystem(system); // Update system data
+        Object.assign(system, updatedSystem);
+      }
+      res.status(200).json(results);
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send();
+  }
+});
+
+
 // Function to update system data
 async function updateSystem(system) {
   try {
@@ -215,48 +259,6 @@ router.get('/getAllHistorySystem', async (req, res) => {
 
     // Execute the query
     connection.query(query, async (err, results, fields) => {
-      if (err) {
-        console.error(err);
-        return res.status(400).send();
-      }
-      // Format system_plan_start and system_plan_end to contain only date
-      for (const system of results) {
-        const updatedSystem = await updateSystem(system); // Update system data
-        Object.assign(system, updatedSystem);
-      }
-      res.status(200).json(results);
-    });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).send();
-  }
-});
-
-router.get('/searchByProjectId/:project_id', async (req, res) => {
-  try {
-    const { project_id } = req.params;
-
-    let query = `
-      SELECT Systems.id, 
-             Systems.project_id,
-             Systems.system_id,
-             Systems.system_nameTH,
-             Systems.system_nameEN,
-             Systems.system_shortname,
-             Systems.is_deleted,
-             COUNT(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_id ELSE NULL END) AS screen_count, 
-             IFNULL(SUM(CASE WHEN Screens.is_deleted = 0 THEN IFNULL(screens.screen_progress, 0) ELSE 0 END) / NULLIF(COUNT(CASE WHEN Screens.is_deleted = 0 THEN screens.screen_progress END), 0), 0) AS system_progress,
-             DATE_FORMAT(MIN(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_start END), '%Y-%m-%d') AS system_plan_start,
-             DATE_FORMAT(MAX(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_end END), '%Y-%m-%d') AS system_plan_end,
-             DATEDIFF(MAX(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_end END), MIN(CASE WHEN Screens.is_deleted = 0 THEN Screens.screen_plan_start END)) AS system_manday
-      FROM Systems 
-      LEFT JOIN Screens ON Systems.id = Screens.system_id 
-      WHERE Systems.project_id = ? AND Systems.is_deleted = false
-      GROUP BY Systems.id
-    `;
-
-    // Execute the query
-    connection.query(query, [project_id], async (err, results, fields) => {
       if (err) {
         console.error(err);
         return res.status(400).send();
