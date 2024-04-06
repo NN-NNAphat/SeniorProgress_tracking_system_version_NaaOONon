@@ -100,150 +100,176 @@
       </v-row>
     </div>
 
-    <!-- Search bar -->
-    <v-row no-gutters>
-      <v-col cols="12">
-        <input
-          type="text"
-          v-model="searchQuery"
-          placeholder="Search..."
-          style="
-            margin-bottom: 10px;
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-          "
-        />
-      </v-col>
-    </v-row>
-
-    <!-- ปุ่ม -->
-    <v-row style="margin-bottom: 20px" justify="end">
-      <v-btn
-        color="primary"
-        class="text-none mb-4"
-        @click="goToCreateScreen"
-        style="margin-left: 50px; width: 10%; height: 40px"
-        >Create Screen</v-btn
-      >
-      &nbsp;&nbsp;&nbsp;
-      <v-btn
-        color="error"
-        class="text-none mb-4"
-        @click="showSystemIdDialog"
-        style="margin-left: 10px; width: 10%; height: 40px"
-      >
-        <v-icon>mdi-delete</v-icon> &nbsp;Bin</v-btn
-      >
-    </v-row>
-
     <!-- แสดงรายระเอียดScreen -->
     <div>
+      <div class="topper">
+        <h3>Screen Management</h3>
+        <v-divider vertical></v-divider>
+        <!-- open add task form -->
+        <v-btn
+          color="primary"
+          class="text-none mb-4"
+          @click="goToCreateScreen"
+          style="margin-left: 20px; width: 10%; height: 40px"
+          >Create Screen</v-btn
+        >
+        &nbsp;&nbsp;&nbsp;
+        <v-btn
+          color="error"
+          class="text-none mb-4"
+          @click="showSystemIdDialog"
+          style="margin-left: 10px; width: 10%; height: 40px"
+        >
+          <v-icon>mdi-delete</v-icon> &nbsp;Bin</v-btn
+        >
+      </div>
+      <v-divider></v-divider>
+      <!-- Search bar -->
+      <v-row no-gutters>
+        <v-col cols="12">
+          <input
+            type="text"
+            v-model="searchQuery"
+            placeholder="Search..."
+            style="
+              margin-bottom: 10px;
+              width: 100%;
+              padding: 10px;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+              font-size: 16px;
+            "
+          />
+        </v-col>
+      </v-row>
       <v-container>
-        <v-row class="full-width">
-          <v-col
-            cols="12"
-            md="6"
-            lg="4"
-            v-for="(screen, index) in paginatedScreens"
-            :key="index"
-          >
-            <v-card
-              class="mx-auto full-width"
-              max-width="400"
-              @click="goToScreensDetail(screen.id)"
-            >
-              <v-img
-                class="align-end text-white"
-                height="200"
-                :src="getBase64Image(screen.screen_pic)"
-                cover
-              >
-                <v-card-title class="card-title">
-                  <div>
-                    {{ screen.screen_name }}
-                  </div>
-                </v-card-title>
-              </v-img>
-
-              <v-card-subtitle class="pt-4" style="width: 100%">
-                <span
-                  style="font-weight: bold; display: flex; align-items: center"
+        <v-tabs v-model="selectedTab">
+          <v-tab v-for="(tab, index) in tabs" :key="index">{{ tab }}</v-tab>
+          <v-tab-item v-for="(tab, index) in tabs" :key="index">
+            <v-container>
+              <v-row class="full-width">
+                <v-col
+                  cols="12"
+                  md="6"
+                  lg="4"
+                  v-for="(screen, index) in filteredScreensByStatus(tab)"
+                  :key="index"
                 >
-                  Progress :
-                  <div
-                    style="
-                      display: flex;
-                      align-items: center;
-                      justify-content: flex-end;
-                      flex-grow: 1;
-                    "
+                  <v-card
+                    class="mx-auto full-width"
+                    max-width="400"
+                    @click="goToScreensDetail(screen.id)"
                   >
-                    <v-progress-linear
-                      color="primary"
-                      height="15"
-                      :value="parseFloat(screen.screen_progress)"
-                      :style="{ width: '95%' }"
-                      striped
+                    <v-img
+                      class="align-end text-white"
+                      height="200"
+                      :src="getBase64Image(screen.screen_pic)"
+                      cover
                     >
-                      <strong :style="{ color: 'white' }">
-                        {{
-                          screen.screen_progress
-                            ? parseFloat(screen.screen_progress) + "%"
-                            : "0%"
-                        }}
-                      </strong>
-                    </v-progress-linear>
-                  </div>
-                </span>
-              </v-card-subtitle>
+                      <v-card-title class="card-title">
+                        <div>
+                          {{ screen.screen_name }}
+                        </div>
+                      </v-card-title>
+                    </v-img>
 
-              <v-card-text>
-                <div><b>Manday:</b> {{ screen.screen_manday }} Days</div>
+                    <v-card-subtitle class="pt-4" style="width: 100%">
+                      <span
+                        style="
+                          font-weight: bold;
+                          display: flex;
+                          align-items: center;
+                        "
+                      >
+                        Progress :
+                        <div
+                          style="
+                            display: flex;
+                            align-items: center;
+                            justify-content: flex-end;
+                            flex-grow: 1;
+                          "
+                        >
+                          <v-progress-linear
+                            color="primary"
+                            height="15"
+                            :value="parseFloat(screen.screen_progress)"
+                            :style="{ width: '95%' }"
+                            striped
+                          >
+                            <strong :style="{ color: 'white' }">
+                              {{
+                                screen.screen_progress
+                                  ? parseFloat(screen.screen_progress) + "%"
+                                  : "0%"
+                              }}
+                            </strong>
+                          </v-progress-linear>
+                        </div>
+                      </span>
+                    </v-card-subtitle>
 
-                <div><b>Task Count:</b> {{ screen.task_count || 0 }}</div>
-                <p>Status: {{ screen.screen_status }}</p>
-                <div>
-                  <b>Planned Start:</b>
-                  {{ formatDate(screen.screen_plan_start) }}
-                </div>
-                <div>
-                  <b>Planned End:</b> {{ formatDate(screen.screen_plan_end) }}
-                </div>
-              </v-card-text>
+                    <v-card-text>
+                      <div><b>Manday:</b> {{ screen.screen_manday }} Days</div>
 
-              <v-card-actions>
-                <v-btn
-                  color="primary"
-                  class="small"
-                  @click.stop="openEditDialog(screen)"
-                >
-                  <v-icon>mdi-pencil</v-icon>
-                </v-btn>
+                      <div><b>Task Count:</b> {{ screen.task_count || 0 }}</div>
+                      <p>Status: {{ screen.screen_status }}</p>
+                      <div v-if="screen.screen_plan_start">
+                        <b>Planned Start:</b>
+                        {{ formatDate(screen.screen_plan_start) }}
+                      </div>
+                      <div v-else>
+                        <b>Planned Start:</b>
+                        No determine
+                      </div>
 
-                <v-btn
-                  color="primary"
-                  class="small"
-                  @click.stop="
-                    getUserScreenManagement(projectId, systemId, screen.id)
-                  "
-                >
-                  <v-icon>mdi-account-multiple</v-icon>
-                </v-btn>
+                      <div v-if="screen.screen_plan_end">
+                        <b>Planned End:</b>
+                        {{ formatDate(screen.screen_plan_end) }}
+                      </div>
+                      <div v-else>
+                        <b>Planned End:</b>
+                        No determine
+                      </div>
+                    </v-card-text>
 
-                <v-btn
-                  color="error"
-                  class="small"
-                  @click.stop="confirmDeleteScreen(screen)"
-                >
-                  <v-icon>mdi-delete</v-icon>
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-        </v-row>
+                    <v-card-actions>
+                      <v-btn
+                        color="primary"
+                        class="small"
+                        @click.stop="openEditDialog(screen)"
+                      >
+                        <v-icon>mdi-pencil</v-icon>
+                      </v-btn>
+
+                      <v-btn
+                        color="primary"
+                        class="small"
+                        @click.stop="
+                          getUserScreenManagement(
+                            projectId,
+                            systemId,
+                            screen.id
+                          )
+                        "
+                      >
+                        <v-icon>mdi-account-multiple</v-icon>
+                      </v-btn>
+
+                      <v-btn
+                        color="error"
+                        class="small"
+                        @click.stop="confirmDeleteScreen(screen)"
+                      >
+                        <v-icon>mdi-delete</v-icon>
+                      </v-btn>
+                    </v-card-actions>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-tab-item>
+        </v-tabs>
       </v-container>
 
       <!-- เพิ่ม Pagination ที่นี่ -->
@@ -553,6 +579,8 @@ export default {
   layout: "admin",
   data() {
     return {
+      selectedTab: "All",
+      tabs: ["All", "Not started yet", "design", "develop", "finish"],
       tableHeaders: [
         { text: "Screen Picture", align: "start", value: "screen_pic" },
         { text: "Screen ID", value: "screen_id" },
@@ -660,6 +688,15 @@ export default {
   },
 
   methods: {
+    filteredScreensByStatus(status) {
+      if (status === "All") {
+        return this.filteredScreens;
+      } else {
+        return this.filteredScreens.filter(
+          (screen) => screen.screen_status === status
+        );
+      }
+    },
     formatDate(dateString) {
       const date = new Date(dateString);
       const day = date.getDate();
@@ -1661,5 +1698,11 @@ export default {
 .title-text {
   width: 100%; /* กำหนดความกว้างของตัวหนังสือให้เท่ากับความกว้างของพื้นที่ในการแสดงรูปภาพ */
   text-align: center; /* จัดตำแหน่งตัวหนังสือให้อยู่กลาง */
+}
+.topper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
 }
 </style>
