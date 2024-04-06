@@ -50,7 +50,6 @@ function generateId() {
   return id;
 }
 
-// Route to get all screens
 router.get("/getAll", async (req, res) => {
   try {
     const systemIDFilter = req.query.system_id;
@@ -61,9 +60,9 @@ router.get("/getAll", async (req, res) => {
       SELECT
           Screens.*,
           AVG(tasks.task_progress) AS screen_progress,
-          DATE(MIN(tasks.task_plan_start)) AS screen_plan_start,
-          DATE(MAX(tasks.task_plan_end)) AS screen_plan_end,
-          DATEDIFF(MAX(tasks.task_plan_end), MIN(tasks.task_plan_start)) AS screen_manday
+          COUNT(tasks.id) AS task_count,
+          MIN(tasks.task_plan_start) AS min_task_plan_start,
+          MAX(tasks.task_plan_end) AS max_task_plan_end
       FROM
           Screens
       LEFT JOIN tasks ON Screens.id = tasks.screen_id
@@ -92,25 +91,21 @@ router.get("/getAll", async (req, res) => {
         return res.status(400).send();
       }
 
-      const screensWithTasks = await Promise.all(
-        results.map(async (screen) => {
-          await updateScreen(screen);
-
-          // Format dates and fix discrepancy
-          screen.screen_plan_start = new Date(screen.screen_plan_start).toISOString().split('T')[0];
-          screen.screen_plan_end = new Date(screen.screen_plan_end).toISOString().split('T')[0];
+      results.forEach(screen => {
+        // Format dates
+        if (screen.min_task_plan_start && screen.max_task_plan_end) {
+          screen.screen_plan_start = new Date(screen.min_task_plan_start).toISOString().split('T')[0];
+          screen.screen_plan_end = new Date(screen.max_task_plan_end).toISOString().split('T')[0];
           const startDate = new Date(screen.screen_plan_start);
-          startDate.setDate(startDate.getDate() + 1);
-          screen.screen_plan_start = startDate.toISOString().split('T')[0];
           const endDate = new Date(screen.screen_plan_end);
+          startDate.setDate(startDate.getDate() + 1);
           endDate.setDate(endDate.getDate() + 1);
+          screen.screen_plan_start = startDate.toISOString().split('T')[0];
           screen.screen_plan_end = endDate.toISOString().split('T')[0];
+        }
+      });
 
-          return screen;
-        })
-      );
-
-      res.status(200).json(screensWithTasks);
+      res.status(200).json(results);
     });
 
   } catch (err) {
@@ -119,10 +114,60 @@ router.get("/getAll", async (req, res) => {
   }
 });
 
+router.get("/getOne/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    let query = `
+      SELECT
+        Screens.*,
+        AVG(tasks.task_progress) AS screen_progress,
+        COUNT(tasks.id) AS task_count,
+        MIN(tasks.task_plan_start) AS min_task_plan_start,
+        MAX(tasks.task_plan_end) AS max_task_plan_end
+      FROM
+        Screens
+      LEFT JOIN tasks ON Screens.id = tasks.screen_id
+    `;
+
+    query += ` WHERE Screens.id = ? AND Screens.is_deleted = 0`;
+
+    query += " GROUP BY Screens.id";
+
+    connection.query(query, [id], async (err, results, fields) => {
+      if (err) {
+        console.log(err);
+        return res.status(400).send();
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ message: "No screen with that ID!" });
+      }
+
+      results.forEach(screen => {
+        if (screen.min_task_plan_start && screen.max_task_plan_end) {
+          screen.screen_plan_start = new Date(screen.min_task_plan_start).toISOString().split('T')[0];
+          screen.screen_plan_end = new Date(screen.max_task_plan_end).toISOString().split('T')[0];
+        }
+      });
+
+      res.status(200).json(results);
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send();
+  }
+});
 
 // Function to update screen data
 async function updateScreen(screen) {
   try {
+    // Ensure screen_progress is not null
+    if (screen.screen_progress === null || screen.screen_progress === undefined) {
+      // Provide a default value or handle the case appropriately
+      screen.screen_progress = 0; // Default value, change it as needed
+    }
+
     const updateQuery = `
       UPDATE screens 
       SET 
@@ -151,55 +196,6 @@ async function updateScreen(screen) {
     throw error;
   }
 }
-
-// Route to get one screen by ID
-router.get("/getOne/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    let query = `
-      SELECT
-        Screens.*,
-        AVG(tasks.task_progress) AS screen_progress,
-        COUNT(tasks.id) AS task_count,
-        DATE(MIN(tasks.task_plan_start)) AS screen_plan_start,
-          DATE(MAX(tasks.task_plan_end)) AS screen_plan_end,
-          DATEDIFF(MAX(tasks.task_plan_end), MIN(tasks.task_plan_start)) AS screen_manday
-      FROM
-        Screens
-      LEFT JOIN tasks ON Screens.id = tasks.screen_id
-    `;
-
-    query += ` WHERE Screens.id = ? AND Screens.is_deleted = 0`;
-
-    query += " GROUP BY Screens.id";
-
-    connection.query(query, [id], async (err, results, fields) => {
-      if (err) {
-        console.log(err);
-        return res.status(400).send();
-      }
-
-      if (results.length === 0) {
-        return res.status(404).json({ message: "No screen with that ID!" });
-      }
-
-      results.forEach((screen) => {
-        if (screen.screen_plan_start) {
-          screen.screen_plan_start = new Date(screen.screen_plan_start).toISOString().split("T")[0];
-        }
-        if (screen.screen_plan_end) {
-          screen.screen_plan_end = new Date(screen.screen_plan_end).toISOString().split("T")[0];
-        }
-      });
-
-      res.status(200).json(results);
-    });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).send();
-  }
-});
 
 
 // Route to get all historical screens
@@ -467,7 +463,6 @@ router.post("/createScreen", async (req, res) => {
   }
 });
 
-
 router.put("/updateScreen/:id", (req, res) => {
   const id = req.params.id;
   const {
@@ -533,8 +528,6 @@ router.put("/updateScreen/:id", (req, res) => {
     return res.status(500).send();
   }
 });
-
-
 
 // Route to delete a screen by ID
 router.delete("/delete/:id", async (req, res) => {

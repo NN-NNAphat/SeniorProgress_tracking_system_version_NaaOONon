@@ -32,11 +32,11 @@
                 <p>Screen Count: {{ system.screen_count || 0 }}</p>
                 <p>
                   System Plan Start:
-                  {{ system.system_plan_start || "Not determined" }}
+                  {{ formatDate(system.system_plan_start) || "Not determined" }}
                 </p>
                 <p>
                   System Plan End:
-                  {{ system.system_plan_end || "Not determined" }}
+                  {{ formatDate(system.system_plan_end) || "Not determined" }}
                 </p>
               </v-card-text>
             </div>
