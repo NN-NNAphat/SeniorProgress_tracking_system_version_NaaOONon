@@ -188,10 +188,14 @@
                       :style="{ width: '95%' }"
                       striped
                     >
-                      <strong :style="{ color: 'white' }"
-                        >{{ parseFloat(screen.screen_progress) }}%</strong
-                      ></v-progress-linear
-                    >
+                      <strong :style="{ color: 'white' }">
+                        {{
+                          screen.screen_progress
+                            ? parseFloat(screen.screen_progress) + "%"
+                            : "0%"
+                        }}
+                      </strong>
+                    </v-progress-linear>
                   </div>
                 </span>
               </v-card-subtitle>
