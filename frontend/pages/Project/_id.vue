@@ -920,7 +920,8 @@ export default {
 
           // Refresh data after restoring systems
           this.fetchDeletedSystems();
-          this.fetchSystems(); // Update the table after restoring systems
+          this.fetchSystems();
+          this.fetchProjectNameENG();
         }
       } catch (error) {
         console.error("Error restoring selected systems:", error);
@@ -1146,6 +1147,7 @@ export default {
             text: "System deleted successfully",
           });
           this.fetchSystems();
+          this.fetchProjectNameENG();
         }
       } catch (error) {
         console.error("Error confirming delete system:", error);

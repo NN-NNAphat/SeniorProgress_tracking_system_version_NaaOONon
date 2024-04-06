@@ -1208,6 +1208,8 @@ export default {
           await Swal.fire("Success", "Screen deleted successfully.", "success");
 
           this.fetchScreens();
+          this.fetchSystemNameENG();
+          this.fetchSystem();
         }
       } catch (error) {
         console.error("Error deleting screen:", error);
@@ -1293,57 +1295,6 @@ export default {
       }
     },
 
-    async restoreScreen(item) {
-      try {
-        const confirmResult = await Swal.fire({
-          title: "Are you sure?",
-          text: "You are about to restore this screen.",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#3085d6",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, restore it!",
-        });
-
-        if (confirmResult.isConfirmed) {
-          const response = await fetch(
-            `http://localhost:7777/screens/updateScreen/${item}`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                screen_name: item.screen_name,
-                screen_id: item.screen_id,
-                is_deleted: 0,
-              }),
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error("Failed to restore screen");
-          }
-
-          console.log("Screeb restored successfully");
-
-          await Swal.fire(
-            "Success",
-            "Screen restored successfully.",
-            "success"
-          );
-        }
-        this.fetchDeletedScreens();
-        this.fetchScreens();
-      } catch (error) {
-        console.error("Error restoring screen:", error);
-        await Swal.fire(
-          "Error",
-          "An error occurred during the screen restoration process.",
-          "error"
-        );
-      }
-    },
     async confirmDeleteScreenHistory(item) {
       try {
         const confirmResult = await Swal.fire({
@@ -1434,6 +1385,8 @@ export default {
 
           this.fetchDeletedScreens();
           this.fetchScreens();
+          this.fetchSystemNameENG();
+          this.fetchSystem();
         }
       } catch (error) {
         console.error("Error restoring screens:", error);
@@ -1562,8 +1515,10 @@ export default {
           // If user confirms deletion, call deleteScreen method
           await this.deleteScreen(screen);
           // อัพเดทข้อมูลโดยอัตโนมัติหลังจากลบข้อมูล
-          this.fetchScreens();
         }
+        this.fetchScreens();
+        this.fetchSystemNameENG();
+        this.fetchSystem();
       } catch (error) {
         console.error("Error confirming delete screen:", error);
       }
