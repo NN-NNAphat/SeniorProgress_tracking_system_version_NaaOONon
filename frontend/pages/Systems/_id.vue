@@ -126,7 +126,7 @@
         class="text-none mb-4"
         @click="goToCreateScreen"
         style="margin-left: 50px; width: 10%; height: 40px"
-        >Create System</v-btn
+        >Create Screen</v-btn
       >
       &nbsp;&nbsp;&nbsp;
       <v-btn

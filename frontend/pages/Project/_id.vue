@@ -252,7 +252,7 @@
             ></v-text-field>
             <!-- Add v-select for selecting users -->
             <v-select
-              v-model="selectedUsers"
+              v-model="selectedCreateSystemAnalysts"
               :items="filteredUsers('System Analyst')"
               label="Select System Analyst"
               item-value="user_id"
@@ -271,7 +271,7 @@
             </v-select>
 
             <v-select
-              v-model="selectedUsers"
+              v-model="selectedCreateDevelopers"
               :items="filteredUsers('Developer')"
               label="Select Developer"
               item-value="user_id"
@@ -287,7 +287,7 @@
               </template>
             </v-select>
             <v-select
-              v-model="selectedUsers"
+              v-model="selectedCreateImplementers"
               :items="filteredUsers('Implementer')"
               label="Select Implementer"
               item-value="user_id"
@@ -517,6 +517,9 @@ export default {
   layout: "admin",
   data() {
     return {
+      selectedCreateSystemAnalysts: [],
+      selectedCreateDevelopers: [],
+      selectedCreateImplementers: [],
       searchUser: "",
       assinguserDalog: false,
       selectedSystemAnalysts: [],
@@ -632,32 +635,33 @@ export default {
       const implementers = this.filteredUsers("Implementer").map(
         (user) => user.user_id
       );
-      if (this.selectedUsers.length === implementers.length) {
-        this.selectedUsers = [];
+      if (this.selectedCreateImplementers.length === implementers.length) {
+        this.selectedCreateImplementers = [];
       } else {
-        this.selectedUsers = implementers;
+        this.selectedCreateImplementers = implementers;
       }
     },
     selectAllDevelopers() {
       const developers = this.filteredUsers("Developer").map(
         (user) => user.user_id
       );
-      if (this.selectedUsers.length === developers.length) {
-        this.selectedUsers = [];
+      if (this.selectedCreateDevelopers.length === developers.length) {
+        this.selectedCreateDevelopers = [];
       } else {
-        this.selectedUsers = developers;
+        this.selectedCreateDevelopers = developers;
       }
     },
     selectAllSystemAnalysts() {
       const systemAnalysts = this.filteredUsers("System Analyst").map(
         (user) => user.user_id
       );
-      if (this.selectedUsers.length === systemAnalysts.length) {
-        this.selectedUsers = [];
+      if (this.selectedCreateSystemAnalysts.length === systemAnalysts.length) {
+        this.selectedCreateSystemAnalysts = [];
       } else {
-        this.selectedUsers = systemAnalysts;
+        this.selectedCreateSystemAnalysts = systemAnalysts;
       }
     },
+
     getProgressColor(progress) {
       if (progress >= 0 && progress <= 40) {
         return "red"; // สีแดงสำหรับค่า progress 0-40
@@ -1005,6 +1009,13 @@ export default {
       }
     },
     async createSystem() {
+      console.log(
+        "Selected System Analysts:",
+        this.selectedCreateSystemAnalysts
+      );
+      console.log("Selected Developers:", this.selectedCreateDevelopers);
+      console.log("Selected Implementers:", this.selectedCreateImplementers);
+
       const projectId = this.$route.params.id;
       const { system_id, system_nameTH, system_nameEN, system_shortname } =
         this.newSystem;
@@ -1029,7 +1040,16 @@ export default {
             },
             body: JSON.stringify({
               project_id: projectId,
-              ...this.newSystem,
+              system_id,
+              system_nameTH,
+              system_nameEN,
+              system_shortname,
+              selectedUser: [
+                // Map selected users to their user_id
+                ...this.selectedCreateSystemAnalysts,
+                ...this.selectedCreateDevelopers,
+                ...this.selectedCreateImplementers,
+              ],
             }),
           }
         );
@@ -1053,6 +1073,7 @@ export default {
           showConfirmButton: true,
           allowOutsideClick: false,
         });
+
         // Fetch systems again to update the list
         this.fetchSystems();
 
