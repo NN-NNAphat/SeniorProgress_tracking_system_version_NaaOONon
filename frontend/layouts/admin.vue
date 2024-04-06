@@ -8,12 +8,14 @@
           <v-list-item-title class="text-h6">
             <v-layout align-center justify-center>
               <!-- Main logo -->
-              <v-img
-                lazy-src="/mainlogo.png"
-                max-height="150"
-                max-width="100"
-                src="/mainlogo.png"
-              ></v-img>
+              <nuxt-link to="/">
+                <v-img
+                  lazy-src="/mainlogo.png"
+                  max-height="150"
+                  max-width="100"
+                  src="/mainlogo.png"
+                ></v-img>
+              </nuxt-link>
             </v-layout>
           </v-list-item-title>
         </v-list-item-content>
