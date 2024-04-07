@@ -340,6 +340,14 @@
                       >
                         <v-icon>mdi-pencil</v-icon>
                       </v-btn>
+                      <v-btn
+                        icon
+                        color="primary"
+                        @click.stop="openSaveHistoryDialog(task)"
+                      >
+                        <v-icon>mdi-content-save</v-icon>
+                      </v-btn>
+
                       <v-btn icon color="error" @click.stop="deleteTask(task)">
                         <v-icon>mdi-delete</v-icon>
                       </v-btn>
@@ -913,6 +921,214 @@
       </v-card>
     </v-dialog>
 
+    <!-- save task dialog -->
+    <v-dialog v-model="dialogSaveTaskForm" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <h2>Save History</h2>
+        </v-card-title>
+        <v-card-text>
+          <v-form @submit.prevent="saveHistory">
+            <!-- Task data fields -->
+            <v-text-field
+              v-model="historyTaskData.task_name"
+              label="Task Name"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="historyTaskData.task_detail"
+              label="Detail"
+              required
+            ></v-text-field>
+            <v-select
+              v-model="historyTaskData.task_status"
+              :items="[
+                'start',
+                'stop',
+                'correct',
+                'mistake',
+                'Not started yet',
+              ]"
+              label="Status"
+              required
+              outlined
+              dense
+            ></v-select>
+
+            <v-row align="center">
+              <v-col cols="3">
+                <v-text-field
+                  v-model="historyTaskData.task_progress"
+                  label="Progress"
+                  type="number"
+                  min="0"
+                  max="100"
+                  outlined
+                  dense
+                ></v-text-field>
+              </v-col>
+              <v-col cols="9">
+                <v-slider
+                  v-model="historyTaskData.task_progress"
+                  :thumb-label="true"
+                  thumb-size="20"
+                  ticks="always"
+                  tick-size="2"
+                  tick-thickness="2"
+                  track-color="primary"
+                  :max="100"
+                  :min="0"
+                  step="1"
+                ></v-slider>
+              </v-col>
+            </v-row>
+
+            <!-- Plan -->
+            <v-row>
+              <v-col cols="6">
+                <v-menu
+                  v-model="planStartMenu"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                >
+                  <template v-slot:activator="{ on }">
+                    <v-text-field
+                      :value="
+                        formatDate(
+                          historyTaskData.task_plan_start,
+                          'DD-MM-YYYY'
+                        )
+                      "
+                      label="Plan Start"
+                      prepend-icon="mdi-calendar"
+                      readonly
+                      v-on="on"
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                    v-model="historyTaskData.task_plan_start"
+                    no-title
+                    scrollable
+                  ></v-date-picker>
+                </v-menu>
+              </v-col>
+              <v-col cols="6">
+                <v-menu
+                  v-model="planEndMenu"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                >
+                  <template v-slot:activator="{ on }">
+                    <v-text-field
+                      :value="
+                        formatDate(historyTaskData.task_plan_end, 'DD-MM-YYYY')
+                      "
+                      label="Plan End"
+                      prepend-icon="mdi-calendar"
+                      readonly
+                      v-on="on"
+                      :disabled="!historyTaskData.task_plan_start"
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                    v-model="historyTaskData.task_plan_end"
+                    no-title
+                    scrollable
+                    :min="historyTaskData.task_plan_start"
+                  ></v-date-picker>
+                </v-menu>
+              </v-col>
+            </v-row>
+
+            <!-- Actual -->
+            <v-row>
+              <v-col cols="6">
+                <v-menu
+                  v-if="
+                    historyTaskData.task_plan_start &&
+                    historyTaskData.task_plan_end
+                  "
+                  v-model="actualStartMenu"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                >
+                  <template v-slot:activator="{ on }">
+                    <v-text-field
+                      :value="
+                        formatDate(
+                          historyTaskData.task_actual_start,
+                          'DD-MM-YYYY'
+                        )
+                      "
+                      label="Actual Start"
+                      prepend-icon="mdi-calendar"
+                      readonly
+                      v-on="on"
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                    v-model="historyTaskData.task_actual_start"
+                    no-title
+                    scrollable
+                  ></v-date-picker>
+                </v-menu>
+              </v-col>
+              <v-col cols="6">
+                <v-menu
+                  v-if="
+                    historyTaskData.task_plan_start &&
+                    historyTaskData.task_plan_end
+                  "
+                  v-model="actualEndMenu"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                >
+                  <template v-slot:activator="{ on }">
+                    <v-text-field
+                      :value="
+                        formatDate(
+                          historyTaskData.task_actual_end,
+                          'DD-MM-YYYY'
+                        )
+                      "
+                      label="Actual End"
+                      prepend-icon="mdi-calendar"
+                      readonly
+                      v-on="on"
+                      :disabled="!historyTaskData.task_actual_start"
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                    v-model="historyTaskData.task_actual_end"
+                    no-title
+                    scrollable
+                    :min="historyTaskData.task_actual_start"
+                  ></v-date-picker>
+                </v-menu>
+              </v-col>
+            </v-row>
+
+            <v-text-field
+              v-model="historyTaskData.task_manday"
+              label="Manday"
+              required
+            ></v-text-field>
+
+            <v-btn type="submit">Save History</v-btn>
+            <v-btn color="error" @click="cancelSaveHistory">Cancel</v-btn>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
     <!-- Create task dialog -->
     <v-dialog v-model="dialogAddTaskForm" max-width="600px">
       <v-card>
@@ -1062,10 +1278,26 @@
 import Swal from "sweetalert2";
 
 export default {
+  middleware: "auth",
+  layout: "admin",
   layout: "admin",
 
   data() {
     return {
+      user: this.$auth.user,
+      dialogSaveTaskForm: false, // Dialog status
+      historyTaskData: {
+        task_name: "",
+        task_detail: "",
+        task_status: "",
+        task_progress: "",
+        task_plan_start: "",
+        task_plan_end: "",
+        task_manday: "",
+        task_actual_start: "",
+        task_actual_end: "",
+      },
+
       dialogTaskDetails: {}, // ถ้าต้องการเก็บข้อมูล Task Details ให้ใช้ตัวแปรนี้
       historyTasks: [], // เก็บข้อมูล history tasks ที่ได้จาก API
       historyHeaders: [
@@ -1135,15 +1367,7 @@ export default {
       show: false,
       searchQuery: "",
       //Edited Task data
-      editedTask: {
-        task_id: "",
-        task_name: "",
-        person_in_charge: "No one in charge",
-        task_status: "",
-        task_plan_start: "",
-        task_plan_end: "",
-        task_detail: "",
-      },
+
       //Task data
       tasks: [],
       //New Task data
@@ -1281,6 +1505,75 @@ export default {
     },
   },
   methods: {
+    openSaveHistoryDialog(task) {
+      // Set task data for the form
+      this.historyTaskData = {
+        task_name: task.task_name,
+        task_detail: task.task_detail,
+        task_status: task.task_status,
+        task_progress: task.task_progress,
+        task_plan_start: task.task_plan_start,
+        task_plan_end: task.task_plan_end,
+        task_manday: task.task_manday,
+        task_actual_start: task.task_actual_start,
+        task_actual_end: task.task_actual_end,
+
+        // Set other fields as per your API
+      };
+      // Set the task ID for the API endpoint
+      this.taskId = task.id; // Assign task ID to a component data property
+      // Open the save task dialog
+      this.dialogSaveTaskForm = true;
+    },
+    formatDateSAVE(date) {
+      // นำออก timezone และแปลงให้เป็นรูปแบบ 'YYYY-MM-DD'
+      const d = new Date(date);
+      const year = d.getFullYear();
+      let month = "" + (d.getMonth() + 1);
+      let day = "" + d.getDate();
+
+      if (month.length < 2) month = "0" + month;
+      if (day.length < 2) day = "0" + day;
+
+      return [year, month, day].join("-");
+    },
+
+    async saveHistory() {
+      try {
+        // Format dates before sending to server
+        this.historyTaskData.task_plan_start = this.formatDateSAVE(
+          this.historyTaskData.task_plan_start
+        );
+        this.historyTaskData.task_plan_end = this.formatDateSAVE(
+          this.historyTaskData.task_plan_end
+        );
+        this.historyTaskData.task_actual_start = this.formatDateSAVE(
+          this.historyTaskData.task_actual_start
+        );
+        this.historyTaskData.task_actual_end = this.formatDateSAVE(
+          this.historyTaskData.task_actual_end
+        );
+
+        // Set user_update value
+        this.historyTaskData.user_update = this.user.id;
+
+        // Call the API to save history data using the assigned task ID
+        const response = await this.$axios.put(
+          `http://localhost:7777/tasks/save_history_tasks/${this.taskId}`,
+          this.historyTaskData
+        );
+        // Handle any actions after successful save
+        console.log(response.data);
+        // Close the dialog after successful save
+        this.dialogSaveTaskForm = false;
+      } catch (error) {
+        console.error("Error saving history task and updating task:", error);
+      }
+    },
+    cancelSaveHistory() {
+      // Cancel save and close the dialog
+      this.dialogSaveTaskForm = false;
+    },
     async openDialog(taskId) {
       this.dialog = true;
       this.dialogTaskDetails = taskId;

@@ -1,8 +1,7 @@
 
 <template>
   <div>
-    <h1>{{ userdata.user_role }}</h1> 
-    <h1>{{ user.user_role }}</h1> 
+    <h1>{{ user.id }}</h1>
   </div>
 </template>
 

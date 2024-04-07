@@ -481,12 +481,14 @@ router.put('/save_history_tasks/:id', async (req, res) => {
             task_actual_start,
             task_actual_end,
             user_update,
-            task_member_id,
-            task_manday
-
+            task_manday,
+            task_member_id // Add task_member_id here
         } = req.body;
 
-        await connection.promise().query('UPDATE tasks SET task_name=?, task_detail=?, task_status=?, task_progress=?, task_plan_start=?, task_plan_end=?, task_actual_start=?, task_actual_end=?,user_update=?, task_manday=?,task_member_id= ?, task_date_update=? WHERE id=?', [
+        // Check if task_member_id is provided, if not, use the current task_member_id value
+        const updatedTaskMemberId = task_member_id !== undefined ? task_member_id : currentTask[0].task_member_id;
+
+        await connection.promise().query('UPDATE tasks SET task_name=?, task_detail=?, task_status=?, task_progress=?, task_plan_start=?, task_plan_end=?, task_actual_start=?, task_actual_end=?,user_update=?, task_manday=?, task_date_update=?, task_member_id=? WHERE id=?', [
             task_name,
             task_detail,
             task_status,
@@ -497,12 +499,12 @@ router.put('/save_history_tasks/:id', async (req, res) => {
             task_actual_end,
             user_update,
             task_manday,
-            task_member_id,
             new Date(), // Update task_date_update with current date
+            updatedTaskMemberId, // Use updatedTaskMemberId here
             taskId
         ]);
 
-        await connection.promise().query('INSERT INTO history_tasks (task_id, task_name, task_detail, task_status, task_progress, task_Code, screen_id, project_id, system_id, task_plan_start, task_plan_end, task_actual_start, task_actual_end, is_deleted, task_member_id, task_manday, update_date, user_update) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        await connection.promise().query('INSERT INTO history_tasks (task_id, task_name, task_detail, task_status, task_progress, task_Code, screen_id, project_id, system_id, task_plan_start, task_plan_end, task_actual_start, task_actual_end, is_deleted, task_manday, update_date, user_update, task_member_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             currentTask[0].id,
             currentTask[0].task_name,
             currentTask[0].task_detail,
@@ -517,12 +519,11 @@ router.put('/save_history_tasks/:id', async (req, res) => {
             currentTask[0].task_actual_start,
             currentTask[0].task_actual_end,
             currentTask[0].is_deleted,
-            currentTask[0].task_member_id,
             currentTask[0].task_manday,
             currentTask[0].task_date_update,
             currentTask[0].user_update,
+            updatedTaskMemberId // Use updatedTaskMemberId here as well
         ]);
-
 
         res.send('History task saved and task updated successfully');
     } catch (error) {
@@ -530,6 +531,8 @@ router.put('/save_history_tasks/:id', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
+
 
 // Route for getting history tasks by task_id
 router.get('/history_tasks/:task_id', async (req, res) => {
