@@ -391,8 +391,8 @@
                     <v-row>
                       <v-col>
                         <span style="margin-right: auto; font-size: 17px"
-                          >Progress : {{ task.task_progress || 0 }} %</span
-                        >
+                          >Progress :
+                        </span>
                       </v-col>
                       <v-col>
                         <v-progress-linear
@@ -400,16 +400,22 @@
                           height="15"
                           :value="parseInt(task.task_progress)"
                           striped
-                          style="margin-left: auto"
-                        ></v-progress-linear>
+                          :style="{ width: '100%' }"
+                        >
+                          <strong :style="{ color: 'white' }"
+                            >{{ parseInt(task.task_progress) }}%</strong
+                          ></v-progress-linear
+                        >
                       </v-col>
                     </v-row>
                   </div>
 
                   <!-- Row 2: Task Detail -->
                   <p style="font-size: 16px; line-height: 1.5em; height: 170px">
-                    Task Detail: {{ task.task_detail }}
+                    Task Detail:
+                    {{ task.task_detail ? task.task_detail : "Not determined" }}
                   </p>
+
                   <!-- Row 3: User Details -->
                   <div style="height: 100px">
                     <v-divider></v-divider>
@@ -454,6 +460,7 @@
                 <v-card-actions>
                   <!-- Row 4: Plan Start, Plan End, Buttons -->
                   <div style="display: flex; flex-direction: column">
+                    <p>Status : {{ task.task_status }}</p>
                     <!-- Plan Start -->
                     <p>
                       Plan Start:
@@ -486,6 +493,14 @@
                       >
                         <v-icon>mdi-pencil</v-icon>
                       </v-btn>
+                      <v-btn
+                        icon
+                        color="primary"
+                        @click.stop="openSaveHistoryDialog(task)"
+                      >
+                        <v-icon>mdi-content-save</v-icon>
+                      </v-btn>
+
                       <v-btn icon color="error" @click.stop="deleteTask(task)">
                         <v-icon>mdi-delete</v-icon>
                       </v-btn>
@@ -523,8 +538,8 @@
                     <v-row>
                       <v-col>
                         <span style="margin-right: auto; font-size: 17px"
-                          >Progress : {{ task.task_progress || 0 }} %</span
-                        >
+                          >Progress :
+                        </span>
                       </v-col>
                       <v-col>
                         <v-progress-linear
@@ -532,16 +547,22 @@
                           height="15"
                           :value="parseInt(task.task_progress)"
                           striped
-                          style="margin-left: auto"
-                        ></v-progress-linear>
+                          :style="{ width: '100%' }"
+                        >
+                          <strong :style="{ color: 'white' }"
+                            >{{ parseInt(task.task_progress) }}%</strong
+                          ></v-progress-linear
+                        >
                       </v-col>
                     </v-row>
                   </div>
 
                   <!-- Row 2: Task Detail -->
                   <p style="font-size: 16px; line-height: 1.5em; height: 170px">
-                    Task Detail: {{ task.task_detail }}
+                    Task Detail:
+                    {{ task.task_detail ? task.task_detail : "Not determined" }}
                   </p>
+
                   <!-- Row 3: User Details -->
                   <div style="height: 100px">
                     <v-divider></v-divider>
@@ -584,11 +605,10 @@
                   </div>
                 </v-card-text>
                 <v-card-actions>
-                  <!-- Row 4: Buttons, Plan Start, Plan End -->
-                  <div
-                    class="text-right"
-                    style="padding: 10px; margin-right: auto"
-                  >
+                  <!-- Row 4: Plan Start, Plan End, Buttons -->
+                  <div style="display: flex; flex-direction: column">
+                    <p>Status : {{ task.task_status }}</p>
+                    <!-- Plan Start -->
                     <p>
                       Plan Start:
                       {{
@@ -597,6 +617,8 @@
                           : "Not determined"
                       }}
                     </p>
+
+                    <!-- Plan End -->
                     <p>
                       Plan End:
                       {{
@@ -605,19 +627,31 @@
                           : "Not determined"
                       }}
                     </p>
-                    <v-btn
-                      icon
-                      color="primary"
-                      @click.stop="
-                        dialogEditTaskForm = true;
-                        editedTask = task;
-                      "
-                    >
-                      <v-icon>mdi-pencil</v-icon>
-                    </v-btn>
-                    <v-btn icon color="error" @click.stop="deleteTask(task)">
-                      <v-icon>mdi-delete</v-icon>
-                    </v-btn>
+
+                    <!-- Buttons -->
+                    <div>
+                      <v-btn
+                        icon
+                        color="primary"
+                        @click.stop="
+                          dialogEditTaskForm = true;
+                          editedTask = task;
+                        "
+                      >
+                        <v-icon>mdi-pencil</v-icon>
+                      </v-btn>
+                      <v-btn
+                        icon
+                        color="primary"
+                        @click.stop="openSaveHistoryDialog(task)"
+                      >
+                        <v-icon>mdi-content-save</v-icon>
+                      </v-btn>
+
+                      <v-btn icon color="error" @click.stop="deleteTask(task)">
+                        <v-icon>mdi-delete</v-icon>
+                      </v-btn>
+                    </div>
                   </div>
                 </v-card-actions>
               </v-card>
@@ -628,81 +662,111 @@
 
       <!-- Dialog for Task Details -->
       <v-dialog v-model="dialog" width="9000px">
-        <v-card>
-          <v-card-title>Updates Task History </v-card-title>
-          <v-card-text>
-            <p>Task ID: {{ dialogTaskDetails.task_id }}</p>
-            <p>Task Detail: {{ dialogTaskDetails.task_detail }}</p>
-            <p>Status: {{ dialogTaskDetails.task_status }}</p>
-            <p>Manday: {{ dialogTaskDetails.task_manday || 0 }}</p>
-            <p>Progress: {{ dialogTaskDetails.task_progress || 0 }} %</p>
-            <p>
-              Plan Start:
-              {{
-                dialogTaskDetails.task_plan_start
-                  ? formatDate(dialogTaskDetails.task_plan_start)
-                  : "Not determined"
-              }}
-            </p>
-            <p>
-              Plan End:
-              {{
-                dialogTaskDetails.task_plan_end
-                  ? formatDate(dialogTaskDetails.task_plan_end)
-                  : "Not determined"
-              }}
-            </p>
-            <p>
-              Actual Start:
-              {{
-                dialogTaskDetails.task_actual_start
-                  ? formatDate(dialogTaskDetails.task_actual_start)
-                  : "Not determined"
-              }}
-            </p>
-            <p>
-              Actual End:
-              {{
-                dialogTaskDetails.task_actual_end
-                  ? formatDate(dialogTaskDetails.task_actual_end)
-                  : "Not determined"
-              }}
-            </p>
-
-            <v-data-table
-              :headers="historyHeaders"
-              :items="historyTasks"
-              item-key="id"
-            >
-              <template v-slot:items="props">
-                <td>{{ props.item.task_id }}</td>
-                <td>{{ props.item.task_detail }}</td>
-                <td>{{ props.item.task_status }}</td>
-                <td>{{ props.item.task_progress || 0 }} %</td>
-                <td>
-                  {{
-                    formatDate(props.item.task_plan_start) || "Not determined"
-                  }}
-                </td>
-                <td>
-                  {{ formatDate(props.item.task_plan_end) || "Not determined" }}
-                </td>
-                <td>
-                  {{
-                    formatDate(props.item.task_actual_start) || "Not determined"
-                  }}
-                </td>
-                <td>
-                  {{
-                    formatDate(props.item.task_actual_end) || "Not determined"
-                  }}
-                </td>
-                <td>{{ props.item.task_manday || 0 }}</td>
-              </template>
-            </v-data-table>
+        <v-card class="task-details-card">
+          <v-card-title class="task-title">
+            Details of Task : {{ dialogTaskDetails.task_name }}
+          </v-card-title>
+          <v-card-text class="task-details">
+            <div class="task-info">
+              <p><strong>Task ID:</strong> {{ dialogTaskDetails.task_id }}</p>
+              <p>
+                <strong>Task Detail:</strong>
+                {{ dialogTaskDetails.task_detail }}
+              </p>
+              <p>
+                <strong>Status:</strong> {{ dialogTaskDetails.task_status }}
+              </p>
+              <p>
+                <strong>Manday:</strong>
+                {{ dialogTaskDetails.task_manday || 0 }} Da
+              </p>
+              <p>
+                <strong>Progress:</strong>
+                {{ dialogTaskDetails.task_progress || 0 }} %
+              </p>
+            </div>
+            <div class="responsible-person">
+              <p>
+                <strong
+                  >Responsible person:
+                  <span v-if="dialogTaskDetails.memberDetails">
+                    {{ dialogTaskDetails.memberDetails.user_firstname }}
+                    {{ dialogTaskDetails.memberDetails.user_lastname }}
+                  </span>
+                  <span v-else>Not determined</span></strong
+                >
+              </p>
+            </div>
+            <div class="task-dates">
+              <p>
+                <strong>Last updated date:</strong>
+                {{
+                  formatDate(dialogTaskDetails.task_date_update) ||
+                  "Not determined" ,
+                }}
+              </p>
+              <p>
+                <strong>Plan Start:</strong>
+                {{
+                  formatDate(dialogTaskDetails.task_plan_start) ||
+                  "Not determined"
+                }}
+              </p>
+              <p>
+                <strong>Plan End:</strong>
+                {{
+                  formatDate(dialogTaskDetails.task_plan_end) ||
+                  "Not determined"
+                }}
+              </p>
+              <p>
+                <strong>Actual Start:</strong>
+                {{
+                  formatDate(dialogTaskDetails.task_actual_start) ||
+                  "Not determined"
+                }}
+              </p>
+              <p>
+                <strong>Actual End:</strong>
+                {{
+                  formatDate(dialogTaskDetails.task_actual_end) ||
+                  "Not determined"
+                }}
+              </p>
+            </div>
           </v-card-text>
+
+          <div>
+            <h3 style="padding-left: 20px">History tasks</h3>
+          </div>
+          <v-data-table
+            :headers="historyHeaders"
+            :items="historyTasks"
+            item-key="id"
+            class="table-with-border"
+          >
+            <template v-slot:item.task_plan_start="{ item }">
+              {{ formatDate(item.task_plan_start) }}
+            </template>
+            <template v-slot:item.user_update="{ item }">
+              {{ item.user_update ? item.user_update : "no detemine" }}
+            </template>
+            <template v-slot:item.update_date="{ item }">
+              {{ formatDate(item.task_plan_end) }}
+            </template>
+            <template v-slot:item.task_plan_end="{ item }">
+              {{ formatDate(item.task_plan_end) }}
+            </template>
+            <template v-slot:item.task_actual_start="{ item }">
+              {{ formatDate(item.task_actual_start) }}
+            </template>
+            <template v-slot:item.task_actual_end="{ item }">
+              {{ formatDate(item.task_actual_end) }}
+            </template>
+          </v-data-table>
+
           <v-card-actions>
-            <v-btn color="primary" @click="dialog = false">Close</v-btn>
+            <v-btn color="error" @click="dialog = false">Close</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -1122,7 +1186,7 @@
               required
             ></v-text-field>
 
-            <v-btn type="submit">Save History</v-btn>
+            <v-btn color="primary" type="submit">Save History</v-btn>
             <v-btn color="error" @click="cancelSaveHistory">Cancel</v-btn>
           </v-form>
         </v-card-text>
@@ -1301,7 +1365,9 @@ export default {
       dialogTaskDetails: {}, // ถ้าต้องการเก็บข้อมูล Task Details ให้ใช้ตัวแปรนี้
       historyTasks: [], // เก็บข้อมูล history tasks ที่ได้จาก API
       historyHeaders: [
-        { text: "Task ID", value: "task_id" },
+        { text: "Update date", value: "update_date" },
+        { text: "User update", value: "user_update" },
+        { text: "Task Name", value: "task_name" },
         { text: "Task Detail", value: "task_detail" },
         { text: "Status", value: "task_status" },
         { text: "Progress", value: "task_progress" },
@@ -1505,6 +1571,16 @@ export default {
     },
   },
   methods: {
+    formatDateHistory(historyTasks) {
+      return historyTasks.map((task) => {
+        // สร้างวัตถุใหม่ที่มีข้อมูลจาก task และแปลงรูปแบบวันที่
+        return {
+          ...task,
+          // สมมติว่าวันที่อยู่ในคีย์ "date"
+          date: new Date(task.date).toLocaleDateString("en-GB"), // ใช้ 'th-TH' หากต้องการให้เป็นภาษาไทย
+        };
+      });
+    },
     openSaveHistoryDialog(task) {
       // Set task data for the form
       this.historyTaskData = {
@@ -1564,10 +1640,24 @@ export default {
         );
         // Handle any actions after successful save
         console.log(response.data);
+        // Show success alert
+        await Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "History task has been saved successfully!",
+        });
         // Close the dialog after successful save
         this.dialogSaveTaskForm = false;
+        this.fetchTasks();
+        this.fetchScreenDetail();
       } catch (error) {
         console.error("Error saving history task and updating task:", error);
+        // Show error alert
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "An error occurred while saving history task and updating task.",
+        });
       }
     },
     cancelSaveHistory() {
@@ -1734,6 +1824,14 @@ export default {
         console.error("Error fetching member details:", error);
         return null;
       }
+    },
+    formatDatehistory(dateString) {
+      if (!dateString) return null;
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${day}/${month}/${year}`;
     },
 
     formatDate(dateString) {
@@ -2038,5 +2136,20 @@ export default {
 }
 .text-right {
   text-align: right;
+}
+.user-picture {
+  width: 50px; /* ปรับขนาดความกว้าง */
+  height: 50px; /* ปรับขนาดความสูง */
+  /* border-radius: 5%; ทำให้มันเป็นวงกลม */
+}
+.table-with-border {
+  border: 1px solid #ccc;
+  border-collapse: collapse;
+}
+
+.table-with-border th,
+.table-with-border td {
+  border: 1px solid #ccc;
+  padding: 8px; /* ปรับค่าตามที่ต้องการ */
 }
 </style>
