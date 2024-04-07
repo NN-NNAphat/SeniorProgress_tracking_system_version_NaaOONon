@@ -619,9 +619,9 @@
       </v-tabs>
 
       <!-- Dialog for Task Details -->
-      <v-dialog v-model="dialog" max-width="500px">
+      <v-dialog v-model="dialog" width="9000px">
         <v-card>
-          <v-card-title>Updates Task History  </v-card-title>
+          <v-card-title>Updates Task History </v-card-title>
           <v-card-text>
             <p>Task ID: {{ dialogTaskDetails.task_id }}</p>
             <p>Task Detail: {{ dialogTaskDetails.task_detail }}</p>
@@ -660,6 +660,38 @@
                   : "Not determined"
               }}
             </p>
+
+            <v-data-table
+              :headers="historyHeaders"
+              :items="historyTasks"
+              item-key="id"
+            >
+              <template v-slot:items="props">
+                <td>{{ props.item.task_id }}</td>
+                <td>{{ props.item.task_detail }}</td>
+                <td>{{ props.item.task_status }}</td>
+                <td>{{ props.item.task_progress || 0 }} %</td>
+                <td>
+                  {{
+                    formatDate(props.item.task_plan_start) || "Not determined"
+                  }}
+                </td>
+                <td>
+                  {{ formatDate(props.item.task_plan_end) || "Not determined" }}
+                </td>
+                <td>
+                  {{
+                    formatDate(props.item.task_actual_start) || "Not determined"
+                  }}
+                </td>
+                <td>
+                  {{
+                    formatDate(props.item.task_actual_end) || "Not determined"
+                  }}
+                </td>
+                <td>{{ props.item.task_manday || 0 }}</td>
+              </template>
+            </v-data-table>
           </v-card-text>
           <v-card-actions>
             <v-btn color="primary" @click="dialog = false">Close</v-btn>
@@ -1034,6 +1066,19 @@ export default {
 
   data() {
     return {
+      dialogTaskDetails: {}, // ถ้าต้องการเก็บข้อมูล Task Details ให้ใช้ตัวแปรนี้
+      historyTasks: [], // เก็บข้อมูล history tasks ที่ได้จาก API
+      historyHeaders: [
+        { text: "Task ID", value: "task_id" },
+        { text: "Task Detail", value: "task_detail" },
+        { text: "Status", value: "task_status" },
+        { text: "Progress", value: "task_progress" },
+        { text: "Plan Start", value: "task_plan_start" },
+        { text: "Plan End", value: "task_plan_end" },
+        { text: "Actual Start", value: "task_actual_start" },
+        { text: "Actual End", value: "task_actual_end" },
+        { text: "Manday", value: "task_manday" },
+      ],
       dialog: false,
       dialogTaskDetails: {},
       currentPageUser: 1,
@@ -1236,12 +1281,26 @@ export default {
     },
   },
   methods: {
-    openDialog(task) {
-      // กำหนดข้อมูล task ที่ต้องการแสดงใน dialog
-      this.dialogTaskDetails = task;
-      // เปิด dialog
+    async openDialog(taskId) {
       this.dialog = true;
+      this.dialogTaskDetails = taskId;
+
+      const task_Id = taskId.id;
+
+      try {
+        const response = await fetch(
+          `http://localhost:7777/tasks/history_tasks/${task_Id}`
+        );
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        const data = await response.json();
+        this.historyTasks = data;
+      } catch (error) {
+        console.error("Error fetching history tasks:", error);
+      }
     },
+
     sortTasks(criteria) {
       // Clone the tasks array to avoid mutating the original array
       let sortedTasks = [...this.tasks];
