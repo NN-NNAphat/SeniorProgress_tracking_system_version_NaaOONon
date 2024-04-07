@@ -458,5 +458,72 @@ router.delete('/deleteHistoryTasks/:id', async (req, res) => {
     }
 });
 
+// Route for saving history tasks and updating tasks
+router.put('/save_history_tasks/:id', async (req, res) => {
+    try {
+        const taskId = req.params.id;
+
+        // Get the current task data
+        const [currentTask] = await connection.promise().query('SELECT * FROM tasks WHERE id = ?', [taskId]);
+
+        if (currentTask.length === 0) {
+            return res.status(404).json({ error: 'Task not found' });
+        }
+
+        // Update task data
+        const {
+            task_name,
+            task_detail,
+            task_status,
+            task_plan_start,
+            task_plan_end,
+            task_actual_start,
+            task_actual_end,
+            task_member_id,
+            task_manday
+        } = req.body;
+
+        await connection.promise().query('UPDATE tasks SET task_name=?, task_detail=?, task_status=?, task_plan_start=?, task_plan_end=?, task_actual_start=?, task_actual_end=?, task_member_id=?, task_manday=? WHERE id=?', [
+            task_name,
+            task_detail,
+            task_status,
+            task_plan_start,
+            task_plan_end,
+            task_actual_start,
+            task_actual_end,
+            task_member_id,
+            task_manday,
+            taskId
+        ]);
+
+        // Insert current task data into history_tasks table
+        await connection.promise().query('INSERT INTO history_tasks (task_id, task_name, task_detail, task_status, task_Code, screen_id, project_id, system_id, task_plan_start, task_plan_end, task_actual_start, task_actual_end, is_deleted, task_member_id, task_manday, updated_quantity, update_date, user_update) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            currentTask[0].id, // Use id from currentTask
+            currentTask[0].task_name,
+            currentTask[0].task_detail,
+            currentTask[0].task_status,
+            currentTask[0].task_id,
+            currentTask[0].screen_id,
+            currentTask[0].project_id,
+            currentTask[0].system_id,
+            currentTask[0].task_plan_start,
+            currentTask[0].task_plan_end,
+            currentTask[0].task_actual_start,
+            currentTask[0].task_actual_end,
+            currentTask[0].is_deleted,
+            req.body.task_member_id, // Use task_member_id from req.body
+            req.body.task_manday, // Use task_manday from req.body
+            req.body.updated_quantity, // Use updated_quantity from req.body
+            req.body.update_date, // Use update_date from req.body
+            req.body.user_update // Use user_update from req.body
+        ]);
+
+        res.send('History task saved and task updated successfully');
+    } catch (error) {
+        console.error('Error saving history task and updating task:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 // Exporting the router
 module.exports = router;
