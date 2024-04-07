@@ -527,6 +527,29 @@ router.put('/save_history_tasks/:id', async (req, res) => {
     }
 });
 
+// Route for getting history tasks by task_id
+router.get('/history_tasks/:task_id', async (req, res) => {
+    try {
+        const taskId = req.params.task_id;
+
+        // Query to select history tasks based on task_id
+        const query = 'SELECT * FROM history_tasks WHERE task_id = ?';
+
+        // Execute the query
+        const historyTasks = await new Promise((resolve, reject) => {
+            connection.query(query, [taskId], (err, results) => {
+                if (err) reject(err);
+                resolve(results);
+            });
+        });
+
+        res.json(historyTasks);
+    } catch (error) {
+        console.error('Error fetching history tasks:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 
 // Exporting the router
 module.exports = router;
