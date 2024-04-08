@@ -229,7 +229,43 @@ router.get("/getUsersNotInProject/:project_id", async (req, res) => {
     }
 });
 
-
+//* GET one by user_id
+router.get("/getProjectByUser_id/:user_id", async (req, res) => {
+    const user_id = req.params.user_id;
+    try {
+        connection.query(
+            "SELECT * FROM user_projects WHERE user_id = ?",
+            [user_id],
+            (err, results, fields) => {
+                if (err) {
+                    console.log(err);
+                    return res.status(400).send();
+                }
+                if (results.length === 0) {
+                    return res.status(404).json({ message: "User projects not found" });
+                }
+                const project_id = results[0].project_id;
+                connection.query(
+                    "SELECT * FROM projects WHERE id = ?",
+                    [project_id],
+                    (err, results, fields) => {
+                        if (err) {
+                            console.log(err);
+                            return res.status(400).send();
+                        }
+                        if (results.length === 0) {
+                            return res.status(404).json({ message: "Project not found" });
+                        }
+                        res.status(200).json(results[0]);
+                    }
+                );
+            }
+        );
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
 
 
 module.exports = router;

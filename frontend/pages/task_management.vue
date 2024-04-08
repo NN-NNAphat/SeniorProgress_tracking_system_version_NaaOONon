@@ -1,11 +1,17 @@
-
 <template>
   <div>
-    <h1>Hello task_management</h1>
-
-    <h1>
-      {{ user.user_role }} {{ user.user_firstname }} {{ user.user_position }}
-    </h1>
+    <div>
+      <v-header> Project ของ ฉัน </v-header>
+      <v-data-table :headers="headers" :items="projects">
+        <template v-slot:item="{ item }">
+          <tr>
+            <td>{{ item.project_id }}</td>
+            <td>{{ item.project_name_ENG }}</td>
+            <!-- Add more columns here according to your data structure -->
+          </tr>
+        </template>
+      </v-data-table>
+    </div>
   </div>
 </template>
 
@@ -15,26 +21,33 @@ export default {
   layout: "admin",
   data() {
     return {
-      user: this.$auth.user,
-      loggedIn: this.$auth.loggedIn,
-      screenId: "",
-      screen: "",
+      projects: [],
+      headers: [
+        { text: "Project ID", value: "id" },
+        { text: "Project Name", value: "name" },
+        // Add more headers according to your data structure
+      ],
     };
   },
   created() {
-    this.getUser();
+    this.getUserProjects();
   },
   methods: {
-    async getUser() {
-      await this.$axios
-        .get("/users/getOne/" + this.$auth.user.id)
-        .then((res) => {
-          this.id = res.data[0].id;
-        });
+    async getUserProjects() {
+      try {
+        const userId = this.$auth.user.id;
+        const response = await this.$axios.get(
+          `user_projects/getProjectByUser_id/${userId}`
+        );
+        this.projects = [response.data]; // Assuming API returns a single project
+      } catch (error) {
+        console.error("Error fetching user projects:", error);
+      }
     },
   },
 };
 </script>
 
 <style>
+/* Add your styles here */
 </style>
