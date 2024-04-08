@@ -42,10 +42,10 @@
         </v-card-text>
       </v-card>
 
-      <div>
+      <div v-if="projectDetails">
         <h1>รายการระบบทั้งหมด</h1>
         <v-container>
-          <v-list v-if="projectDetails" outlined elevation="2">
+          <v-list outlined elevation="2">
             <v-list-item v-for="system in systems" :key="system.id">
               <v-list-item-content>
                 <v-list-item-title>{{
@@ -54,9 +54,79 @@
                 <v-list-item-subtitle>{{
                   system.system_nameEN
                 }}</v-list-item-subtitle>
-                <v-list-item-subtitle v-if="system.screen_count">{{
-                  `จำนวนหน้าจอ: ${system.screen_count}`
-                }}</v-list-item-subtitle>
+                <v-list-item-subtitle v-if="system.screen_count">
+                  {{ `จำนวนหน้าจอ: ${system.screen_count}` }}
+                </v-list-item-subtitle>
+                <!-- Display all other fields -->
+                <v-list-item-subtitle
+                  >รหัสระบบ: {{ system.system_id }}</v-list-item-subtitle
+                >
+                <v-list-item-subtitle
+                  >ชื่อย่อระบบ:
+                  {{ system.system_shortname }}</v-list-item-subtitle
+                >
+                <v-list-item-subtitle
+                  >จำนวนวันที่ใช้งาน:
+                  {{ system.system_manday }}</v-list-item-subtitle
+                >
+                <v-list-item-subtitle
+                  >ความก้าวหน้าระบบ:
+                  {{ system.system_progress }}</v-list-item-subtitle
+                >
+                <v-list-item-subtitle
+                  >วันที่เริ่มต้นระบบ:
+                  {{ system.system_plan_start }}</v-list-item-subtitle
+                >
+                <v-list-item-subtitle
+                  >วันที่สิ้นสุดระบบ:
+                  {{ system.system_plan_end }}</v-list-item-subtitle
+                >
+                <!-- Add more fields as needed -->
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-container>
+      </div>
+
+      <div v-if="projectDetails">
+        <h1>รายการหน้าจอทั้งหมด</h1>
+        <v-container>
+          <v-list outlined elevation="2">
+            <!-- Display screens -->
+            <v-list-item v-for="screen in screens" :key="screen.id">
+              <v-list-item-content>
+                <v-list-item-title>{{ screen.screen_name }}</v-list-item-title>
+                <!-- Display other details of the screen -->
+                <v-list-item-subtitle
+                  >รหัสหน้าจอ: {{ screen.screen_id }}</v-list-item-subtitle
+                >
+
+                <v-list-item-subtitle
+                  >สถานะหน้าจอ: {{ screen.screen_status }}</v-list-item-subtitle
+                >
+                <v-list-item-subtitle
+                  >ระดับหน้าจอ: {{ screen.screen_level }}</v-list-item-subtitle
+                >
+                <v-list-item-subtitle
+                  >จำนวนวันที่ใช้งาน:
+                  {{ screen.screen_manday }}</v-list-item-subtitle
+                >
+                <v-list-item-subtitle
+                  >ความก้าวหน้าหน้าจอ:
+                  {{ screen.screen_progress }}</v-list-item-subtitle
+                >
+                <v-list-item-subtitle
+                  >จำนวนงาน: {{ screen.task_count }}</v-list-item-subtitle
+                >
+                <v-list-item-subtitle
+                  >วันที่เริ่มต้นหน้าจอ:
+                  {{ screen.screen_plan_start }}</v-list-item-subtitle
+                >
+                <v-list-item-subtitle
+                  >วันที่สิ้นสุดหน้าจอ:
+                  {{ screen.screen_plan_end }}</v-list-item-subtitle
+                >
+                <!-- Add more fields as needed -->
               </v-list-item-content>
             </v-list-item>
           </v-list>
@@ -77,13 +147,23 @@ export default {
       projectList: [],
       projectDetails: null, // เริ่มต้นเป็น null
       systems: [],
+      screens: [],
     };
   },
 
   created() {
     this.user = this.$auth.user;
     this.getProjects();
-    this.getSystems();
+  },
+
+  watch: {
+    selectedItem: function (newVal, oldVal) {
+      if (newVal !== oldVal) {
+        this.fetchProjectDetails();
+        this.getSystems();
+        this.getScreens(); // เรียกใช้งานฟังก์ชันเมื่อมีการเลือกโปรเจคใหม่
+      }
+    },
   },
   methods: {
     async getProjects() {
@@ -111,6 +191,17 @@ export default {
         this.systems = response.data;
       } catch (error) {
         console.error("Error fetching systems:", error);
+      }
+    },
+    async getScreens() {
+      try {
+        const projectId = this.selectedItem; // รับ id ของโปรเจคที่เลือกจาก v-autocomplete
+        const response = await this.$axios.get(
+          `/screens/searchByProjectId/${projectId}`
+        ); // เรียก API เพื่อรับข้อมูลหน้าจอโปรเจค
+        this.screens = response.data; // กำหนดข้อมูลหน้าจอ
+      } catch (error) {
+        console.error("Error fetching screens:", error);
       }
     },
   },
