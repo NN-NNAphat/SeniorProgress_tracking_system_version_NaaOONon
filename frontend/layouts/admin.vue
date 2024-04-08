@@ -305,6 +305,11 @@ export default {
           to: "/manageProject",
         });
         items.splice(0, 0, {
+          icon: "mdi-table",
+          title: "Dashbord Project",
+          to: "/Dashbord_Project",
+        });
+        items.splice(0, 0, {
           icon: "mdi-calendar-month",
           title: "ตารางงาน",
           to: "/schedule",
