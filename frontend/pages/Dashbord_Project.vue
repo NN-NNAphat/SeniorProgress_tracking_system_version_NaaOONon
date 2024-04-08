@@ -42,7 +42,26 @@
         </v-card-text>
       </v-card>
 
-      
+      <div>
+        <h1>รายการระบบทั้งหมด</h1>
+        <v-container>
+          <v-list v-if="projectDetails" outlined elevation="2">
+            <v-list-item v-for="system in systems" :key="system.id">
+              <v-list-item-content>
+                <v-list-item-title>{{
+                  system.system_nameTH
+                }}</v-list-item-title>
+                <v-list-item-subtitle>{{
+                  system.system_nameEN
+                }}</v-list-item-subtitle>
+                <v-list-item-subtitle v-if="system.screen_count">{{
+                  `จำนวนหน้าจอ: ${system.screen_count}`
+                }}</v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-container>
+      </div>
     </v-container>
   </div>
 </template>
@@ -53,15 +72,18 @@ export default {
   layout: "admin",
   data() {
     return {
-      selectedItem: "", // เก็บ id ของโปรเจคที่เลือก
+      selectedItem: "", // เก็บ ID ของโปรเจคที่เลือก
       user: {},
       projectList: [],
-      projectDetails: "",
+      projectDetails: null, // เริ่มต้นเป็น null
+      systems: [],
     };
   },
+
   created() {
     this.user = this.$auth.user;
     this.getProjects();
+    this.getSystems();
   },
   methods: {
     async getProjects() {
@@ -76,10 +98,19 @@ export default {
       try {
         const projectId = this.selectedItem; // รับ id ของโปรเจคที่เลือกจาก v-autocomplete
         const response = await this.$axios.get(`/projects/getOne/${projectId}`); // ส่งคำร้องข้อมูลโปรเจคไปยัง API
-        console.table(response.data);
+        // console.table(response.data);
         this.projectDetails = response.data; // กำหนดข้อมูลรายละเอียดโปรเจคเพื่อแสดงในหน้า UI
       } catch (error) {
         console.error("Error fetching project details:", error);
+      }
+    },
+    async getSystems() {
+      try {
+        const projectId = this.selectedItem; // รับ id ของโปรเจคที่เลือกจาก v-autocomplete
+        const response = await this.$axios.get(`/systems/getAll/${projectId}`);
+        this.systems = response.data;
+      } catch (error) {
+        console.error("Error fetching systems:", error);
       }
     },
   },

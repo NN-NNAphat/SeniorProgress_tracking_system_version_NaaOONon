@@ -211,9 +211,6 @@ async function updateScreen(screen) {
   }
 }
 
-
-
-
 // Route to get all historical screens
 router.get("/getAllHistoryScreens", async (req, res) => {
   try {
