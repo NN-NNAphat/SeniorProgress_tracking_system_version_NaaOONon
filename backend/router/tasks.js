@@ -80,7 +80,7 @@ router.post('/createTasks', async (req, res) => {
 // Route for getting all tasks
 router.get('/getAll', async (req, res) => {
     try {
-        const query = 'SELECT * FROM Tasks WHERE is_deleted = 0'; // Adding condition in WHERE to filter only non-deleted data
+        const query = 'SELECT * FROM Tasks '; // Adding condition in WHERE to filter only non-deleted data
 
         const results = await new Promise((resolve, reject) => {
             connection.query(query, async (err, tasks) => {
@@ -114,7 +114,7 @@ router.get('/getOne/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        const query = 'SELECT * FROM Tasks WHERE id = ? AND is_deleted = 0'; // Adding condition is_deleted = 0
+        const query = 'SELECT * FROM Tasks  ';
 
         const task = await new Promise((resolve, reject) => {
             connection.query(query, [id], async (err, results) => {
@@ -128,7 +128,6 @@ router.get('/getOne/:id', async (req, res) => {
                         task_plan_end: moment(results[0].task_plan_end).format('YYYY-MM-DD[Z]'),
                         task_actual_start: moment(results[0].task_actual_start).format('YYYY-MM-DD'),
                         task_actual_end: moment(results[0].task_actual_end).format('YYYY-MM-DD'),
-                        is_deleted: 0 // Adding is_deleted to the returned data
                     };
                     resolve(formattedTask);
                 }
@@ -142,24 +141,7 @@ router.get('/getOne/:id', async (req, res) => {
     }
 });
 
-// Route for getting all deleted tasks
-router.get('/getAllHistoryTasks', async (req, res) => {
-    try {
-        const query = 'SELECT * FROM Tasks WHERE is_deleted = 1'; // Selecting deleted Tasks
 
-        const deletedTasks = await new Promise((resolve, reject) => {
-            connection.query(query, (err, tasks) => {
-                if (err) reject(err);
-                resolve(tasks);
-            });
-        });
-
-        res.json(deletedTasks);
-    } catch (error) {
-        console.error('Error fetching deleted tasks:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
 // GET Tasks by Project ID
 router.get('/searchByProjectId/:project_id', async (req, res) => {
     try {
@@ -169,7 +151,7 @@ router.get('/searchByProjectId/:project_id', async (req, res) => {
         let query = `
             SELECT * 
             FROM Tasks 
-            WHERE project_id = ? AND is_deleted = 0
+            WHERE project_id = ? 
         `;
 
         // ดำเนินการคิวรีด้วย project_id ที่ให้ไว้
@@ -192,38 +174,13 @@ router.get('/searchByProjectId/:project_id', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
-router.get('/searchByProjectId_delete/:project_id', async (req, res) => {
-    try {
-        const { project_id } = req.params;
 
-        // สร้าง query SQL เพื่อดึงข้อมูลTasks ที่ถูกลบตาม ID โครงการที่ระบุ
-        const query = `
-            SELECT * 
-            FROM Tasks 
-            WHERE project_id = ? AND is_deleted = 1
-        `;
-
-        // ดำเนินการคิวรีด้วยพารามิเตอร์ project_id ที่ให้ไว้
-        connection.query(query, [project_id], async (err, tasks, fields) => {
-            if (err) {
-                console.error('Error fetching deleted tasks by project ID:', err);
-                return res.status(500).send('Internal Server Error');
-            }
-
-            // ส่งข้อมูลTasks ที่ถูกลบที่ตรวจสอบแล้วกลับในรูปแบบ JSON
-            res.json(tasks);
-        });
-    } catch (error) {
-        console.error('Error fetching deleted tasks by project ID:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
 router.get('/searchBySystemId/:system_id', async (req, res) => {
     try {
         const { system_id } = req.params;
 
         // สร้าง query SQL เพื่อดึงข้อมูล Tasks ตาม ID ระบบที่ระบุ พร้อมกรองข้อมูล Tasks ที่ถูกลบ
-        const query = 'SELECT * FROM Tasks WHERE system_id = ? AND is_deleted = 0';
+        const query = 'SELECT * FROM Tasks WHERE system_id = ?';
 
         const tasks = await new Promise((resolve, reject) => {
             connection.query(query, [system_id], async (err, results) => {
@@ -238,25 +195,7 @@ router.get('/searchBySystemId/:system_id', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
-router.get('/searchBySystemId_delete/:system_id', async (req, res) => {
-    try {
-        const { system_id } = req.params;
 
-        const query = 'SELECT * FROM Tasks WHERE system_id = ? AND is_deleted = 1';
-
-        connection.query(query, [system_id], (err, results) => {
-            if (err) {
-                console.error('Error fetching deleted tasks by system ID:', err);
-                return res.status(500).send('Internal Server Error');
-            }
-
-            res.json(results);
-        });
-    } catch (error) {
-        console.error('Error fetching deleted tasks by system ID:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
 // GET Screens by Screen id
 router.get('/searchByScreenId/:screen_id', async (req, res) => {
     try {
@@ -264,7 +203,7 @@ router.get('/searchByScreenId/:screen_id', async (req, res) => {
 
         const query = `
             SELECT * FROM Tasks
-            WHERE screen_id = ? AND is_deleted = 0
+            WHERE screen_id = ? 
         `;
 
         connection.query(query, [screen_id], (err, tasks) => {
@@ -281,27 +220,7 @@ router.get('/searchByScreenId/:screen_id', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
-// GET Deleted Tasks by Screen id
-router.get('/searchByScreenId_delete/:screen_id', async (req, res) => {
-    try {
-        const { screen_id } = req.params;
 
-        // สร้าง query SQL เพื่อดึงข้อมูล Tasks ที่ถูกลบตาม Screen ID ที่ระบุ
-        const query = 'SELECT * FROM Tasks WHERE screen_id = ? AND is_deleted = 1';
-
-        connection.query(query, [screen_id], (err, results) => {
-            if (err) {
-                console.error('Error fetching deleted tasks by screen id:', err);
-                res.status(500).send('Internal Server Error');
-                return;
-            }
-            res.json(results);
-        });
-    } catch (error) {
-        console.error('Error fetching deleted tasks by screen id:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
 
 // Function to format dates
 function formatDates(tasks) {
@@ -407,26 +326,6 @@ router.put('/updateTasks/:id', async (req, res) => {
 });
 
 
-// Route for deleting a task
-router.delete('/delete/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const query = 'UPDATE Tasks SET is_deleted = true WHERE id = ?';
-
-        await new Promise((resolve, reject) => {
-            connection.query(query, [id], (err, result) => {
-                if (err) reject(err);
-                resolve(result);
-            });
-        });
-
-        res.send('Task deleted successfully');
-    } catch (error) {
-        console.error('Error deleting task:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
 
 // Route for deleting a task and related data
 router.delete('/deleteHistoryTasks/:id', async (req, res) => {
@@ -437,15 +336,6 @@ router.delete('/deleteHistoryTasks/:id', async (req, res) => {
         const deleteTasksQuery = 'DELETE FROM Tasks WHERE id = ?';
         await new Promise((resolve, reject) => {
             connection.query(deleteTasksQuery, [id], (err, result) => {
-                if (err) reject(err);
-                resolve(result);
-            });
-        });
-
-        // Delete the task itself
-        const deleteTaskQuery = 'UPDATE Tasks SET is_deleted = true WHERE id = ?';
-        await new Promise((resolve, reject) => {
-            connection.query(deleteTaskQuery, [id], (err, result) => {
                 if (err) reject(err);
                 resolve(result);
             });
@@ -504,7 +394,7 @@ router.put('/save_history_tasks/:id', async (req, res) => {
             taskId
         ]);
 
-        await connection.promise().query('INSERT INTO history_tasks (task_id, task_name, task_detail, task_status, task_progress, task_Code, screen_id, project_id, system_id, task_plan_start, task_plan_end, task_actual_start, task_actual_end, is_deleted, task_manday, update_date, user_update, task_member_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        await connection.promise().query('INSERT INTO history_tasks (task_id, task_name, task_detail, task_status, task_progress, task_Code, screen_id, project_id, system_id, task_plan_start, task_plan_end, task_actual_start, task_actual_end,  task_manday, update_date, user_update, task_member_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             currentTask[0].id,
             currentTask[0].task_name,
             currentTask[0].task_detail,
@@ -518,7 +408,6 @@ router.put('/save_history_tasks/:id', async (req, res) => {
             currentTask[0].task_plan_end,
             currentTask[0].task_actual_start,
             currentTask[0].task_actual_end,
-            currentTask[0].is_deleted,
             currentTask[0].task_manday,
             currentTask[0].task_date_update,
             currentTask[0].user_update,

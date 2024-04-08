@@ -1147,7 +1147,9 @@
                 <v-menu
                   v-if="
                     historyTaskData.task_plan_start &&
-                    historyTaskData.task_plan_end
+                    historyTaskData.task_plan_end &&
+                    historyTaskData.task_actual_end &&
+                    historyTaskData.task_actual_start
                   "
                   v-model="actualEndMenu"
                   :close-on-content-click="false"
@@ -1158,10 +1160,12 @@
                   <template v-slot:activator="{ on }">
                     <v-text-field
                       :value="
-                        formatDate(
-                          historyTaskData.task_actual_end,
-                          'DD-MM-YYYY'
-                        )
+                        historyTaskData.task_actual_end
+                          ? formatDate(
+                              historyTaskData.task_actual_end,
+                              'DD-MM-YYYY'
+                            )
+                          : ''
                       "
                       label="Actual End"
                       prepend-icon="mdi-calendar"
@@ -1339,6 +1343,7 @@
 </template>
 
 <script>
+import axios from "axios";
 import Swal from "sweetalert2";
 
 export default {
@@ -1545,11 +1550,20 @@ export default {
       }
     },
   },
-  async mounted() {
-    await this.fetchScreenDetail();
-    await this.fetchUserList();
-    this.fetchTasks();
+
+  mounted() {
+    this.fetchAllScreens()
+      .then(() => this.fetchAllSystems())
+      .then(() => this.fetchAllProjects())
+      .then(() => this.fetchScreenDetail())
+      .then(() => this.fetchUserList())
+      .then(() => this.fetchTasks())
+      .catch((error) => {
+        console.error("Error:", error);
+        // Handle error here
+      });
   },
+
   created() {
     // เรียกใช้ฟังก์ชันเมื่อโหลดหน้า
     this.getTasksToday();
@@ -1571,6 +1585,39 @@ export default {
     },
   },
   methods: {
+    async fetchAllScreens() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/screens/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching screens:", error);
+        throw error;
+      }
+    },
+    async fetchAllSystems() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/systems/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching systems:", error);
+        throw error;
+      }
+    },
+    async fetchAllProjects() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/projects/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        throw error;
+      }
+    },
     formatDateHistory(historyTasks) {
       return historyTasks.map((task) => {
         // สร้างวัตถุใหม่ที่มีข้อมูลจาก task และแปลงรูปแบบวันที่
@@ -1616,19 +1663,19 @@ export default {
 
     async saveHistory() {
       try {
-        // Format dates before sending to server
-        this.historyTaskData.task_plan_start = this.formatDateSAVE(
-          this.historyTaskData.task_plan_start
-        );
-        this.historyTaskData.task_plan_end = this.formatDateSAVE(
-          this.historyTaskData.task_plan_end
-        );
-        this.historyTaskData.task_actual_start = this.formatDateSAVE(
-          this.historyTaskData.task_actual_start
-        );
-        this.historyTaskData.task_actual_end = this.formatDateSAVE(
-          this.historyTaskData.task_actual_end
-        );
+        // Check if the values are empty and set them to null
+        if (!this.historyTaskData.task_plan_start) {
+          this.historyTaskData.task_plan_start = null;
+        }
+        if (!this.historyTaskData.task_plan_end) {
+          this.historyTaskData.task_plan_end = null;
+        }
+        if (!this.historyTaskData.task_actual_start) {
+          this.historyTaskData.task_actual_start = null;
+        }
+        if (!this.historyTaskData.task_actual_end) {
+          this.historyTaskData.task_actual_end = null;
+        }
 
         // Set user_update value
         this.historyTaskData.user_update = this.user.id;
@@ -1638,6 +1685,7 @@ export default {
           `http://localhost:7777/tasks/save_history_tasks/${this.taskId}`,
           this.historyTaskData
         );
+
         // Handle any actions after successful save
         console.log(response.data);
         // Show success alert

@@ -438,6 +438,39 @@ export default {
     };
   },
   methods: {
+    async fetchAllScreens() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/screens/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching screens:", error);
+        throw error;
+      }
+    },
+    async fetchAllSystems() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/systems/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching systems:", error);
+        throw error;
+      }
+    },
+    async fetchAllProjects() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/projects/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        throw error;
+      }
+    },
     formatDate(dateString) {
       if (!dateString) {
         return "Not determined";
@@ -1036,14 +1069,23 @@ export default {
   },
 
   mounted() {
-    // ตรวจสอบว่ามี project_id ก่อนที่จะเรียกใช้ fetchAvailableUsers
-    if (this.project_id) {
-      this.fetchAvailableUsers(this.project_id);
-    }
-    this.fetchTeamMembers();
-    this.updateDateTime();
-    this.fetchProjects();
-    setInterval(this.updateDateTime, 1000);
+    this.fetchAllScreens()
+      .then(() => this.fetchAllSystems())
+      .then(() => this.fetchAllProjects())
+      .then(() => {
+        // ตรวจสอบว่ามี project_id ก่อนที่จะเรียกใช้ fetchAvailableUsers
+        if (this.project_id) {
+          this.fetchAvailableUsers(this.project_id);
+        }
+        this.fetchTeamMembers();
+        this.updateDateTime();
+        this.fetchProjects();
+        setInterval(this.updateDateTime, 1000);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        // Handle error here
+      });
   },
 };
 </script>

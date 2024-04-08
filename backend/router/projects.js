@@ -177,8 +177,8 @@ router.post("/createProject", async (req, res) => {
 
   try {
     connection.query(
-      "INSERT INTO projects (id, project_id, project_name_TH, project_name_ENG, project_shortname, project_agency, project_progress, project_manday, system_count, project_plan_start, project_plan_end, is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [id, project_id, project_name_TH, project_name_ENG, "", 0, 0, 0, 0, null, null, false],
+      "INSERT INTO projects (id, project_id, project_name_TH, project_name_ENG, project_progress, project_manday, system_count, project_plan_start, project_plan_end, is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [id, project_id, project_name_TH, project_name_ENG, 0, 0, 0, null, null, false],
       (err, results, fields) => {
         if (err) {
           console.error("Error while inserting a project into the database", err);

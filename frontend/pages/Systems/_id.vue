@@ -572,6 +572,7 @@
 </template>
 
 <script>
+import axios from "axios";
 import Swal from "sweetalert2";
 
 export default {
@@ -678,16 +679,58 @@ export default {
   },
 
   mounted() {
-    this.fetchSystem();
-    this.fetchScreens();
-    this.fetchSystemNameENG();
-    this.fetchSystemUsers(this.systemId, this.projectId);
+    this.fetchAllScreens()
+      .then(() => this.fetchAllSystems())
+      .then(() => this.fetchAllProjects())
+      .then(() => this.fetchSystem())
+      .then(() => this.fetchScreens())
+      .then(() => this.fetchSystemNameENG())
+      .then(() => {
+        this.fetchSystemUsers(this.systemId, this.projectId);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        // Handle error here
+      });
   },
   created() {
     this.fetchSystemUsers(this.systemId, this.projectId);
   },
 
   methods: {
+    async fetchAllScreens() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/screens/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching screens:", error);
+        throw error;
+      }
+    },
+    async fetchAllSystems() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/systems/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching systems:", error);
+        throw error;
+      }
+    },
+    async fetchAllProjects() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/projects/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        throw error;
+      }
+    },
     filteredScreensByStatus(status) {
       if (status === "All") {
         return this.filteredScreens;

@@ -5,10 +5,12 @@
       <v-autocomplete
         v-model="selectedItem"
         :items="projectList"
-        item-text="id"
+        item-text="project_name_ENG"
+        item-value="id"
         label="Select Project"
         @change="fetchProjectDetails"
       ></v-autocomplete>
+
       <v-card v-if="projectDetails">
         <v-card-title>{{ projectDetails.project_name }}</v-card-title>
         <v-card-text>
@@ -23,7 +25,7 @@
           </p>
           <p>
             <strong>ความก้าวหน้าโปรเจค:</strong>
-            {{ projectDetails.project_progress }}
+            {{ parseInt(projectDetails.project_progress) }} %
           </p>
           <p>
             <strong>จำนวนวันที่ใช้งานโปรเจค:</strong>
@@ -32,11 +34,11 @@
           <p><strong>จำนวนระบบ:</strong> {{ projectDetails.system_count }}</p>
           <p>
             <strong>วันที่เริ่มต้นของโปรเจค:</strong>
-            {{ projectDetails.project_plan_start }}
+            {{ formatDate(projectDetails.project_plan_start) }}
           </p>
           <p>
             <strong>วันที่สิ้นสุดของโปรเจค:</strong>
-            {{ projectDetails.project_plan_end }}
+            {{ formatDate(projectDetails.project_plan_end) }}
           </p>
           <!-- เพิ่มรายละเอียดอื่น ๆ ของโปรเจคตามต้องการ -->
         </v-card-text>
@@ -71,15 +73,17 @@
                 >
                 <v-list-item-subtitle
                   >ความก้าวหน้าระบบ:
-                  {{ system.system_progress }}</v-list-item-subtitle
+                  {{ parseInt(system.system_progress) }} %</v-list-item-subtitle
                 >
                 <v-list-item-subtitle
                   >วันที่เริ่มต้นระบบ:
-                  {{ system.system_plan_start }}</v-list-item-subtitle
+                  {{
+                    formatDate(system.system_plan_start)
+                  }}</v-list-item-subtitle
                 >
                 <v-list-item-subtitle
                   >วันที่สิ้นสุดระบบ:
-                  {{ system.system_plan_end }}</v-list-item-subtitle
+                  {{ formatDate(system.system_plan_end) }}</v-list-item-subtitle
                 >
                 <!-- Add more fields as needed -->
               </v-list-item-content>
@@ -109,22 +113,24 @@
                 >
                 <v-list-item-subtitle
                   >จำนวนวันที่ใช้งาน:
-                  {{ screen.screen_manday }}</v-list-item-subtitle
+                  {{ screen.screen_manday }} Days</v-list-item-subtitle
                 >
                 <v-list-item-subtitle
                   >ความก้าวหน้าหน้าจอ:
-                  {{ screen.screen_progress }}</v-list-item-subtitle
+                  {{ parseInt(screen.screen_progress) }} %</v-list-item-subtitle
                 >
                 <v-list-item-subtitle
                   >จำนวนงาน: {{ screen.task_count }}</v-list-item-subtitle
                 >
                 <v-list-item-subtitle
                   >วันที่เริ่มต้นหน้าจอ:
-                  {{ screen.screen_plan_start }}</v-list-item-subtitle
+                  {{
+                    formatDate(screen.screen_plan_start)
+                  }}</v-list-item-subtitle
                 >
                 <v-list-item-subtitle
                   >วันที่สิ้นสุดหน้าจอ:
-                  {{ screen.screen_plan_end }}</v-list-item-subtitle
+                  {{ formatDate(screen.screen_plan_end) }}</v-list-item-subtitle
                 >
                 <!-- Add more fields as needed -->
               </v-list-item-content>
@@ -166,6 +172,11 @@ export default {
     },
   },
   methods: {
+    formatDate(date) {
+      const options = { year: "numeric", month: "2-digit", day: "2-digit" };
+      const formattedDate = new Date(date).toLocaleDateString("th-TH", options);
+      return formattedDate.replace(/(\d+)\/(\d+)\/(\d+)/, "$1/$2/$3"); // แปลงให้เป็นรูปแบบ วัน/เดือน/ปี
+    },
     async getProjects() {
       try {
         const response = await this.$axios.get("/projects/getAll");
