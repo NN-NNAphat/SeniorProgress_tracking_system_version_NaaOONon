@@ -10,7 +10,7 @@
             :src="screen_pic"
             alt="Screen PIC"
             width="100%"
-            max-height="100%"
+            height="300px"
             @click="showImageDialog = true"
           ></v-img>
 
@@ -793,7 +793,7 @@
             </template>
             <!-- โค้ดประสาทีนี้เรียงตาม update_date -->
             <template v-slot:item.task_manday="{ item }">
-              {{ item.task_detail ? item.task_manday : "No determine" }}
+              {{ item.task_manday !== null ? item.task_manday : 0 }}
             </template>
           </v-data-table>
 
