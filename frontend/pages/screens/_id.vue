@@ -667,73 +667,84 @@
             Details of Task : {{ dialogTaskDetails.task_name }}
           </v-card-title>
           <v-card-text class="task-details">
-            <div class="task-info">
-              <p><strong>Task ID:</strong> {{ dialogTaskDetails.task_id }}</p>
-              <p>
-                <strong>Task Detail:</strong>
-                {{ dialogTaskDetails.task_detail }}
-              </p>
-              <p>
-                <strong>Status:</strong> {{ dialogTaskDetails.task_status }}
-              </p>
-              <p>
-                <strong>Manday:</strong>
-                {{ dialogTaskDetails.task_manday || 0 }} Da
-              </p>
-              <p>
-                <strong>Progress:</strong>
-                {{ dialogTaskDetails.task_progress || 0 }} %
-              </p>
-            </div>
-            <div class="responsible-person">
-              <p>
-                <strong
-                  >Responsible person:
-                  <span v-if="dialogTaskDetails.memberDetails">
+            <v-row>
+              <!-- Task Info -->
+              <v-col cols="4">
+                <div class="task-info">
+                  <p>
+                    <strong>Task ID:</strong> {{ dialogTaskDetails.task_id }}
+                  </p>
+                  <p>
+                    <strong>Task Detail:</strong>
+                    {{ dialogTaskDetails.task_detail }}
+                  </p>
+                  <p>
+                    <strong>Status:</strong> {{ dialogTaskDetails.task_status }}
+                  </p>
+                  <p>
+                    <strong>Manday:</strong>
+                    {{ dialogTaskDetails.task_manday || 0 }} Da
+                  </p>
+                  <p>
+                    <strong>Progress:</strong>
+                    {{ dialogTaskDetails.task_progress || 0 }} %
+                  </p>
+                </div>
+              </v-col>
+
+              <!-- Responsible Person -->
+              <v-col cols="4">
+                <div class="responsible-person">
+                  <p><strong>Responsible person:</strong></p>
+                  <p v-if="dialogTaskDetails.memberDetails">
                     {{ dialogTaskDetails.memberDetails.user_firstname }}
                     {{ dialogTaskDetails.memberDetails.user_lastname }}
-                  </span>
-                  <span v-else>Not determined</span></strong
-                >
-              </p>
-            </div>
-            <div class="task-dates">
-              <p>
-                <strong>Last updated date:</strong>
-                {{
-                  formatDate(dialogTaskDetails.task_date_update) ||
-                  "Not determined" ,
-                }}
-              </p>
-              <p>
-                <strong>Plan Start:</strong>
-                {{
-                  formatDate(dialogTaskDetails.task_plan_start) ||
-                  "Not determined"
-                }}
-              </p>
-              <p>
-                <strong>Plan End:</strong>
-                {{
-                  formatDate(dialogTaskDetails.task_plan_end) ||
-                  "Not determined"
-                }}
-              </p>
-              <p>
-                <strong>Actual Start:</strong>
-                {{
-                  formatDate(dialogTaskDetails.task_actual_start) ||
-                  "Not determined"
-                }}
-              </p>
-              <p>
-                <strong>Actual End:</strong>
-                {{
-                  formatDate(dialogTaskDetails.task_actual_end) ||
-                  "Not determined"
-                }}
-              </p>
-            </div>
+                  </p>
+                  <p v-else>Not determined</p>
+                </div>
+              </v-col>
+
+              <!-- Task Dates -->
+              <v-col cols="4">
+                <div class="task-dates">
+                  <p>
+                    <strong>Last updated date:</strong>
+                    {{
+                      formatDate(dialogTaskDetails.task_date_update) ||
+                      "Not determined"
+                    }}
+                  </p>
+                  <p>
+                    <strong>Plan Start:</strong>
+                    {{
+                      formatDate(dialogTaskDetails.task_plan_start) ||
+                      "Not determined"
+                    }}
+                  </p>
+                  <p>
+                    <strong>Plan End:</strong>
+                    {{
+                      formatDate(dialogTaskDetails.task_plan_end) ||
+                      "Not determined"
+                    }}
+                  </p>
+                  <p>
+                    <strong>Actual Start:</strong>
+                    {{
+                      formatDate(dialogTaskDetails.task_actual_start) ||
+                      "Not determined"
+                    }}
+                  </p>
+                  <p>
+                    <strong>Actual End:</strong>
+                    {{
+                      formatDate(dialogTaskDetails.task_actual_end) ||
+                      "Not determined"
+                    }}
+                  </p>
+                </div>
+              </v-col>
+            </v-row>
           </v-card-text>
 
           <div>
@@ -793,7 +804,7 @@
             </template>
             <!-- โค้ดประสาทีนี้เรียงตาม update_date -->
             <template v-slot:item.task_manday="{ item }">
-              {{ item.task_manday !== null ? item.task_manday : 0 }}
+              {{ item.task_manday !== null ? item.task_manday : 0 }} days
             </template>
           </v-data-table>
 
