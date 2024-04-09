@@ -414,13 +414,16 @@
               label="Screen Status"
               :items="['Not started yet', 'design', 'develop', 'finish']"
             ></v-select>
+            <!-- Input for selecting image file -->
             <v-file-input
-              accept="image/png, image/jpeg, image/bmp"
               label="Select screen image"
+              accept="image/png, image/jpeg, image/bmp"
               placeholder="Select screen image"
               prepend-icon="mdi-camera"
               v-model="editScreen.screen_pic"
+              @change="onFileChange"
             ></v-file-input>
+
             <!-- Add more fields as needed -->
             <v-btn color="primary" type="submit">Update</v-btn>
             <v-btn color="error" @click="editScreenDialog = false"
@@ -938,14 +941,41 @@ export default {
           throw new Error("Failed to assign users to screen");
         }
 
-        // ดำเนินการอื่นๆ หลังจากสำเร็จ
-
         // ปิด Dialog หลังจากทำงานเสร็จสิ้น
         this.closeAssignUserDialog();
+
+        // แสดง SweetAlert2 หลังจากการทำงานเสร็จสิ้น
+        await Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Users assigned to screen successfully!",
+        });
+
+        // Refresh ตารางผู้ใช้หลังจาก Assign User เสร็จสิ้น
+        await this.getUserScreenManagement(
+          assignProjectId,
+          assignSystemId,
+          assignScreenId
+        );
+
+        // รีเซ็ตฟอร์มหลังจากทำการ Assign User เสร็จสิ้น
+        this.resetForm();
       } catch (error) {
         console.error("Error assigning users to screen:", error);
         // จัดการข้อผิดพลาดที่เกิดขึ้น
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to assign users to screen",
+        });
       }
+    },
+    resetForm() {
+      // รีเซ็ตค่าที่ถูกเลือกหรือป้อนเข้ามาในฟอร์มกลับไปยังค่าเริ่มต้น
+      this.assignProjectId = ""; // รีเซ็ต projectId
+      this.assignSystemId = ""; // รีเซ็ต systemId
+      this.assignScreenId = ""; // รีเซ็ต screenId
+      this.selectedUsers = []; // รีเซ็ต selectedUsers
     },
 
     openAssignUserDialog(projectId, systemId, screenId) {
@@ -1163,8 +1193,8 @@ export default {
         if (this.editScreen.screen_pic instanceof File) {
           // Check if screen_pic is a file
           const file = this.editScreen.screen_pic;
-          const imageUrl = URL.createObjectURL(file); // Create URL for the selected file
-          requestData.screen_pic = imageUrl; // Assign the URL to requestData instead of the file itself
+          const base64Image = await this.convertFileToBase64(file);
+          requestData.screen_pic = base64Image;
         }
 
         const response = await fetch(
@@ -1199,6 +1229,26 @@ export default {
           text: "Failed to update screen",
         });
       }
+    },
+    async onFileChange(file) {
+      try {
+        if (file && file instanceof File) {
+          // Store the selected file in editScreen
+          this.editScreen.screen_pic = file;
+          // Preview the selected image
+          this.previewImage(file);
+        }
+      } catch (error) {
+        console.error("Error processing file:", error);
+      }
+    },
+    async convertFileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = (error) => reject(error);
+      });
     },
 
     async imageToBase64Edit(file) {
