@@ -744,24 +744,56 @@
             :items="historyTasks"
             item-key="id"
             class="table-with-border"
+            :sort-by="[{ key: 'update_date', order: 'desc' }]"
           >
-            <template v-slot:item.task_plan_start="{ item }">
-              {{ formatDate(item.task_plan_start) }}
+            <template v-slot:item.task_detail="{ item }">
+              {{ item.task_detail ? item.task_detail : "No determine" }}
             </template>
+
+            <!-- โค้ดประสาทีนี้เรียงตาม update_date -->
             <template v-slot:item.user_update="{ item }">
-              {{ item.user_update ? item.user_update : "no detemine" }}
+              {{ item.user_update ? item.user_update : "No determine" }}
             </template>
+
+            <!-- โค้ดประสาทีนี้เรียงตาม update_date -->
             <template v-slot:item.update_date="{ item }">
-              {{ formatDate(item.task_plan_end) }}
+              {{
+                item.update_date ? formatDate(item.update_date) : "No determine"
+              }}
+            </template>
+
+            <!-- ส่วนที่เหลือจะใช้ formatDate ตามปกติ -->
+            <template v-slot:item.task_plan_start="{ item }">
+              {{
+                item.task_plan_start
+                  ? formatDate(item.task_plan_start)
+                  : "No determine"
+              }}
             </template>
             <template v-slot:item.task_plan_end="{ item }">
-              {{ formatDate(item.task_plan_end) }}
+              {{
+                item.task_plan_end
+                  ? formatDate(item.task_plan_end)
+                  : "No determine"
+              }}
             </template>
             <template v-slot:item.task_actual_start="{ item }">
-              {{ formatDate(item.task_actual_start) }}
+              {{
+                item.task_actual_start
+                  ? formatDate(item.task_actual_start)
+                  : "No determine"
+              }}
             </template>
             <template v-slot:item.task_actual_end="{ item }">
-              {{ formatDate(item.task_actual_end) }}
+              {{
+                item.task_actual_end
+                  ? formatDate(item.task_actual_end)
+                  : "No determine"
+              }}
+            </template>
+            <!-- โค้ดประสาทีนี้เรียงตาม update_date -->
+            <template v-slot:item.task_manday="{ item }">
+              {{ item.task_detail ? item.task_manday : "No determine" }}
             </template>
           </v-data-table>
 
@@ -1179,7 +1211,7 @@
                 </v-menu>
               </v-col>
             </v-row>
-            
+
             <v-text-field
               v-model="historyTaskData.task_manday"
               label="Manday"
@@ -1645,58 +1677,78 @@ export default {
       this.dialogSaveTaskForm = true;
     },
     formatDateSAVE(date) {
-      // นำออก timezone และแปลงให้เป็นรูปแบบ 'YYYY-MM-DD'
+      // แปลงข้อความวันที่เป็นอ็อบเจ็ค Date
       const d = new Date(date);
+
+      // ดึงค่าปี เดือน และวัน
       const year = d.getFullYear();
       let month = "" + (d.getMonth() + 1);
       let day = "" + d.getDate();
 
+      // เติมเต็มเดือน และวันที่มีหลักเดียวด้วยเลขศูนย์ด้านหน้า
       if (month.length < 2) month = "0" + month;
       if (day.length < 2) day = "0" + day;
 
-      return [year, month, day].join("-");
+      // ส่งค่าวันที่ในรูปแบบ 'YYYY-MM-DD'
+      return `${year}-${month}-${day}`;
     },
 
     async saveHistory() {
       try {
-        // Check if the values are empty and set them to null
-        if (!this.historyTaskData.task_plan_start) {
+        // ตรวจสอบว่าค่าวันที่ว่างเปล่าหรือไม่และกำหนดให้เป็น null
+        if (this.historyTaskData.task_plan_start) {
+          this.historyTaskData.task_plan_start = this.formatDateSAVE(
+            this.historyTaskData.task_plan_start
+          );
+        } else {
           this.historyTaskData.task_plan_start = null;
         }
-        if (!this.historyTaskData.task_plan_end) {
+        if (this.historyTaskData.task_plan_end) {
+          this.historyTaskData.task_plan_end = this.formatDateSAVE(
+            this.historyTaskData.task_plan_end
+          );
+        } else {
           this.historyTaskData.task_plan_end = null;
         }
-        if (!this.historyTaskData.task_actual_start) {
+        if (this.historyTaskData.task_actual_start) {
+          this.historyTaskData.task_actual_start = this.formatDateSAVE(
+            this.historyTaskData.task_actual_start
+          );
+        } else {
           this.historyTaskData.task_actual_start = null;
         }
-        if (!this.historyTaskData.task_actual_end) {
+        if (this.historyTaskData.task_actual_end) {
+          this.historyTaskData.task_actual_end = this.formatDateSAVE(
+            this.historyTaskData.task_actual_end
+          );
+        } else {
           this.historyTaskData.task_actual_end = null;
         }
 
-        // Set user_update value
+        // กำหนดค่า user_update
         this.historyTaskData.user_update = this.user.id;
 
-        // Call the API to save history data using the assigned task ID
+        // เรียกใช้ API เพื่อบันทึกข้อมูลประวัติโดยใช้ task ID ที่กำหนด
         const response = await this.$axios.put(
           `http://localhost:7777/tasks/save_history_tasks/${this.taskId}`,
           this.historyTaskData
         );
 
-        // Handle any actions after successful save
+        // จัดการการกระทำหลังจากบันทึกสำเร็จ
         console.log(response.data);
-        // Show success alert
+        // แสดงแจ้งเตือนเรื่องความสำเร็จ
         await Swal.fire({
           icon: "success",
           title: "Success",
           text: "History task has been saved successfully!",
         });
-        // Close the dialog after successful save
+        // ปิด dialog หลังจากบันทึกสำเร็จ
         this.dialogSaveTaskForm = false;
         this.fetchTasks();
         this.fetchScreenDetail();
       } catch (error) {
         console.error("Error saving history task and updating task:", error);
-        // Show error alert
+        // แสดงแจ้งเตือนเรื่องข้อผิดพลาด
         await Swal.fire({
           icon: "error",
           title: "Error",
@@ -1704,6 +1756,7 @@ export default {
         });
       }
     },
+
     cancelSaveHistory() {
       // Cancel save and close the dialog
       this.dialogSaveTaskForm = false;
