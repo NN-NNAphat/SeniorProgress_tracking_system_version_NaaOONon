@@ -10,7 +10,7 @@
             :src="screen_pic"
             alt="Screen PIC"
             width="100%"
-            max-height="200px"
+            max-height="100%"
             @click="showImageDialog = true"
           ></v-img>
 
@@ -1147,9 +1147,7 @@
                 <v-menu
                   v-if="
                     historyTaskData.task_plan_start &&
-                    historyTaskData.task_plan_end &&
-                    historyTaskData.task_actual_end &&
-                    historyTaskData.task_actual_start
+                    historyTaskData.task_plan_end
                   "
                   v-model="actualEndMenu"
                   :close-on-content-click="false"
@@ -1160,12 +1158,10 @@
                   <template v-slot:activator="{ on }">
                     <v-text-field
                       :value="
-                        historyTaskData.task_actual_end
-                          ? formatDate(
-                              historyTaskData.task_actual_end,
-                              'DD-MM-YYYY'
-                            )
-                          : ''
+                        formatDate(
+                          historyTaskData.task_actual_end,
+                          'DD-MM-YYYY'
+                        )
                       "
                       label="Actual End"
                       prepend-icon="mdi-calendar"
@@ -1183,7 +1179,7 @@
                 </v-menu>
               </v-col>
             </v-row>
-
+            
             <v-text-field
               v-model="historyTaskData.task_manday"
               label="Manday"
