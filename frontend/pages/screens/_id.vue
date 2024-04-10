@@ -258,7 +258,7 @@
                   </div>
 
                   <!-- Row 2: Task Detail -->
-                  <p style="font-size: 16px; line-height: 1.5em; height: 170px">
+                  <p class="clamp-text">
                     Task Detail:
                     {{ task.task_detail ? task.task_detail : "Not determined" }}
                   </p>
@@ -683,7 +683,7 @@
                   </p>
                   <p>
                     <strong>Manday:</strong>
-                    {{ dialogTaskDetails.task_manday || 0 }} Da
+                    {{ dialogTaskDetails.task_manday || 0 }} Days
                   </p>
                   <p>
                     <strong>Progress:</strong>
@@ -2259,5 +2259,15 @@ export default {
 .table-with-border td {
   border: 1px solid #ccc;
   padding: 8px; /* ปรับค่าตามที่ต้องการ */
+}
+.clamp-text {
+  font-size: 16px;
+  line-height: 1.5em;
+  height: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* จำนวนบรรทัดที่ต้องการให้แสดง */
+  -webkit-box-orient: vertical;
 }
 </style>

@@ -98,8 +98,8 @@ router.get("/getAll", async (req, res) => {
           screen.screen_plan_end = new Date(screen.max_task_plan_end).toISOString().split('T')[0];
           const startDate = new Date(screen.screen_plan_start);
           const endDate = new Date(screen.screen_plan_end);
-          startDate.setDate(startDate.getDate() + 1);
-          endDate.setDate(endDate.getDate() + 1);
+          startDate.setDate(startDate.getDate());
+          endDate.setDate(endDate.getDate());
           screen.screen_plan_start = startDate.toISOString().split('T')[0];
           screen.screen_plan_end = endDate.toISOString().split('T')[0];
         }
@@ -341,9 +341,18 @@ router.get("/searchBySystemId/:system_id", async (req, res) => {
         return res.status(400).send();
       }
 
-      await Promise.all(results.map(async (screen) => {
-        await updateScreen(screen);
-      }));
+      await Promise.all(
+        results.map(async (screen) => {
+          await updateScreen(screen);
+          if (screen.screen_plan_start) {
+            screen.screen_plan_start = new Date(screen.screen_plan_start).toISOString().split("T")[0];
+          }
+          if (screen.screen_plan_end) {
+            screen.screen_plan_end = new Date(screen.screen_plan_end).toISOString().split("T")[0];
+          }
+          return screen;
+        })
+      );
 
       res.status(200).json(results);
     });
