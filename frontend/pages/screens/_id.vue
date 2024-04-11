@@ -1787,6 +1787,17 @@ export default {
         }
         const data = await response.json();
         this.historyTasks = data;
+
+        // เพิ่มส่วนนี้เพื่อดึงรายละเอียดของผู้ใช้และแทนที่ id ด้วยข้อมูลผู้ใช้
+        for (let i = 0; i < this.historyTasks.length; i++) {
+          const userId = this.historyTasks[i].user_update;
+          const userDetails = await this.fetchMemberDetails(userId);
+          if (userDetails) {
+            const fullName =
+              userDetails.user_firstname + " " + userDetails.user_lastname;
+            this.historyTasks[i].user_update = fullName;
+          }
+        }
       } catch (error) {
         console.error("Error fetching history tasks:", error);
       }
