@@ -380,7 +380,7 @@
                         v-if="!task.memberDetails || !task.memberDetails.id"
                         color="primary"
                         style="margin-left: 75px"
-                        @click.stop=""
+                        @click.stop="takeTask(task)"
                       >
                         Take this task.
                       </v-btn>
@@ -1672,6 +1672,64 @@ export default {
     // Watcher to update task_manday when task_plan_start or task_plan_end changes
   },
   methods: {
+    async takeTask(task) {
+      try {
+        // ตรวจสอบว่ามีข้อมูลผู้ใช้ที่เข้าสู่ระบบหรือไม่
+        if (!this.$auth.user || !this.$auth.user.id) {
+          throw new Error("User is not authenticated.");
+        }
+
+        // แสดง confirm dialog เพื่อยืนยันการ Take งาน
+        const confirmResult = await Swal.fire({
+          icon: "warning",
+          title: "Are you sure?",
+          text: "Do you want to take this task?",
+          showCancelButton: true,
+          confirmButtonColor: "#009933",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, take it!",
+          cancelButtonText: "Cancel",
+        });
+
+        // ถ้าผู้ใช้กดปุ่มยืนยัน
+        if (confirmResult.isConfirmed) {
+          // อัปเดต task_member_id ด้วย ID ของผู้ใช้ที่เข้าสู่ระบบ
+          const response = await fetch(
+            `http://localhost:7777/tasks/updateTasks/${task.id}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                ...task,
+                task_member_id: this.$auth.user.id, // อัปเดต task_member_id ด้วย ID ของผู้ใช้ที่เข้าสู่ระบบ
+              }),
+            }
+          );
+
+          if (response.ok) {
+            Swal.fire({
+              icon: "success",
+              title: "Task assigned successfully",
+              confirmButtonColor: "#009933",
+            });
+            // อัปเดตรายการงาน
+            this.fetchTasks();
+          } else {
+            throw new Error("Failed to assign task");
+          }
+        }
+      } catch (error) {
+        console.error("Error assigning task:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error assigning task",
+          text: error.message || "Please try again",
+        });
+      }
+    },
+
     getProgressColor(progress) {
       if (progress >= 61 && progress <= 100) {
         return "green";
