@@ -65,7 +65,7 @@
           <td>{{ item.project_name_ENG }}</td>
           <td>
             <v-progress-linear
-              color="primary"
+              :color="getProgressColorProject(parseInt(item.project_progress))"
               height="20"
               :value="parseInt(item.project_progress)"
               :style="{ width: '100%' }"
@@ -1018,6 +1018,17 @@ export default {
     },
   },
   computed: {
+    getProgressColorProject() {
+      return function (progress) {
+        if (progress >= 61) {
+          return "green"; // สีเขียว
+        } else if (progress >= 40) {
+          return "#FC8705"; // สีเหลือง
+        } else {
+          return "red"; // สีแดง
+        }
+      };
+    },
     searchBarStyle() {
       if (this.user.user_role === "Admin") {
         // ถ้าผู้ใช้เป็น Admin ให้ความกว้างเต็มหน้าจอ
