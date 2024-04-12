@@ -288,5 +288,27 @@ router.delete("/deleteUserSystem/:system_id/:project_id/:user_id", async (req, r
     }
 });
 
+// GET systems by user_id and project_id
+router.get("/getSystemsByUser_id/:project_id/:user_id", async (req, res) => {
+    const { project_id, user_id } = req.params;
+
+    try {
+        connection.query(
+            "SELECT systems.* FROM user_systems INNER JOIN systems ON user_systems.system_id = systems.id WHERE user_systems.project_id = ? AND user_systems.user_id = ?",
+            [project_id, user_id],
+            (err, results, fields) => {
+                if (err) {
+                    console.log(err);
+                    return res.status(400).send();
+                }
+                res.status(200).json(results);
+            }
+        );
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
+
 
 module.exports = router;

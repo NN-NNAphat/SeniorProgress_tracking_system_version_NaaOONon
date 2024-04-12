@@ -15,7 +15,7 @@
           <v-card-subtitle>
             Project Progress : {{ Math.floor(project.project_progress) }}
             <v-progress-linear
-              color="primary"
+              :color="getProgressColor(project.project_progress)"
               height="50"
               :value="parseInt(project.project_progress)"
               striped
@@ -119,38 +119,41 @@
           type="text"
           v-model="searchQuery"
           placeholder="Search..."
-          style="
-            margin-bottom: 10px;
-            width: 70%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-          "
+          :style="{
+            'margin-bottom': '10px',
+            width: user.user_role === 'Admin' ? '70%' : '100%', // เพิ่มเงื่อนไขในการกำหนด width
+            padding: '10px',
+            border: '1px solid #ccc',
+            'border-radius': '5px',
+            'font-size': '16px',
+          }"
         />
 
         <v-btn
+          v-if="user.user_role === 'Admin'"
           color="primary"
           class="text-none mb-4"
           @click="goToCreateSystem"
           style="margin-left: 50px; width: 10%; height: 70%"
-          >Create System</v-btn
+        >
+          <v-icon>mdi-plus</v-icon></v-btn
         >
         <!-- เพิ่มปุ่ม Show History System -->
         <v-btn
+          v-if="user.user_role === 'Admin'"
           color="error"
           class="text-none mb-4"
           @click="goToHistorySystems"
           style="margin-left: 10px; width: 10%; height: 70%"
         >
-          <v-icon>mdi-delete</v-icon> &nbsp;Bin</v-btn
+          <v-icon>mdi-delete</v-icon> &nbsp;</v-btn
         >
       </v-col>
     </v-row>
 
     <!-- Data Table -->
     <v-data-table
-      :headers="headers"
+      :headers="filteredHeaders"
       :items="filteredSystems"
       :sort-by="[{ key: 'system_id', order: 'desc' }]"
     >
@@ -166,7 +169,7 @@
 
           <td>
             <v-progress-linear
-              color="primary"
+              :color="getProgressColor(parseInt(item.system_progress))"
               height="20"
               :value="parseInt(item.system_progress)"
               :style="{ width: '100%' }"
@@ -183,8 +186,9 @@
           <td>{{ formatDate(item.system_plan_end) }}</td>
 
           <td>{{ item.system_manday ? item.system_manday : "0" }}</td>
-          <!-- เพิ่มปุ่ม manage user systems -->
-          <td>
+
+          <!-- เพิ่มเงื่อนไขเพื่อซ่อนคอลัมน์ Action เมื่อผู้ใช้ไม่ใช่ Admin -->
+          <td v-if="user.user_role === 'Admin'">
             <!-- Dropdown menu for other actions -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
@@ -195,14 +199,23 @@
               <v-list>
                 <!-- Manage User Systems action -->
                 <v-list-item @click="openManageUserDialog(item)">
+                  <v-list-item-icon>
+                    <v-icon>mdi-account-edit</v-icon>
+                  </v-list-item-icon>
                   <v-list-item-content>Assign</v-list-item-content>
                 </v-list-item>
                 <!-- Edit action -->
                 <v-list-item @click="openEditDialog(item)">
+                  <v-list-item-icon>
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-list-item-icon>
                   <v-list-item-content>Edit</v-list-item-content>
                 </v-list-item>
                 <!-- Delete action -->
                 <v-list-item @click="confirmDeleteSystem(item)">
+                  <v-list-item-icon>
+                    <v-icon class="red--text">mdi-delete</v-icon>
+                  </v-list-item-icon>
                   <v-list-item-content class="red--text"
                     >Delete</v-list-item-content
                   >
@@ -212,6 +225,21 @@
             </v-menu>
           </td>
         </tr>
+      </template>
+
+      <!-- เพิ่มเงื่อนไขเพื่อซ่อนคอลัมน์ Action เมื่อผู้ใช้ไม่ใช่ Admin -->
+      <template v-if="user.user_role === 'Admin'" v-slot:top>
+        <thead>
+          <tr>
+            <th
+              v-for="header in headers"
+              :key="header.text"
+              v-if="header.text !== 'Actions'"
+            >
+              {{ header.text }}
+            </th>
+          </tr>
+        </thead>
       </template>
     </v-data-table>
 
@@ -513,10 +541,13 @@ import Swal from "sweetalert2";
 import axios from "axios";
 
 export default {
+  middleware: "auth",
   name: "SystemsDataTable",
   layout: "admin",
   data() {
     return {
+      user: this.$auth.user,
+      loggedIn: this.$auth.loggedIn,
       selectedCreateSystemAnalysts: [],
       selectedCreateDevelopers: [],
       selectedCreateImplementers: [],
@@ -598,6 +629,17 @@ export default {
   },
 
   methods: {
+    getProgressColor(progress) {
+      if (progress >= 61 && progress <= 100) {
+        return "green";
+      } else if (progress >= 40 && progress <= 60) {
+        return "#FC8705";
+      } else if (progress >= 0 && progress <= 39) {
+        return "red";
+      }
+      // เมื่อไม่ตรงกับเงื่อนไขใดๆ ให้คืนค่าเริ่มต้น
+      return "primary";
+    },
     async fetchAllScreens() {
       try {
         const response = await axios.get(
@@ -1199,9 +1241,17 @@ export default {
     async fetchSystems() {
       try {
         const projectId = this.$route.params.id;
-        const response = await fetch(
-          `http://localhost:7777/systems/searchByProjectId/${projectId}`
-        );
+        let url = "";
+
+        // Check if the user role is Admin
+        if (this.$auth.user.user_role === "Admin") {
+          url = `http://localhost:7777/systems/searchByProjectId/${projectId}`;
+        } else {
+          // If not Admin, use the URL for non-admin users
+          url = `http://localhost:7777/user_systems/getSystemsByUser_id/${projectId}/${this.$auth.user.id}`;
+        }
+
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error("Failed to fetch systems");
         }
@@ -1224,6 +1274,15 @@ export default {
     },
   },
   computed: {
+    filteredHeaders() {
+      if (this.user.user_role === "Admin") {
+        // If user role is Admin, include Action column
+        return this.headers;
+      } else {
+        // If user role is not Admin, exclude Action column
+        return this.headers.filter((header) => header.value !== "actions");
+      }
+    },
     filteredUsersList() {
       return this.displayedUsers.filter((user) => {
         const fullName =
