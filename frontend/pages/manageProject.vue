@@ -28,14 +28,7 @@
           type="text"
           v-model="searchQuery"
           placeholder="Search..."
-          style="
-            margin-bottom: 10px;
-            width: 70%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-          "
+          :style="searchBarStyle"
         />
 
         <v-btn
@@ -882,13 +875,25 @@ export default {
       }
     },
     async fetchProjects() {
+      let url;
+      if (this.$auth.user.user_role === "Admin") {
+        url = "http://localhost:7777/projects/getAll";
+      } else {
+        url = `http://localhost:7777/user_projects/getProjectByUser_id/${this.$auth.user.id}`;
+      }
+
       try {
-        const response = await fetch("http://localhost:7777/projects/getAll");
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error("Failed to fetch projects");
         }
         const data = await response.json();
-        this.projects = data;
+
+        if (Array.isArray(data)) {
+          this.projects = data;
+        } else {
+          this.projects = [data];
+        }
       } catch (error) {
         console.error("Error fetching projects:", error);
       }
@@ -1013,6 +1018,31 @@ export default {
     },
   },
   computed: {
+    searchBarStyle() {
+      if (this.user.user_role === "Admin") {
+        // ถ้าผู้ใช้เป็น Admin ให้ความกว้างเต็มหน้าจอ
+        return {
+          marginBottom: "10px",
+          width: "70%", // กำหนดความกว้างเต็มหน้าจอ
+          height: "70%",
+          padding: "10px",
+          border: "1px solid #ccc",
+          borderRadius: "5px",
+          fontSize: "16px",
+        };
+      } else {
+        // ถ้าผู้ใช้ไม่ใช่ Admin ให้ความกว้างเป็น 70%
+        return {
+          marginBottom: "10px",
+          width: "100%", // ความกว้าง 70%
+          height: "70%",
+          padding: "10px",
+          border: "1px solid #ccc",
+          borderRadius: "5px",
+          fontSize: "16px",
+        };
+      }
+    },
     filteredHeaders() {
       if (this.user.user_role === "Admin") {
         // If user role is Admin, include Action column
