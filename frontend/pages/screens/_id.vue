@@ -32,14 +32,18 @@
           </v-card-item>
           <v-card-subtitle @click="showDetails = !showDetails">
             <span style="font-weight: bold; color: black; font-size: 16px">
-              Screen Progress: {{ Math.floor(screen_progress) }}%
+              Screen Progress
             </span>
             <v-progress-linear
-              color="primary"
+              :color="getProgressColor(parseInt(screen_progress))"
               height="50"
               :value="parseInt(screen_progress)"
               striped
-            ></v-progress-linear>
+            >
+              <strong :style="{ color: '#5E5E5E', fontSize: '20px' }"
+                >{{ Math.floor(screen_progress) }}%</strong
+              ></v-progress-linear
+            >
           </v-card-subtitle>
 
           <v-expand-transition>
@@ -63,10 +67,11 @@
                   }}
                 </p>
 
-                <p>Screen Manday: {{ screen_manday }}</p>
+                <p>Screen Manday: {{ screen_manday || 0 }}</p>
+
                 <p>Screen Level: {{ screen_level }}</p>
 
-                <p>Task Count: {{ task_count }}</p>
+                <p>Task Count: {{ task_count || 0 }}</p>
               </v-card-text>
             </div>
           </v-expand-transition>
@@ -150,9 +155,13 @@
         <h3>Task Management</h3>
         <v-divider vertical></v-divider>
         <!-- open add task form -->
-        <v-btn color="primary" @click="dialogAddTaskForm = true"
-          >Add Task</v-btn
+        <v-btn
+          class="rounded-btn"
+          color="primary"
+          @click="dialogAddTaskForm = true"
         >
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
       </div>
       <v-divider></v-divider>
 
@@ -243,16 +252,18 @@
                       </v-col>
                       <v-col>
                         <v-progress-linear
-                          color="primary"
+                          :color="
+                            getProgressColorTask(parseInt(task.task_progress))
+                          "
                           height="15"
                           :value="parseInt(task.task_progress)"
                           striped
                           :style="{ width: '100%' }"
                         >
-                          <strong :style="{ color: 'white' }"
+                          <strong :style="{ color: '#5E5E5E' }"
                             >{{ parseInt(task.task_progress) }}%</strong
-                          ></v-progress-linear
-                        >
+                          >
+                        </v-progress-linear>
                       </v-col>
                     </v-row>
                   </div>
@@ -331,6 +342,7 @@
                     <!-- Buttons -->
                     <div>
                       <v-btn
+                        v-if="user.user_role === 'Admin'"
                         icon
                         color="primary"
                         @click.stop="
@@ -341,15 +353,36 @@
                         <v-icon>mdi-pencil</v-icon>
                       </v-btn>
                       <v-btn
+                        v-if="
+                          (task.memberDetails &&
+                            task.memberDetails.id === user.id) ||
+                          user.user_role === 'Admin'
+                        "
                         icon
                         color="primary"
                         @click.stop="openSaveHistoryDialog(task)"
                       >
                         <v-icon>mdi-content-save</v-icon>
                       </v-btn>
-
-                      <v-btn icon color="error" @click.stop="deleteTask(task)">
+                      <v-btn
+                        v-if="
+                          (task.memberDetails &&
+                            task.memberDetails.id === user.id) ||
+                          user.user_role === 'Admin'
+                        "
+                        icon
+                        color="error"
+                        @click.stop="deleteTask(task)"
+                      >
                         <v-icon>mdi-delete</v-icon>
+                      </v-btn>
+                      <v-btn
+                        v-if="!task.memberDetails || !task.memberDetails.id"
+                        color="primary"
+                        style="margin-left: 75px"
+                        @click.stop=""
+                      >
+                        Take this task.
                       </v-btn>
                     </div>
                   </div>
@@ -1021,7 +1054,7 @@
               </template>
             </v-select>
 
-            <v-btn type="submit">Update</v-btn>
+            <v-btn color="primary" type="submit">Update</v-btn>
             <v-btn color="error" @click="cancelEdit">Cancel</v-btn>
           </v-form>
         </v-card-text>
@@ -1250,7 +1283,6 @@
               v-model="newTask.task_id"
               label="Task ID"
               required
-              :rules="[taskIDRules, onlyEnglishNumericSymbolRule]"
               append-icon="mdi-alert-circle"
               pattern="[A-Za-z0-9@#$%^&*()-_+=!]+"
             ></v-text-field>
@@ -1258,7 +1290,6 @@
             <!-- Task Name -->
             <v-text-field
               v-model="newTask.task_name"
-              :rules="taskNameRules"
               label="Task Name"
               required
               append-icon="mdi-alert-circle"
@@ -1295,7 +1326,6 @@
                   readonly
                   v-on="on"
                   required
-                  @input="calculateManday"
                   :value="formatDate(newTask.task_plan_start)"
                 ></v-text-field>
               </template>
@@ -1304,7 +1334,6 @@
                 no-title
                 scrollable
                 max-width="300px"
-                @input="calculateManday"
               ></v-date-picker>
             </v-menu>
 
@@ -1325,7 +1354,6 @@
                   v-on="on"
                   required
                   :min="newTask.task_plan_start"
-                  @input="calculateManday"
                   :value="formatDate(newTask.task_plan_end)"
                 ></v-text-field>
               </template>
@@ -1335,14 +1363,12 @@
                 scrollable
                 max-width="300px"
                 :min="newTask.task_plan_start"
-                @input="calculateManday"
               ></v-date-picker>
             </v-menu>
             <v-text-field
               v-model="newTask.task_manday"
               label="Manday"
               required
-              @change="calculateManday"
             ></v-text-field>
 
             <!-- Member ID -->
@@ -1392,6 +1418,7 @@ export default {
 
   data() {
     return {
+      loggedIn: this.$auth.loggedIn,
       user: this.$auth.user,
       dialogSaveTaskForm: false, // Dialog status
       historyTaskData: {
@@ -1508,6 +1535,17 @@ export default {
   },
 
   computed: {
+    getProgressColorTask() {
+      return function (progress) {
+        if (progress >= 61) {
+          return "green"; // สีเขียว
+        } else if (progress >= 40) {
+          return "#FC8705"; // สีเหลือง
+        } else {
+          return "red"; // สีแดง
+        }
+      };
+    },
     numberOfPages() {
       return Math.ceil(this.filteredTasks.length / this.perPage);
     },
@@ -1608,6 +1646,22 @@ export default {
     this.getTasksToday();
   },
   watch: {
+    "editedTask.task_plan_start": function (newValue, oldValue) {
+      if (this.editedTask.task_plan_start && this.editedTask.task_plan_end) {
+        this.calculateMandayEdit();
+      }
+    },
+    "editedTask.task_plan_end": function (newValue, oldValue) {
+      if (this.editedTask.task_plan_start && this.editedTask.task_plan_end) {
+        this.calculateMandayEdit();
+      }
+    },
+    "historyTaskData.task_plan_start": function (newVal, oldVal) {
+      this.calculateMandaySAVE();
+    },
+    "historyTaskData.task_plan_end": function (newVal, oldVal) {
+      this.calculateMandaySAVE();
+    },
     filteredTasks: {
       handler() {
         // เรียกใช้ฟังก์ชันเมื่อมีการเปลี่ยนแปลงใน Task ของคุณ
@@ -1616,14 +1670,19 @@ export default {
       deep: true,
     },
     // Watcher to update task_manday when task_plan_start or task_plan_end changes
-    newTask: {
-      deep: true,
-      handler(newVal) {
-        this.calculateManday();
-      },
-    },
   },
   methods: {
+    getProgressColor(progress) {
+      if (progress >= 61 && progress <= 100) {
+        return "green";
+      } else if (progress >= 40 && progress <= 60) {
+        return "#FC8705";
+      } else if (progress >= 0 && progress <= 39) {
+        return "red";
+      }
+      // เมื่อไม่ตรงกับเงื่อนไขใดๆ ให้คืนค่าเริ่มต้น
+      return "primary";
+    },
     async fetchAllScreens() {
       try {
         const response = await axios.get(
@@ -1706,6 +1765,40 @@ export default {
 
     async saveHistory() {
       try {
+        // ตรวจสอบค่า task_manday ว่าไม่น้อยกว่า 0 และไม่เกินจำนวนวันระหว่าง task_plan_start และ task_plan_end
+        const manday = parseFloat(this.historyTaskData.task_manday);
+        const start = new Date(this.historyTaskData.task_plan_start);
+        const end = new Date(this.historyTaskData.task_plan_end);
+        const differenceInTime = end.getTime() - start.getTime();
+        const differenceInDays = differenceInTime / (1000 * 3600 * 24);
+
+        if (manday < 0 || manday > differenceInDays || isNaN(manday)) {
+          // แสดง SweetAlert แจ้งเตือนเมื่อค่าไม่ถูกต้อง
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text:
+              "Invalid manday value. Please enter a value between 0 and " +
+              differenceInDays +
+              ".",
+            confirmButtonColor: "#009933",
+          });
+          return; // ออกจากฟังก์ชันหลังจากแสดงข้อความแจ้งเตือน
+        }
+        if (this.historyTaskData.task_progress === 100) {
+          // กำหนดค่า task_status เป็น "correct"
+          this.historyTaskData.task_status = "correct";
+        } else if (this.historyTaskData.task_progress === 0) {
+          // ถ้า task_progress เป็น 0% ให้กำหนดค่า task_status เป็น 'Not started yet'
+          this.historyTaskData.task_status = "Not started yet";
+        } else {
+          // ถ้า task_progress ไม่ใช่ 0 หรือ 100% หรือ task_progress ใหญ่กว่า 0 และน้อยกว่า 100%
+          // ไม่ต้องทำอะไรเพิ่มเติม
+          this.historyTaskData.task_status = "start";
+        }
+
+        // ตรวจสอบค่า task_manday และค่าอื่นๆ และบันทึกข้อมูล
+
         // ตรวจสอบว่าค่าวันที่ว่างเปล่าหรือไม่และกำหนดให้เป็น null
         if (this.historyTaskData.task_plan_start) {
           this.historyTaskData.task_plan_start = this.formatDateSAVE(
@@ -1752,6 +1845,7 @@ export default {
           icon: "success",
           title: "Success",
           text: "History task has been saved successfully!",
+          confirmButtonColor: "#009933",
         });
         // ปิด dialog หลังจากบันทึกสำเร็จ
         this.dialogSaveTaskForm = false;
@@ -1764,6 +1858,7 @@ export default {
           icon: "error",
           title: "Error",
           text: "An error occurred while saving history task and updating task.",
+          confirmButtonColor: "#009933",
         });
       }
     },
@@ -1881,48 +1976,62 @@ export default {
         "Invalid characters. Only English letters, numbers, and symbols are allowed"
       );
     },
-    calculateManday() {
-      // Check if both task_plan_start and task_plan_end are selected
-      if (this.newTask.task_plan_start && this.newTask.task_plan_end) {
-        const start = new Date(this.newTask.task_plan_start);
-        const end = new Date(this.newTask.task_plan_end);
 
-        // เพิ่มหนึ่งวันเพื่อครอบคลุมวันสิ้นสุดด้วย
-        end.setDate(end.getDate() + 1);
+    calculateMandaySAVE() {
+      // คำนวณจำนวนวันระหว่าง task_plan_start และ task_plan_end
+      const start = new Date(this.historyTaskData.task_plan_start);
+      const end = new Date(this.historyTaskData.task_plan_end);
+      const differenceInTime = end.getTime() - start.getTime();
+      const differenceInDays = differenceInTime / (1000 * 3600 * 24);
 
-        // หาความต่างระหว่างวันเริ่มและวันสิ้นสุดและคำนวณ Manday
-        const oneDay = 24 * 60 * 60 * 1000; // หนึ่งวันในมิลลิวินาที
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        const diffDays = Math.ceil(diffTime / oneDay);
-        this.newTask.task_manday = diffDays;
+      // ตรวจสอบว่าไม่สามารถใส่ค่าลบหรือค่าเป็น NaN ได้
+      if (differenceInDays < 0 || isNaN(differenceInDays)) {
+        this.historyTaskData.task_manday = "";
       } else {
-        // If either task_plan_start or task_plan_end is not selected, set Manday to null
-        this.newTask.task_manday = null;
+        this.historyTaskData.task_manday = differenceInDays;
+
+        // ตรวจสอบว่า task_manday ไม่เกินจำนวนวันที่คำนวณได้
+        if (this.historyTaskData.task_manday > differenceInDays) {
+          this.historyTaskData.task_manday = differenceInDays;
+        }
       }
     },
 
     async deleteTask(task) {
       try {
-        const response = await fetch(
-          `http://localhost:7777/tasks/deleteHistoryTasks/${task.id}`,
-          {
-            method: "DELETE",
+        const result = await Swal.fire({
+          title: "Are you sure?",
+          text: "You won't be able to revert this!",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#009933",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, delete it!",
+        });
+
+        if (result.isConfirmed) {
+          const response = await fetch(
+            `http://localhost:7777/tasks/deleteHistoryTasks/${task.id}`,
+            {
+              method: "DELETE",
+            }
+          );
+          if (response.ok) {
+            // ลบงานเรียบร้อย
+            Swal.fire({
+              icon: "success",
+              title: "Task deleted successfully",
+              confirmButtonColor: "#009933",
+            });
+            // รีเฟรชรายการงานหลังจากลบเสร็จ
+            this.fetchTasks();
+          } else {
+            // แจ้งเตือนเมื่อเกิดข้อผิดพลาดในการลบงาน
+            throw new Error("Failed to delete task");
           }
-        );
-        if (response.ok) {
-          // ลบงานเรียบร้อย
-          Swal.fire({
-            icon: "success",
-            title: "Task deleted successfully",
-          });
-          // รีเฟรชรายการงานหลังจากลบเสร็จ
           this.fetchTasks();
-        } else {
-          // แจ้งเตือนเมื่อเกิดข้อผิดพลาดในการลบงาน
-          throw new Error("Failed to delete task");
+          this.fetchScreenDetail();
         }
-        this.fetchTasks();
-        this.fetchScreenDetail();
       } catch (error) {
         console.error("Error deleting task:", error);
         Swal.fire({
@@ -2106,7 +2215,7 @@ export default {
           task_plan_end,
           task_member_id,
           task_manday,
-        } = this.newTask; // ตรวจสอบว่า task_plan_start, task_plan_end, และ task_manday ไม่ว่างเปล่าหรือไม
+        } = this.newTask; // ตรวจสอบว่า task_plan_start, task_plan_end, และ task_manday ไม่ว่างเปล่าหรือไม่
 
         const response = await fetch(
           `http://localhost:7777/tasks/createTasks`,
@@ -2139,6 +2248,18 @@ export default {
           this.dialogAddTaskForm = false;
           this.fetchTasks();
           this.fetchScreenDetail();
+
+          // รีเซ็ตฟอร์มหลังจากสร้างงานเสร็จสิ้น
+          this.newTask = {
+            task_id: "",
+            task_name: "",
+            task_detail: "",
+            task_status: "",
+            task_plan_start: "",
+            task_plan_end: "",
+            task_member_id: "",
+            task_manday: "",
+          };
         } else {
           throw new Error("Failed to create new task");
         }
@@ -2151,6 +2272,7 @@ export default {
         });
       }
     },
+
     formatDisplayDate(dateString) {
       if (!dateString) return null;
       const date = new Date(dateString);
@@ -2162,7 +2284,6 @@ export default {
     // Update task
     async updateTask() {
       try {
-        // Convert task dates to the correct format before sending to the server
         const taskData = { ...this.editedTask }; // Clone the editedTask object
         taskData.task_plan_start = this.formatAPIDate(
           this.editedTask.task_plan_start
@@ -2176,6 +2297,37 @@ export default {
         taskData.task_actual_end = this.formatAPIDate(
           this.editedTask.task_actual_end
         );
+
+        // เพิ่มเงื่อนไขเพื่อตรวจสอบ task_manday ให้ไม่มากกว่าจำนวนวันที่คำนวณและไม่เป็นค่าลบ
+        if (taskData.task_manday < 0) {
+          throw new Error("Task manday must be greater than or equal to 0");
+        }
+
+        // คำนวณ Manday โดยใช้วันที่ที่กำหนดและวันที่สิ้นสุดของงาน
+        const start = new Date(taskData.task_plan_start);
+        const end = new Date(taskData.task_plan_end);
+        const manday = Math.round((end - start) / (1000 * 60 * 60 * 24));
+
+        // ตรวจสอบว่า Manday มีค่ามากกว่าหรือเท่ากับ 0
+        if (manday < 0) {
+          throw new Error("Manday must be greater than or equal to 0");
+        }
+
+        // ตรวจสอบว่า task_manday มีค่าน้อยกว่าหรือเท่ากับ Manday ที่คำนวณได้
+        if (taskData.task_manday > manday) {
+          throw new Error(`Task manday must be between 0 and ${manday}`);
+        }
+
+        // เพิ่มเงื่อนไขเพื่อตั้งค่า task_status เป็น "correct" เมื่อ Progress เท่ากับ 100
+        if (taskData.task_progress === 100) {
+          taskData.task_status = "correct";
+        } else if (taskData.task_progress === 0) {
+          taskData.task_status = "Not started yet";
+        } else {
+          taskData.task_status = "start";
+        }
+
+        taskData.task_manday = manday;
 
         const response = await fetch(
           `http://localhost:7777/tasks/updateTasks/${taskData.id}`,
@@ -2192,6 +2344,7 @@ export default {
           Swal.fire({
             icon: "success",
             title: "Task updated successfully",
+            confirmButtonColor: "#009933",
           });
           this.dialogEditTaskForm = false;
           this.fetchTasks();
@@ -2204,9 +2357,20 @@ export default {
         Swal.fire({
           icon: "error",
           title: "Error updating task",
-          text: "Please try again",
+          text: error.message || "Please try again",
         });
       }
+    },
+
+    calculateMandayEdit() {
+      const start = new Date(this.editedTask.task_plan_start);
+      const end = new Date(this.editedTask.task_plan_end);
+      if (start > end) {
+        // Handle error when start date is after end date
+        return;
+      }
+      const manday = Math.round((end - start) / (1000 * 60 * 60 * 24));
+      this.editedTask.task_manday = manday;
     },
 
     formatAPIDate(dateString) {
@@ -2280,5 +2444,13 @@ export default {
   display: -webkit-box;
   -webkit-line-clamp: 3; /* จำนวนบรรทัดที่ต้องการให้แสดง */
   -webkit-box-orient: vertical;
+}
+.rounded-btn {
+  border-radius: 50%;
+  width: 40px; /* กำหนดขนาดของปุ่ม */
+  height: 40px; /* กำหนดขนาดของปุ่ม */
+  min-width: 40px; /* กำหนดขนาดของปุ่ม */
+  min-height: 40px; /* กำหนดขนาดของปุ่ม */
+  padding: 0; /* ลบ Padding เพื่อป้องกันการขยับของปุ่ม */
 }
 </style>
