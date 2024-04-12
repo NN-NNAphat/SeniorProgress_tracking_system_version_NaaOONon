@@ -39,27 +39,29 @@
         />
 
         <v-btn
+          v-if="user.user_role === 'Admin'"
           color="primary"
           class="text-none mb-4"
           @click="goToCreateProject"
           style="margin-left: 50px; width: 10%; height: 70%"
         >
-          Create Project
+          <v-icon>mdi-plus</v-icon>
         </v-btn>
         <v-btn
+          v-if="user.user_role === 'Admin'"
           color="error"
           @click="goToHistoryProject"
           style="margin-left: 10px; width: 10%; height: 70%"
           class="text-none mb-4"
         >
-          <v-icon>mdi-delete</v-icon> &nbsp;Bin
+          <v-icon>mdi-delete</v-icon> &nbsp;
         </v-btn>
       </v-col>
     </v-row>
 
     <!-- Project data table -->
     <v-data-table
-      :headers="headers"
+      :headers="filteredHeaders"
       :items="filteredProjects"
       :sort-by="[{ key: 'project_id', order: 'desc' }]"
     >
@@ -85,7 +87,7 @@
           <td>{{ formatDate(item.project_plan_start) }}</td>
           <td>{{ formatDate(item.project_plan_end) }}</td>
 
-          <td>
+          <td v-if="user.user_role === 'Admin'">
             <!-- Dropdown menu for other actions -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
@@ -96,13 +98,22 @@
               <v-list>
                 <!-- Edit action -->
                 <v-list-item @click="manageUserProjects(item)">
+                  <v-list-item-icon>
+                    <v-icon>mdi-account-edit</v-icon>
+                  </v-list-item-icon>
                   <v-list-item-content>Assign</v-list-item-content>
                 </v-list-item>
                 <v-list-item @click="openEditDialog(item)">
+                  <v-list-item-icon>
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-list-item-icon>
                   <v-list-item-content>Edit</v-list-item-content>
                 </v-list-item>
                 <!-- Delete action -->
                 <v-list-item @click="softDeleteProject(item)">
+                  <v-list-item-icon>
+                    <v-icon class="red--text">mdi-delete</v-icon>
+                  </v-list-item-icon>
                   <v-list-item-content class="red--text"
                     >Delete</v-list-item-content
                   >
@@ -113,7 +124,6 @@
         </tr>
       </template>
     </v-data-table>
-
     <!-- Create Project Dialog -->
     <v-dialog
       v-model="createProjectDialog"
@@ -1003,6 +1013,15 @@ export default {
     },
   },
   computed: {
+    filteredHeaders() {
+      if (this.user.user_role === "Admin") {
+        // If user role is Admin, include Action column
+        return this.headers;
+      } else {
+        // If user role is not Admin, exclude Action column
+        return this.headers.filter((header) => header.value !== "actions");
+      }
+    },
     totalPages() {
       return Math.ceil(this.filteredUserProjects.length / this.itemsPerPage);
     },
