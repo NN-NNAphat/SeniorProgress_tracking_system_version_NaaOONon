@@ -16,7 +16,7 @@
             <v-card-subtitle>
               Systems Progress: {{ Math.floor(system.system_progress) }} %
               <v-progress-linear
-                color="primary"
+                :color="getProgressColor(parseInt(system.system_progress))"
                 height="50"
                 :value="parseInt(system.system_progress)"
                 striped
@@ -102,28 +102,6 @@
 
     <!-- แสดงรายระเอียดScreen -->
     <div>
-      <div class="topper">
-        <h3>Screen Management</h3>
-        <v-divider vertical></v-divider>
-        <!-- open add task form -->
-        <v-btn
-          color="primary"
-          class="text-none mb-4"
-          @click="goToCreateScreen"
-          style="margin-left: 20px; width: 10%; height: 40px"
-          >Create Screen</v-btn
-        >
-        &nbsp;&nbsp;&nbsp;
-        <v-btn
-          color="error"
-          class="text-none mb-4"
-          @click="showSystemIdDialog"
-          style="margin-left: 10px; width: 10%; height: 40px"
-        >
-          <v-icon>mdi-delete</v-icon> &nbsp;Bin</v-btn
-        >
-      </div>
-      <v-divider></v-divider>
       <!-- Search bar -->
       <v-row no-gutters>
         <v-col cols="12">
@@ -131,15 +109,34 @@
             type="text"
             v-model="searchQuery"
             placeholder="Search..."
-            style="
-              margin-bottom: 10px;
-              width: 100%;
-              padding: 10px;
-              border: 1px solid #ccc;
-              border-radius: 5px;
-              font-size: 16px;
-            "
+            :style="{
+              'margin-bottom': '10px',
+              width: user.user_role === 'Admin' ? '70%' : '100%', // เพิ่มเงื่อนไขในการกำหนด width
+              padding: '10px',
+              border: '1px solid #ccc',
+              'border-radius': '5px',
+              'font-size': '16px',
+            }"
           />
+
+          <v-btn
+            v-if="user.user_role === 'Admin'"
+            color="primary"
+            class="text-none mb-4 mr-2"
+            @click="goToCreateScreen"
+            style="margin-left: 50px; width: 10%; height: 40px"
+          >
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
+          <v-btn
+            v-if="user.user_role === 'Admin'"
+            color="error"
+            class="text-none mb-4"
+            @click="showSystemIdDialog"
+            style="width: 10%; height: 40px"
+          >
+            <v-icon>mdi-delete</v-icon>
+          </v-btn>
         </v-col>
       </v-row>
       <v-container>
@@ -191,7 +188,9 @@
                           "
                         >
                           <v-progress-linear
-                            color="primary"
+                            :color="
+                              getProgressColor(parseInt(screen.screen_progress))
+                            "
                             height="15"
                             :value="parseInt(screen.screen_progress)"
                             :style="{ width: '95%' }"
@@ -532,6 +531,7 @@
             "
             >Assign User</v-btn
           >
+          <v-btn color="primary" @click="">Take Screen</v-btn>
           <v-btn color="error" @click="showUserManagementDialog = false"
             >Close</v-btn
           >
@@ -579,10 +579,13 @@ import axios from "axios";
 import Swal from "sweetalert2";
 
 export default {
+  middleware: "auth",
   name: "SystemDetails",
   layout: "admin",
   data() {
     return {
+      user: this.$auth.user,
+      loggedIn: this.$auth.loggedIn,
       selectedTab: "All",
       tabs: ["All", "Not started yet", "design", "develop", "finish"],
       tableHeaders: [
@@ -701,6 +704,17 @@ export default {
   },
 
   methods: {
+    getProgressColor(progress) {
+      if (progress >= 61 && progress <= 100) {
+        return "green";
+      } else if (progress >= 40 && progress <= 60) {
+        return "#FC8705";
+      } else if (progress >= 0 && progress <= 39) {
+        return "red";
+      }
+      // เมื่อไม่ตรงกับเงื่อนไขใดๆ ให้คืนค่าเริ่มต้น
+      return "primary";
+    },
     async fetchAllScreens() {
       try {
         const response = await axios.get(

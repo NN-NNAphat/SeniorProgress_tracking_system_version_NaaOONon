@@ -186,9 +186,8 @@
           <td>{{ formatDate(item.system_plan_end) }}</td>
 
           <td>{{ item.system_manday ? item.system_manday : "0" }}</td>
-
-          <!-- เพิ่มเงื่อนไขเพื่อซ่อนคอลัมน์ Action เมื่อผู้ใช้ไม่ใช่ Admin -->
-          <td v-if="user.user_role === 'Admin'">
+          <!-- เพิ่มปุ่ม manage user systems -->
+          <td>
             <!-- Dropdown menu for other actions -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
@@ -199,23 +198,14 @@
               <v-list>
                 <!-- Manage User Systems action -->
                 <v-list-item @click="openManageUserDialog(item)">
-                  <v-list-item-icon>
-                    <v-icon>mdi-account-edit</v-icon>
-                  </v-list-item-icon>
                   <v-list-item-content>Assign</v-list-item-content>
                 </v-list-item>
                 <!-- Edit action -->
                 <v-list-item @click="openEditDialog(item)">
-                  <v-list-item-icon>
-                    <v-icon>mdi-pencil</v-icon>
-                  </v-list-item-icon>
                   <v-list-item-content>Edit</v-list-item-content>
                 </v-list-item>
                 <!-- Delete action -->
                 <v-list-item @click="confirmDeleteSystem(item)">
-                  <v-list-item-icon>
-                    <v-icon class="red--text">mdi-delete</v-icon>
-                  </v-list-item-icon>
                   <v-list-item-content class="red--text"
                     >Delete</v-list-item-content
                   >
@@ -225,21 +215,6 @@
             </v-menu>
           </td>
         </tr>
-      </template>
-
-      <!-- เพิ่มเงื่อนไขเพื่อซ่อนคอลัมน์ Action เมื่อผู้ใช้ไม่ใช่ Admin -->
-      <template v-if="user.user_role === 'Admin'" v-slot:top>
-        <thead>
-          <tr>
-            <th
-              v-for="header in headers"
-              :key="header.text"
-              v-if="header.text !== 'Actions'"
-            >
-              {{ header.text }}
-            </th>
-          </tr>
-        </thead>
       </template>
     </v-data-table>
 
@@ -256,25 +231,21 @@
           <v-form @submit.prevent="createSystem">
             <v-text-field
               v-model="newSystem.system_id"
-              label="System ID"
               required
               :rules="[(v) => !!v || 'System ID is required']"
             ></v-text-field>
             <v-text-field
               v-model="newSystem.system_nameTH"
-              label="System Name (TH)"
               required
               :rules="[(v) => !!v || 'System Name (TH) is required']"
             ></v-text-field>
             <v-text-field
               v-model="newSystem.system_nameEN"
-              label="System Name (EN)"
               required
               :rules="[(v) => !!v || 'System Name (EN) is required']"
             ></v-text-field>
             <v-text-field
               v-model="newSystem.system_shortname"
-              label="Short Name"
               required
               :rules="[(v) => !!v || 'Short Name is required']"
             ></v-text-field>
@@ -282,7 +253,6 @@
             <v-select
               v-model="selectedCreateSystemAnalysts"
               :items="filteredUsers('System Analyst')"
-              label="Select System Analyst"
               item-value="user_id"
               item-text="displayName"
               multiple
@@ -352,21 +322,13 @@
           <v-form @submit.prevent="updateSystem">
             <v-text-field
               v-model="editedSystem.system_id"
-              label="System ID"
               readonly
               disabled
             ></v-text-field>
-            <v-text-field
-              v-model="editedSystem.system_nameTH"
-              label="System Name (TH)"
-            ></v-text-field>
-            <v-text-field
-              v-model="editedSystem.system_nameEN"
-              label="System Name (EN)"
-            ></v-text-field>
+            <v-text-field v-model="editedSystem.system_nameTH"></v-text-field>
+            <v-text-field v-model="editedSystem.system_nameEN"></v-text-field>
             <v-text-field
               v-model="editedSystem.system_shortname"
-              label="Short Name"
             ></v-text-field>
 
             <v-btn color="primary" type="submit">Update</v-btn>
