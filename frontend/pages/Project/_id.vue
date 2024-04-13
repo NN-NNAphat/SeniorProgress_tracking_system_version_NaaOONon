@@ -231,21 +231,25 @@
           <v-form @submit.prevent="createSystem">
             <v-text-field
               v-model="newSystem.system_id"
+              label="System ID"
               required
               :rules="[(v) => !!v || 'System ID is required']"
             ></v-text-field>
             <v-text-field
               v-model="newSystem.system_nameTH"
+              label="System Name (TH)"
               required
               :rules="[(v) => !!v || 'System Name (TH) is required']"
             ></v-text-field>
             <v-text-field
               v-model="newSystem.system_nameEN"
+              label="System Name (EN)"
               required
               :rules="[(v) => !!v || 'System Name (EN) is required']"
             ></v-text-field>
             <v-text-field
               v-model="newSystem.system_shortname"
+              label="Short Name"
               required
               :rules="[(v) => !!v || 'Short Name is required']"
             ></v-text-field>
@@ -253,6 +257,7 @@
             <v-select
               v-model="selectedCreateSystemAnalysts"
               :items="filteredUsers('System Analyst')"
+              label="Select System Analyst"
               item-value="user_id"
               item-text="displayName"
               multiple
@@ -1096,14 +1101,6 @@ export default {
           throw new Error("Failed to create system");
         }
 
-        // Clear the form
-        this.newSystem = {
-          system_id: "",
-          system_nameTH: "",
-          system_nameEN: "",
-          system_shortname: "",
-        };
-
         // Show success message
         await Swal.fire({
           icon: "success",
@@ -1112,7 +1109,16 @@ export default {
           showConfirmButton: true,
           allowOutsideClick: false,
         });
-
+        // Clear the form
+        this.newSystem = {
+          system_id: "",
+          system_nameTH: "",
+          system_nameEN: "",
+          system_shortname: "",
+        };
+        this.selectedCreateSystemAnalysts = [];
+        this.selectedCreateDevelopers = [];
+        this.selectedCreateImplementers = [];
         // Fetch systems again to update the list
         this.fetchSystems();
 

@@ -111,7 +111,7 @@
             placeholder="Search..."
             :style="{
               'margin-bottom': '10px',
-              width: user.user_role === 'Admin' ? '70%' : '100%', // เพิ่มเงื่อนไขในการกำหนด width
+              width: '70%', // เพิ่มเงื่อนไขในการกำหนด width
               padding: '10px',
               border: '1px solid #ccc',
               'border-radius': '5px',
@@ -120,7 +120,6 @@
           />
 
           <v-btn
-            v-if="user.user_role === 'Admin'"
             color="primary"
             class="text-none mb-4 mr-2"
             @click="goToCreateScreen"
@@ -129,7 +128,6 @@
             <v-icon>mdi-plus</v-icon>
           </v-btn>
           <v-btn
-            v-if="user.user_role === 'Admin'"
             color="error"
             class="text-none mb-4"
             @click="showSystemIdDialog"
@@ -525,13 +523,23 @@
         </v-card-text>
         <v-card-actions>
           <v-btn
+            v-if="this.$auth.user.user_role === 'Admin'"
             color="primary"
             @click="
               openAssignUserDialog(projectId, systemId, screenId), assignUser
             "
-            >Assign User</v-btn
           >
-          <v-btn color="primary" @click="">Take Screen</v-btn>
+            Assign User
+          </v-btn>
+
+          <v-btn
+            v-if="!isUserInScreen()"
+            color="primary"
+            @click="assignCurrentUserToScreen"
+          >
+            Take Screen
+          </v-btn>
+
           <v-btn color="error" @click="showUserManagementDialog = false"
             >Close</v-btn
           >
@@ -584,6 +592,7 @@ export default {
   layout: "admin",
   data() {
     return {
+      userHasAccess: false,
       user: this.$auth.user,
       loggedIn: this.$auth.loggedIn,
       selectedTab: "All",
@@ -704,6 +713,11 @@ export default {
   },
 
   methods: {
+    isUserInScreen() {
+      // ตรวจสอบว่าผู้ใช้ปัจจุบันอยู่ในหน้าจอหรือไม่
+      return this.screenUsers.some((user) => user.id === this.$auth.user.id);
+    },
+
     getProgressColor(progress) {
       if (progress >= 61 && progress <= 100) {
         return "green";
@@ -930,6 +944,50 @@ export default {
         // จัดการข้อผิดพลาดการลบผู้ใช้
       }
     },
+    async assignCurrentUserToScreen() {
+      const { projectId, systemId, screenId } = this;
+
+      try {
+        const response = await fetch(
+          `http://localhost:7777/user_screens/takeScreen`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: this.$auth.user.id, // ใช้ ID ของผู้ใช้ที่เข้าสู่ระบบ
+              screen_id: screenId,
+              system_id: systemId,
+              project_id: projectId,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to take screen");
+        }
+
+        // แสดง SweetAlert2 เมื่อทำการกำหนดหน้าจอสำเร็จ
+        await Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Screen taken successfully!",
+        });
+
+        // รีเซ็ตฟอร์มหลังจากกำหนดหน้าจอเสร็จสิ้น
+        this.resetForm();
+      } catch (error) {
+        console.error("Error assigning current user to screen:", error);
+        // จัดการข้อผิดพลาดที่เกิดขึ้น
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to take screen",
+        });
+      }
+    },
+
     async assignUsersToScreen() {
       const { assignProjectId, assignSystemId, assignScreenId, selectedUsers } =
         this;
@@ -1009,7 +1067,7 @@ export default {
       const projectId = this.assignProjectId;
       const systemId = this.assignSystemId;
       const screenId = this.assignScreenId;
-      console.log(screenId);
+    
       try {
         const response = await fetch(
           `http://localhost:7777/user_screens/checkUsersNOTINScreen/${projectId}/${systemId}/${screenId}`
@@ -1057,7 +1115,7 @@ export default {
           throw new Error("Failed to fetch user screen management data");
         }
         const users = await response.json();
-        console.log(users); // ตรวจสอบข้อมูลผู้ใช้ที่ได้รับมา
+       
         this.screenUsers = users; // เซ็ตค่าข้อมูลผู้ใช้ที่ดึงมาให้กับตัวแปร screenUsers
         this.showUserManagementDialog = true; // เปิด Dialog เมื่อข้อมูลถูกดึงมาสำเร็จ
         // ไม่เรียกใช้ this.assignUser(projectId, systemId, screenId);
@@ -1189,7 +1247,7 @@ export default {
           throw new Error("Failed to fetch system");
         }
         const systemData = await response.json();
-        console.log(systemData); // ตรวจสอบข้อมูลที่ได้รับมา
+       
         this.systemNameENG = systemData.system_nameEN; // ใส่ชื่อ field ที่ต้องการแสดง
       } catch (error) {
         console.error("Error fetching system:", error);
@@ -1198,7 +1256,30 @@ export default {
     },
 
     async goToScreensDetail(screenId) {
-      await this.$router.push({ path: `/screens/${screenId}` });
+      try {
+        const response = await fetch(
+          `http://localhost:7777/user_screens/checkUsersINScreen/${this.projectId}/${this.systemId}/${screenId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch user screen management data");
+        }
+        const users = await response.json();
+       
+        if (
+          users.some((user) => user.id === this.$auth.user.id) ||
+          this.$auth.user.user_role === "Admin"
+        ) {
+          // ตรวจสอบว่า this.$auth.user.id อยู่ใน users หรือเป็น "Admin" หรือไม่
+          // ถ้าใช่ให้ทำการเปลี่ยนหน้าไปยังรายละเอียดของหน้าจอ
+          await this.$router.push({ path: `/screens/${screenId}` });
+        } else {
+          console.log("User does not have access to this screen");
+          // หากไม่มีสิทธิ์เข้าถึงหน้าจอ สามารถเพิ่มการจัดการตามความเหมาะสมที่นี่
+        }
+      } catch (error) {
+        console.error("Error fetching user screen management data:", error);
+        // Handle error fetching user screen management data
+      }
     },
 
     async updateScreen() {
@@ -1281,9 +1362,38 @@ export default {
       });
     },
 
-    openEditDialog(screen) {
-      this.editScreen = { ...screen };
-      this.editScreenDialog = true;
+    async openEditDialog(screen) {
+      try {
+        const response = await fetch(
+          `http://localhost:7777/user_screens/checkUsersINScreen/${this.projectId}/${this.systemId}/${screen.id}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch user screen management data");
+        }
+        const users = await response.json();
+        if (
+          users.some((user) => user.id === this.$auth.user.id) ||
+          this.$auth.user.user_role === "Admin"
+        ) {
+          // ตรวจสอบว่า this.$auth.user.id อยู่ใน users หรือไม่
+          // ถ้าใช่ให้เปิดไดอะล็อกแก้ไขหน้าจอ
+          this.editScreen = { ...screen }; // เซ็ตค่าหน้าจอที่จะแก้ไข
+          this.editScreenDialog = true; // เปิดไดอะล็อกแก้ไขหน้าจอ
+          this.userHasAccess = true; // กำหนดว่าผู้ใช้มีสิทธิ์ในการแก้ไขหน้าจอ
+        } else {
+          // หากไม่มีสิทธิ์แก้ไขหน้าจอ แจ้งเตือนผู้ใช้
+          await Swal.fire({
+            icon: "error",
+            title: "Access Denied",
+            text: "You do not have permission to edit this screen",
+            confirmButtonColor: "#009933",
+          });
+          this.userHasAccess = false; // กำหนดว่าผู้ใช้ไม่มีสิทธิ์ในการแก้ไขหน้าจอ
+        }
+      } catch (error) {
+        console.error("Error fetching user screen management data:", error);
+        // Handle error fetching user screen management data
+      }
     },
 
     async softDeleteScreen(screen) {
@@ -1293,7 +1403,7 @@ export default {
           text: "You won't be able to revert this!",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#009933",
           cancelButtonColor: "#d33",
           confirmButtonText: "Yes, delete it!",
         });
@@ -1404,45 +1514,70 @@ export default {
 
     async confirmDeleteScreenHistory(item) {
       try {
-        const confirmResult = await Swal.fire({
-          title: "Are you sure?",
-          text: "You won't be able to revert this!",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#3085d6",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, delete it!",
-        });
+        const response = await fetch(
+          `http://localhost:7777/user_screens/checkUsersINScreen/${this.projectId}/${this.systemId}/${item}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch user screen management data");
+        }
+        const users = await response.json();
+        if (
+          users.some((user) => user.id === this.$auth.user.id) ||
+          this.$auth.user.user_role === "Admin"
+        ) {
+          const confirmResult = await Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#009933",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!",
+          });
 
-        if (confirmResult.isConfirmed) {
-          const response = await fetch(
-            `http://localhost:7777/screens/deleteHistoryScreen/${item}`,
-            {
-              method: "DELETE",
+          if (confirmResult.isConfirmed) {
+            const deleteResponse = await fetch(
+              `http://localhost:7777/screens/deleteHistoryScreen/${item}`,
+              {
+                method: "DELETE",
+              }
+            );
+
+            if (!deleteResponse.ok) {
+              throw new Error("Failed to delete screen");
             }
-          );
 
-          if (!response.ok) {
-            throw new Error("Failed to delete screen");
+            console.log("Screen deleted successfully");
+
+            await Swal.fire(
+              "Success",
+              "Screen deleted successfully.",
+              "success"
+            );
+
+            // Refresh the deleted screens data
+            this.fetchDeletedScreens();
           }
-
-          console.log("Screen deleted successfully");
-
-          await Swal.fire("Success", "Screen deleted successfully.", "success");
-
-          // Refresh the deleted screens data
-          this.fetchDeletedScreens();
+        } else {
+          console.log("User does not have access to delete this screen");
+          // หากไม่มีสิทธิ์ลบหน้าจอ แจ้งเตือนผู้ใช้
+          await Swal.fire({
+            icon: "error",
+            title: "Access Denied",
+            text: "You do not have permission to delete this screen",
+          });
         }
       } catch (error) {
         console.error("Error deleting screen:", error);
 
-        await Swal.fire(
-          "Error",
-          "An error occurred during the screen deletion process.",
-          "error"
-        );
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "An error occurred during the screen deletion process.",
+        });
       }
     },
+
     async restoreSelectedScreen() {
       try {
         const confirmResult = await Swal.fire({
@@ -1450,7 +1585,7 @@ export default {
           text: "You are about to restore the selected screens.",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#009933",
           cancelButtonColor: "#d33",
           confirmButtonText: "Yes, restore them!",
         });
@@ -1511,7 +1646,7 @@ export default {
           text: "You won't be able to revert this!",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#009933",
           cancelButtonColor: "#d33",
           confirmButtonText: "Yes, delete them!",
         });
@@ -1603,33 +1738,54 @@ export default {
     },
     async confirmDeleteScreen(screen) {
       try {
-        const confirmResult = await Swal.fire({
-          title: "Are you sure?",
-          text: "You won't be able to revert this!",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#3085d6",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, delete it!",
-          showClass: {
-            popup: "animate__animated animate__fadeInDown", // กำหนด animation เมื่อแสดง SweetAlert
-          },
-          hideClass: {
-            popup: "animate__animated animate__fadeOutUp", // กำหนด animation เมื่อซ่อน SweetAlert
-          },
-        });
-        if (confirmResult.isConfirmed) {
-          // If user confirms deletion, call deleteScreen method
-          await this.deleteScreen(screen);
-          // อัพเดทข้อมูลโดยอัตโนมัติหลังจากลบข้อมูล
+        const response = await fetch(
+          `http://localhost:7777/user_screens/checkUsersINScreen/${this.projectId}/${this.systemId}/${screen.id}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch user screen management data");
         }
-        this.fetchScreens();
-        this.fetchSystemNameENG();
-        this.fetchSystem();
+        const users = await response.json();
+        if (
+          users.some((user) => user.id === this.$auth.user.id) ||
+          this.$auth.user.user_role === "Admin"
+        ) {
+          // ตรวจสอบว่าผู้ใช้มีสิทธิ์ในการแก้ไขหน้าจอหรือไม่
+          const confirmResult = await Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#009933",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!",
+            showClass: {
+              popup: "animate__animated animate__fadeInDown", // กำหนด animation เมื่อแสดง SweetAlert
+            },
+            hideClass: {
+              popup: "animate__animated animate__fadeOutUp", // กำหนด animation เมื่อซ่อน SweetAlert
+            },
+          });
+          if (confirmResult.isConfirmed) {
+            // ถ้าผู้ใช้ยืนยันการลบ ให้เรียกเมธอด deleteScreen
+            await this.deleteScreen(screen);
+            // อัพเดทข้อมูลโดยอัตโนมัติหลังจากลบข้อมูล
+          }
+          this.fetchScreens();
+          this.fetchSystemNameENG();
+          this.fetchSystem();
+        } else {
+          // หากผู้ใช้ไม่มีสิทธิ์ในการแก้ไขหน้าจอ แจ้งเตือนผู้ใช้
+          await Swal.fire({
+            icon: "error",
+            title: "Access Denied",
+            text: "You do not have permission to delete this screen",
+          });
+        }
       } catch (error) {
         console.error("Error confirming delete screen:", error);
       }
     },
+
     async deleteScreen(screen) {
       const screenId = screen.id;
       try {

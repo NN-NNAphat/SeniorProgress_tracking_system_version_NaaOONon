@@ -66,6 +66,30 @@ router.get("/getOneScreenID/:screen_id", async (req, res) => {
         return res.status(500).send();
     }
 });
+router.post("/takeScreen", async (req, res) => {
+    const { user_id, screen_id, system_id, project_id } = req.body;
+
+    try {
+        // สร้าง ID สำหรับรายการใหม่ใน user_screens
+        const id = generateId();
+
+        // เพิ่มหน้าจอลงในระบบโดยใช้ข้อมูลที่ส่งมาจาก body
+        connection.query(
+            "INSERT INTO user_screens (id, user_id, screen_id, system_id, project_id) VALUES (?, ?, ?, ?, ?)",
+            [id, user_id, screen_id, system_id, project_id],
+            (err, results, fields) => {
+                if (err) {
+                    console.log("Error while taking a screen:", err);
+                    return res.status(500).send();
+                }
+                return res.status(201).json({ message: "Screen taken successfully!" });
+            }
+        );
+    } catch (err) {
+        console.log("Error while taking a screen:", err);
+        return res.status(500).send();
+    }
+});
 
 // * POST FROM user_screens
 router.post("/createUser_screen", async (req, res) => {
