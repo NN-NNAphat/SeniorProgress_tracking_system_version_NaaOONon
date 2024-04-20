@@ -308,7 +308,10 @@
             multiple
           >
             <template v-slot:prepend-item>
-              <v-list-item @click="selectAllSystemAnalysts">
+              <v-list-item
+                v-if="systemAnalysts.length"
+                @click="selectAllSystemAnalysts"
+              >
                 <v-list-item-content>Select All</v-list-item-content>
               </v-list-item>
             </template>
@@ -323,7 +326,10 @@
             multiple
           >
             <template v-slot:prepend-item>
-              <v-list-item @click="selectAllDevelopers">
+              <v-list-item
+                v-if="developers.length"
+                @click="selectAllDevelopers"
+              >
                 <v-list-item-content>Select All</v-list-item-content>
               </v-list-item>
             </template>
@@ -338,7 +344,10 @@
             multiple
           >
             <template v-slot:prepend-item>
-              <v-list-item @click="selectAllImplementers">
+              <v-list-item
+                v-if="implementers.length"
+                @click="selectAllImplementers"
+              >
                 <v-list-item-content>Select All</v-list-item-content>
               </v-list-item>
             </template>
@@ -485,27 +494,6 @@ export default {
       const options = { day: "2-digit", month: "2-digit", year: "numeric" };
       return date.toLocaleDateString("en-GB", options);
     },
-    selectAllSystemAnalysts() {
-      if (this.selectedSystemAnalysts.length === this.systemAnalysts.length) {
-        this.selectedSystemAnalysts = [];
-      } else {
-        this.selectedSystemAnalysts = [...this.systemAnalysts];
-      }
-    },
-    selectAllDevelopers() {
-      if (this.selectedDevelopers.length === this.developers.length) {
-        this.selectedDevelopers = [];
-      } else {
-        this.selectedDevelopers = [...this.developers];
-      }
-    },
-    selectAllImplementers() {
-      if (this.selectedImplementers.length === this.implementers.length) {
-        this.selectedImplementers = [];
-      } else {
-        this.selectedImplementers = [...this.implementers];
-      }
-    },
 
     updateDisplayedUserProjects() {
       // อัปเดตหน้าที่แสดงข้อมูลผู้ใช้เมื่อเปลี่ยนหน้า
@@ -584,7 +572,7 @@ export default {
             });
             console.log(response.data.message);
             // อัปเดตตารางผู้ใช้หลังจากลบผู้ใช้เสร็จสิ้น
-            await this.manageUserProjects({ id: project_id }); // เรียกใช้ฟังก์ชัน manageUserProjects เพื่ออัพเดทตารางผู้ใช้
+            await this.manageUserProjects({ project_id }); // เรียกใช้ฟังก์ชัน manageUserProjects เพื่ออัพเดทตารางผู้ใช้
             await this.fetchAvailableUsers(project_id);
           } else {
             // Handle error
@@ -627,73 +615,69 @@ export default {
           console.error("Error fetching available users:", error);
         });
     },
-
+    selectAllSystemAnalysts() {
+      if (this.selectedSystemAnalysts.length === this.systemAnalysts.length) {
+        this.selectedSystemAnalysts = [];
+      } else {
+        this.selectedSystemAnalysts = this.systemAnalysts.map(
+          (item) => item.id
+        );
+      }
+    },
+    // Select All สำหรับ Developers
+    selectAllDevelopers() {
+      if (this.selectedDevelopers.length === this.developers.length) {
+        this.selectedDevelopers = [];
+      } else {
+        this.selectedDevelopers = this.developers.map((item) => item.id);
+      }
+    },
+    selectAllImplementers() {
+      if (this.selectedImplementers.length === this.implementers.length) {
+        this.selectedImplementers = [];
+      } else {
+        this.selectedImplementers = this.implementers.map((item) => item.id);
+      }
+    },
     async assignUserAF() {
-      // ตรวจสอบว่ามีผู้ใช้ที่ถูกเลือกหรือไม่
-      if (
-        this.selectedSystemAnalysts.length === 0 &&
-        this.selectedDevelopers.length === 0 &&
-        this.selectedImplementers.length === 0
-      ) {
-        await Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "No users selected to assign.",
-        });
-        return;
-      }
-
-      // ดึง project_id จากภายนอก Dialog โดยเรียกใช้ฟังก์ชัน fetchAvailableUsers(project_id)
-      const project_id = this.project_id;
-
-      // ตรวจสอบว่า project_id มีค่าหรือไม่
-      if (!project_id) {
-        await Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "No project_id available.",
-        });
-        return;
-      }
-
-      // ส่งข้อมูลผู้ใช้ที่ถูกเลือกไปยัง API
       const user_ids = [
-        ...this.selectedSystemAnalysts.map((user) => user.id),
-        ...this.selectedDevelopers.map((user) => user.id),
-        ...this.selectedImplementers.map((user) => user.id),
+        ...this.selectedSystemAnalysts,
+        ...this.selectedDevelopers,
+        ...this.selectedImplementers,
       ];
+      const project_id = this.project_id; // ใส่ ID ของโปรเจคที่ต้องการสร้าง user_projects
 
       try {
         const response = await axios.post(
           "http://localhost:7777/user_projects/createUser_project",
           {
-            project_id,
             user_ids,
+            project_id,
           }
         );
+        // สำเร็จ: แสดง SweetAlert2 แจ้งเตือน
         await Swal.fire({
           icon: "success",
-          title: "Success",
+          title: "Success!",
           text: "Users assigned successfully!",
+          confirmButtonColor: "#009933",
         });
-        console.log("Users assigned successfully:", response.data);
-        // เมื่อกำหนดผู้ใช้เสร็จสิ้น ให้เรียก fetchAvailableUsers เพื่ออัพเดตตารางผู้ใช้
-        await this.manageUserProjects({ id: project_id }); // เรียกใช้ฟังก์ชัน manageUserProjects เพื่ออัพเดทตารางผู้ใช้
+        // เรียกใช้ฟังก์ชัน manageUserProjects เพื่ออัปเดตตารางผู้ใช้
+        await this.manageUserProjects({ id: project_id });
+        // ดึงข้อมูลผู้ใช้ที่พร้อมใช้งานสำหรับโปรเจคนั้นๆ
         await this.fetchAvailableUsers(project_id);
         // ปิด Dialog หลังจากกำหนดผู้ใช้เสร็จสิ้น
         this.dialogAssignUser = false;
-
-        // อัพเดทตารางผู้ใช้หลังจากกำหนดผู้ใช้เสร็จสิ้น
       } catch (error) {
-        await Swal.fire({
+        // ข้อผิดพลาด: แสดง SweetAlert2 แจ้งเตือน
+        Swal.fire({
           icon: "error",
-          title: "Error",
-          text: "Error assigning users.",
+          title: "Error!",
+          text: "Error creating user_projects: " + error.message,
         });
-        console.error("Error assigning users:", error);
+        console.error("Error creating user_projects:", error);
       }
     },
-
     closeNestedDialog() {
       this.dialogAssignUser = false;
     },

@@ -918,31 +918,46 @@ export default {
 
     deleteUser(userId) {
       const { systemId, projectId, screenId } = this; // สมมติว่าคุณมีตัวแปรเหล่านี้ใน Vue instance อยู่แล้ว
-      try {
-        fetch(
-          `http://localhost:7777/user_screens/deleteUserScreen/${systemId}/${projectId}/${screenId}/${userId}`,
-          {
-            method: "DELETE",
-          }
-        )
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("Failed to delete user");
-            }
-            // ลบผู้ใช้ออกจากอาร์เรย์ screenUsers
-            this.screenUsers = this.screenUsers.filter(
-              (user) => user.id !== userId
-            );
-            console.log("User deleted successfully.");
-          })
-          .catch((error) => {
+      // เรียกใช้ SweetAlert2 เพื่อแสดงกล่องข้อความแจ้งเตือน
+      Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to delete this user?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#009933",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete!",
+        cancelButtonText: "Cancel",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // หากผู้ใช้กดปุ่ม "ใช่, ลบ!" ให้ทำการลบผู้ใช้
+          try {
+            fetch(
+              `http://localhost:7777/user_screens/deleteUserScreen/${systemId}/${projectId}/${screenId}/${userId}`,
+              {
+                method: "DELETE",
+              }
+            )
+              .then((response) => {
+                if (!response.ok) {
+                  throw new Error("Failed to delete user");
+                }
+                // ลบผู้ใช้ออกจากอาร์เรย์ screenUsers
+                this.screenUsers = this.screenUsers.filter(
+                  (user) => user.id !== userId
+                );
+                console.log("User deleted successfully.");
+              })
+              .catch((error) => {
+                console.error("Error deleting user:", error);
+                // จัดการข้อผิดพลาดการลบผู้ใช้
+              });
+          } catch (error) {
             console.error("Error deleting user:", error);
             // จัดการข้อผิดพลาดการลบผู้ใช้
-          });
-      } catch (error) {
-        console.error("Error deleting user:", error);
-        // จัดการข้อผิดพลาดการลบผู้ใช้
-      }
+          }
+        }
+      });
     },
     async assignCurrentUserToScreen() {
       const { projectId, systemId, screenId } = this;
@@ -973,7 +988,10 @@ export default {
           icon: "success",
           title: "Success",
           text: "Screen taken successfully!",
+          confirmButtonColor: "#009933",
         });
+        // Refresh ตารางผู้ใช้หลังจาก Assign User เสร็จสิ้น
+        await this.getUserScreenManagement(projectId, systemId, screenId);
 
         // รีเซ็ตฟอร์มหลังจากกำหนดหน้าจอเสร็จสิ้น
         this.resetForm();
@@ -1067,7 +1085,7 @@ export default {
       const projectId = this.assignProjectId;
       const systemId = this.assignSystemId;
       const screenId = this.assignScreenId;
-    
+
       try {
         const response = await fetch(
           `http://localhost:7777/user_screens/checkUsersNOTINScreen/${projectId}/${systemId}/${screenId}`
@@ -1115,7 +1133,7 @@ export default {
           throw new Error("Failed to fetch user screen management data");
         }
         const users = await response.json();
-       
+
         this.screenUsers = users; // เซ็ตค่าข้อมูลผู้ใช้ที่ดึงมาให้กับตัวแปร screenUsers
         this.showUserManagementDialog = true; // เปิด Dialog เมื่อข้อมูลถูกดึงมาสำเร็จ
         // ไม่เรียกใช้ this.assignUser(projectId, systemId, screenId);
@@ -1247,7 +1265,7 @@ export default {
           throw new Error("Failed to fetch system");
         }
         const systemData = await response.json();
-       
+
         this.systemNameENG = systemData.system_nameEN; // ใส่ชื่อ field ที่ต้องการแสดง
       } catch (error) {
         console.error("Error fetching system:", error);
@@ -1264,7 +1282,7 @@ export default {
           throw new Error("Failed to fetch user screen management data");
         }
         const users = await response.json();
-       
+
         if (
           users.some((user) => user.id === this.$auth.user.id) ||
           this.$auth.user.user_role === "Admin"

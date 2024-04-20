@@ -2504,7 +2504,6 @@ export default {
   -webkit-box-orient: vertical;
 }
 .rounded-btn {
-  border-radius: 50%;
   width: 40px; /* กำหนดขนาดของปุ่ม */
   height: 40px; /* กำหนดขนาดของปุ่ม */
   min-width: 40px; /* กำหนดขนาดของปุ่ม */
