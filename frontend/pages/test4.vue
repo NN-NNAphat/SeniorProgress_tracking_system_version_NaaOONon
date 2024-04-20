@@ -1,41 +1,48 @@
+
 <template>
-  <v-container>
-    <div>
-      <v-alert
-        border="left"
-        colored-border
-        color="deep-purple accent-4"
-        elevation="2"
-      >
-        Aliquam eu nunc. Fusce commodo aliquam arcu. In consectetuer turpis ut
-        velit. Nulla facilisi.. Morbi mollis tellus ac sapien. Fusce vel dui.
-        Praesent ut ligula non mi varius sagittis. Vivamus consectetuer
-        hendrerit lacus. Suspendisse enim turpis, dictum sed, iaculis a,
-        condimentum nec, nisi.
-      </v-alert>
-
-      <v-alert border="top" colored-border type="info" elevation="2">
-        Vestibulum ullamcorper mauris at ligula. Nam pretium turpis et arcu. Ut
-        varius tincidunt libero. Curabitur ligula sapien, tincidunt non, euismod
-        vitae, posuere imperdiet, leo. Morbi nec metus.
-      </v-alert>
-
-      <DialogFail />
-      <br />
-      <dialog-success />
-    </div>
-  </v-container>
+  <div>
+    <h1>{{ user.id }}</h1>
+    <h1>{{ user.user_role }}</h1>
+    <v-container>
+      <v-autocomplete
+        v-model="selectedItem"
+        :items="items"
+        label="Search and Select"
+      ></v-autocomplete>
+    </v-container>
+  </div>
 </template>
 
 <script>
-import DialogFail from "~/components/DialogFail.vue";
-import DialogSuccess from "../components/DialogSuccess.vue";
-
-export default { components: { DialogFail, DialogSuccess } };
+export default {
+  middleware: "auth",
+  layout: "admin",
+  data() {
+    return {
+      items: ["aaaaa 1", "bbbbb 2", "cccccc 3", "ddddd 4"],
+      selectedItem: null,
+      user: this.$auth.user,
+      loggedIn: this.$auth.loggedIn,
+      screenId: "",
+      screen: "",
+      userdata: [],
+    };
+  },
+  created() {
+    this.getUser();
+  },
+  methods: {
+    async getUser() {
+      await this.$axios
+        .get("/users/getOne/" + this.$auth.user.id)
+        .then((res) => {
+          this.id = res.data[0].id;
+          this.userdata = res.data[0];
+        });
+    },
+  },
+};
 </script>
 
 <style>
-* {
-  font-family: "Lato", sans-serif;
-}
 </style>
