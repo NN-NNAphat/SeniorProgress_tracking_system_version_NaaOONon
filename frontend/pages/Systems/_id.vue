@@ -1,193 +1,655 @@
 <template>
-  <div class="system-details">
-    <!-- Search bar -->
-    <v-row no-gutters>
-      <v-col cols="12">
-        <input
-          type="text"
-          v-model="searchQuery"
-          placeholder="Search..."
-          style="
-            margin-bottom: 10px;
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-          "
-        />
-      </v-col>
-    </v-row>
-    
-    <!--data table -->
-    <v-data-table
-      :headers="userScreenHeaders"
-      :items="filteredScreens"
-      :items-per-page="5"
-      class="elevation-1"
+  <div>
+    <div>
+      <v-row style="margin-bottom: 20px" align="center">
+        <!-- Card detel Systems -->
+        <v-card class="mx-auto align-start" width="95%" hover>
+          <v-card-item @click="showDetails = !showDetails">
+            <v-card-title>
+              System name : {{ system.system_nameEN }}
+              <v-spacer></v-spacer>
+              <v-icon @click.stop="showUserDialog = true">
+                mdi-account-multiple</v-icon
+              >
+            </v-card-title>
+
+            <v-card-subtitle>
+              Systems Progress: {{ Math.floor(system.system_progress) }} %
+              <v-progress-linear
+                :color="getProgressColor(parseInt(system.system_progress))"
+                height="50"
+                :value="parseInt(system.system_progress)"
+                striped
+              ></v-progress-linear>
+            </v-card-subtitle>
+          </v-card-item>
+
+          <v-expand-transition>
+            <div v-show="showDetails">
+              <v-divider></v-divider>
+              <v-card-text>
+                <p>System Manday: {{ system.system_manday || 0 }}</p>
+                <p>Screen Count: {{ system.screen_count || 0 }}</p>
+                <p>
+                  System Plan Start:
+                  {{ formatDate(system.system_plan_start) || "Not determined" }}
+                </p>
+                <p>
+                  System Plan End:
+                  {{ formatDate(system.system_plan_end) || "Not determined" }}
+                </p>
+              </v-card-text>
+            </div>
+          </v-expand-transition>
+        </v-card>
+        <!-- แสดงรายชื่อ USser Dialog -->
+        <v-dialog v-model="showUserDialog" max-width="600">
+          <v-card>
+            <v-card-title>User Systems</v-card-title>
+            <!-- เพิ่มช่องค้นหา -->
+            <v-card-text>
+              <v-text-field
+                v-model="searchprojectUser"
+                label="Search"
+                dense
+                hide-details
+                solo
+                flat
+                outlined
+                color="primary"
+                hint="Search here"
+              ></v-text-field>
+            </v-card-text>
+            <v-card-text>
+              <v-list>
+                <v-list-item
+                  v-for="(user, index) in filteredsearchprojectUser"
+                  :key="index"
+                >
+                  <v-list-item-avatar>
+                    <img :src="user.user_pic" alt="User Picture" />
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      {{ user.user_position }}: {{ user.user_firstname }}
+                      {{ user.user_lastname }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle
+                      >ตำแหน่ง: {{ user.user_position }}</v-list-item-subtitle
+                    >
+                    <v-list-item-subtitle
+                      >แผนก: {{ user.user_department }}</v-list-item-subtitle
+                    >
+                    <!-- เพิ่มข้อมูลเพิ่มเติมตามต้องการ -->
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list>
+              <v-pagination
+                v-model="paginationPageUserSystems"
+                :length="totalPagesUserSystems"
+                @input="changePageUserSystems"
+                color="primary"
+              ></v-pagination>
+            </v-card-text>
+            <!-- เพิ่ม pagination -->
+            <v-card-actions>
+              <v-btn color="error" @click="showUserDialog = false">Close</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+      </v-row>
+    </div>
+
+    <!-- แสดงรายระเอียดScreen -->
+    <div>
+      <!-- Search bar -->
+      <v-row no-gutters>
+        <v-col cols="12">
+          <input
+            type="text"
+            v-model="searchQuery"
+            placeholder="Search..."
+            :style="{
+              'margin-bottom': '10px',
+              width: '70%', // เพิ่มเงื่อนไขในการกำหนด width
+              padding: '10px',
+              border: '1px solid #ccc',
+              'border-radius': '5px',
+              'font-size': '16px',
+            }"
+          />
+
+          <v-btn
+            color="primary"
+            class="text-none mb-4 mr-2"
+            @click="goToCreateScreen"
+            style="margin-left: 50px; width: 10%; height: 40px"
+          >
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
+          <v-btn
+            color="error"
+            class="text-none mb-4"
+            @click="showSystemIdDialog"
+            style="width: 10%; height: 40px"
+          >
+            <v-icon>mdi-delete</v-icon>
+          </v-btn>
+        </v-col>
+      </v-row>
+      <v-container>
+        <v-tabs v-model="selectedTab">
+          <v-tab v-for="(tab, index) in tabs" :key="index">{{ tab }}</v-tab>
+          <v-tab-item v-for="(tab, index) in tabs" :key="index">
+            <v-container>
+              <v-row class="full-width">
+                <v-col
+                  cols="12"
+                  md="6"
+                  lg="4"
+                  v-for="(screen, index) in filteredScreensByStatus(tab)"
+                  :key="index"
+                >
+                  <v-card
+                    class="mx-auto full-width"
+                    max-width="400"
+                    @click="goToScreensDetail(screen.id)"
+                  >
+                    <v-img
+                      class="align-end text-white"
+                      height="200"
+                      :src="getBase64Image(screen.screen_pic)"
+                      cover
+                    >
+                      <v-card-title class="card-title">
+                        <div>
+                          {{ screen.screen_name }}
+                        </div>
+                      </v-card-title>
+                    </v-img>
+
+                    <v-card-subtitle class="pt-4" style="width: 100%">
+                      <span
+                        style="
+                          font-weight: bold;
+                          display: flex;
+                          align-items: center;
+                        "
+                      >
+                        Progress :
+                        <div
+                          style="
+                            display: flex;
+                            align-items: center;
+                            justify-content: flex-end;
+                            flex-grow: 1;
+                          "
+                        >
+                          <v-progress-linear
+                            :color="
+                              getProgressColor(parseInt(screen.screen_progress))
+                            "
+                            height="15"
+                            :value="parseInt(screen.screen_progress)"
+                            :style="{ width: '95%' }"
+                            striped
+                          >
+                            <strong :style="{ color: 'white' }">
+                              {{
+                                screen.screen_progress
+                                  ? parseInt(screen.screen_progress) + "%"
+                                  : "0%"
+                              }}
+                            </strong>
+                          </v-progress-linear>
+                        </div>
+                      </span>
+                    </v-card-subtitle>
+
+                    <v-card-text>
+                      <div><b>Manday:</b> {{ screen.screen_manday }} Days</div>
+
+                      <div><b>Task Count:</b> {{ screen.task_count || 0 }}</div>
+                      <p>Status: {{ screen.screen_status }}</p>
+                      <div v-if="screen.screen_plan_start">
+                        <b>Planned Start:</b>
+                        {{ formatDate(screen.screen_plan_start) }}
+                      </div>
+                      <div v-else>
+                        <b>Planned Start:</b>
+                        No determine
+                      </div>
+
+                      <div v-if="screen.screen_plan_end">
+                        <b>Planned End:</b>
+                        {{ formatDate(screen.screen_plan_end) }}
+                      </div>
+                      <div v-else>
+                        <b>Planned End:</b>
+                        No determine
+                      </div>
+                    </v-card-text>
+
+                    <v-card-actions>
+                      <v-btn
+                        color="primary"
+                        class="small"
+                        @click.stop="openEditDialog(screen)"
+                      >
+                        <v-icon>mdi-pencil</v-icon>
+                      </v-btn>
+
+                      <v-btn
+                        color="primary"
+                        class="small"
+                        @click.stop="
+                          getUserScreenManagement(
+                            projectId,
+                            systemId,
+                            screen.id
+                          )
+                        "
+                      >
+                        <v-icon>mdi-account-multiple</v-icon>
+                      </v-btn>
+
+                      <v-btn
+                        color="error"
+                        class="small"
+                        @click.stop="confirmDeleteScreen(screen)"
+                      >
+                        <v-icon>mdi-delete</v-icon>
+                      </v-btn>
+                    </v-card-actions>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-tab-item>
+        </v-tabs>
+      </v-container>
+
+      <!-- เพิ่ม Pagination ที่นี่ -->
+      <v-pagination
+        v-model="currentPage"
+        :length="Math.ceil(filteredScreens.length / perPage)"
+        @input="onPageChange"
+      ></v-pagination>
+    </div>
+
+    <!-- Create Screen Dialog -->
+    <v-dialog
+      v-model="createScreenDialog"
+      max-width="600"
+      ref="createScreenDialog"
     >
-      <template v-slot:top>
-        <v-toolbar flat>
-          <v-toolbar-title
-            >Screen Management - System : {{ systemNameENG }}</v-toolbar-title
-          >
-          <v-divider class="mx-4" inset vertical></v-divider>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" dark @click="goToCreateScreen"
-            >New Screen</v-btn
-          >
-          <v-btn color="primary" dark @click="goToHistoryScreens"
-            >Show History Screen</v-btn
-          >
-          <!-- <v-btn color="primary" dark @click="goToHistoryScreen"
-            >Show HistoryScreen</v-btn
-          > -->
-        </v-toolbar>
+      <v-card>
+        <v-card-title>Create New Screen</v-card-title>
+        <v-card-text>
+          <v-form ref="screenForm" @submit.prevent="createScreen()">
+            <!-- Existing fields -->
+            <v-text-field
+              v-model="newScreen.screen_id"
+              :rules="[(v) => !!v || 'Screen ID is required']"
+              label="Screen ID"
+            ></v-text-field>
+            <v-text-field
+              v-model="newScreen.screen_name"
+              :rules="[(v) => !!v || 'Screen Name is required']"
+              label="Screen Name"
+            ></v-text-field>
 
-        <!-- Create Screen Dialog -->
-        <v-dialog
-          v-model="createScreenDialog"
-          max-width="600"
-          ref="createScreenDialog"
+            <v-select
+              v-model="newScreen.screen_level"
+              label="Screen Level"
+              :items="['Hard', 'Moderate', 'Easy', 'Simple']"
+            ></v-select>
+            <v-file-input
+              accept="image/png, image/jpeg, image/bmp"
+              label="Select screen image"
+              placeholder="Select screen image"
+              prepend-icon="mdi-camera"
+              v-model="avatarFile"
+            ></v-file-input>
+
+            <v-select
+              v-model="newScreen.screen_status"
+              label="Screen Status"
+              :items="['Not started yet', 'design', 'develop', 'finish']"
+            ></v-select>
+
+            <v-select
+              v-model="selectedSystemAnalysts"
+              :items="filteredUsers('System Analyst')"
+              label="Select System Analyst"
+              item-value="id"
+              item-text="userText"
+              multiple
+              required
+              :rules="[
+                (v) => !!v || 'At least one System Analyst must be selected',
+              ]"
+            >
+              <template v-slot:prepend-item>
+                <v-list-item @click="selectAllSystemAnalysts">
+                  <v-list-item-content>Select All</v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-select>
+
+            <v-select
+              v-model="selectedDevelopers"
+              :items="filteredUsers('Developer')"
+              label="Select Developer"
+              item-value="id"
+              item-text="userText"
+              multiple
+              required
+              :rules="[(v) => !!v || 'At least one Developer must be selected']"
+            >
+              <template v-slot:prepend-item>
+                <v-list-item @click="selectAllDevelopers">
+                  <v-list-item-content>Select All</v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-select>
+
+            <v-select
+              v-model="selectedImplementers"
+              :items="filteredUsers('Implementer')"
+              label="Select Implementer"
+              item-value="id"
+              item-text="userText"
+              multiple
+              required
+              :rules="[
+                (v) => !!v || 'At least one Implementer must be selected',
+              ]"
+            >
+              <template v-slot:prepend-item>
+                <v-list-item @click="selectAllImplementers">
+                  <v-list-item-content>Select All</v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-select>
+
+            <!-- Buttons -->
+            <v-btn color="primary" type="submit">Create</v-btn>
+
+            <v-btn color="error" @click="createScreenDialog = false"
+              >Cancel</v-btn
+            >
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Edit Screen Dialog -->
+    <v-dialog v-model="editScreenDialog" max-width="600" ref="editScreenDialog">
+      <v-card>
+        <v-card-title>Edit Screen</v-card-title>
+        <v-card-text>
+          <!-- Form to edit screen -->
+          <v-form @submit.prevent="updateScreen">
+            <v-text-field
+              v-model="editScreen.screen_id"
+              label="Screen ID"
+              readonly
+              disabled
+            ></v-text-field>
+            <v-text-field
+              v-model="editScreen.screen_name"
+              label="Screen Name"
+            ></v-text-field>
+            <v-select
+              v-model="editScreen.screen_level"
+              label="Screen Level"
+              :items="['Hard', 'Moderate', 'Easy', 'Simple']"
+            ></v-select>
+            <v-select
+              v-model="editScreen.screen_status"
+              label="Screen Status"
+              :items="['Not started yet', 'design', 'develop', 'finish']"
+            ></v-select>
+            <!-- Input for selecting image file -->
+            <v-file-input
+              label="Select screen image"
+              accept="image/png, image/jpeg, image/bmp"
+              placeholder="Select screen image"
+              prepend-icon="mdi-camera"
+              v-model="editScreen.screen_pic"
+              @change="onFileChange"
+            ></v-file-input>
+
+            <!-- Add more fields as needed -->
+            <v-btn color="primary" type="submit">Update</v-btn>
+            <v-btn color="error" @click="editScreenDialog = false"
+              >Cancel</v-btn
+            >
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog for displaying SystemId -->
+    <v-dialog v-model="systemIdDialog" max-width="800">
+      <v-card>
+        <v-data-table
+          v-model="selectedDeletedScreens"
+          :headers="tableHeaders"
+          :items="deletedScreens"
+          item-key="id"
+          show-select
         >
-          <v-card>
-            <v-card-title>Create New Screen</v-card-title>
-            <v-card-text>
-              <!-- Form to create a new screen -->
-              <v-form>
-                <v-text-field
-                  v-model="newScreen.screen_id"
-                  label="Screen ID"
-                ></v-text-field>
-                <v-text-field
-                  v-model="newScreen.screen_name"
-                  label="Screen Name"
-                ></v-text-field>
-                <v-select
-                  v-model="newScreen.screen_level"
-                  label="Screen Level"
-                  :items="[
-                    'Very Difficult',
-                    'Hard',
-                    'Moderate',
-                    'Easy',
-                    'Simple',
-                  ]"
-                ></v-select>
+          <!-- Define headers for the table -->
+          <template v-slot:top>
+            <v-toolbar flat>
+              <v-toolbar-title>Deleted Screen History</v-toolbar-title>
+              <v-divider class="mx-4" inset vertical></v-divider>
+              <v-spacer></v-spacer>
+              <v-btn class="mr-3" color="green" @click="restoreSelectedScreen"
+                ><v-icon color="white">mdi-restore</v-icon></v-btn
+              >
+              <v-btn color="error" @click="deleteSelectedHistoryScreen">
+                <v-icon>mdi-delete</v-icon></v-btn
+              >
+            </v-toolbar>
+          </template>
 
-                <!-- File input for avatar -->
-                <v-file-input
-                  :rules="rules"
-                  accept="image/png, image/jpeg, image/bmp"
-                  label="Avatar"
-                  placeholder="Pick an avatar"
-                  prepend-icon="mdi-camera"
-                  v-model="newScreen.avatar"
-                >
-                </v-file-input>
+          <template v-slot:item.screen_pic="{ item }">
+            <v-img
+              :src="getBase64Image(item.screen_pic)"
+              max-width="50px"
+              max-height="50px"
+              contain
+            ></v-img>
+          </template>
+        </v-data-table>
 
-                <v-btn
-                  type="submit"
-                  @click="
-                    createScreenDialog = false;
-                    createScreen();
-                  "
-                  >Create</v-btn
-                >
-                <v-btn @click="createScreenDialog = false">Cancel</v-btn>
-              </v-form>
-            </v-card-text>
-          </v-card>
-        </v-dialog>
+        <v-card-actions>
+          <v-btn color="error" @click="closeSystemIdDialog">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
-        <!-- Edit Screen Dialog -->
-        <v-dialog
-          v-model="editScreenDialog"
-          max-width="600"
-          ref="editScreenDialog"
-        >
-          <v-card>
-            <v-card-title>Edit Screen</v-card-title>
-            <v-card-text>
-              <!-- Form to edit screen -->
-              <v-form @submit.prevent="updateScreen">
-                <v-text-field
-                  v-model="editScreen.screen_id"
-                  label="Screen ID" readonly
-                ></v-text-field>
-                <v-text-field
-                  v-model="editScreen.screen_name"
-                  label="Screen Name"
-                ></v-text-field>
-                <v-select
-                  v-model="editScreen.screen_level"
-                  label="Screen Level"
-                  :items="[
-                    'Very Difficult',
-                    'Hard',
-                    'Moderate',
-                    'Easy',
-                    'Simple',
-                  ]"
-                ></v-select>
-                <v-btn type="submit">Update</v-btn>
-                <v-btn @click="editScreenDialog = false">Cancel</v-btn>
-              </v-form>
-            </v-card-text>
-          </v-card>
-        </v-dialog>
+    <!-- User Screen Managementdialog -->
+    <v-dialog v-model="showUserManagementDialog" max-width="600">
+      <v-card>
+        <v-card-title> Manage User Screens </v-card-title>
+        <v-card-text>
+          <!-- Search field -->
+          <v-text-field
+            v-model="searchUser"
+            label="Search"
+            dense
+            hide-details
+            solo
+            flat
+            outlined
+            color="primary"
+          ></v-text-field>
 
-        <!-- Show deleted screens history -->
-        <v-dialog v-model="showHistoryDialog" max-width="800">
-          <v-data-table headers="headers" :items="deletedScreens">
-            <!-- Define headers for the table -->
+          <v-list>
+            <v-list-item
+              v-for="(user, index) in paginatedScreenUsers"
+              :key="user.id"
+            >
+              <v-list-item-avatar>
+                <v-img :src="user.user_pic" width="40" height="40"></v-img>
+              </v-list-item-avatar>
+              <v-list-item-content>
+                <v-list-item-title>
+                  {{ user.user_firstname }} {{ user.user_lastname }}
+                </v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ user.user_position }} - {{ user.user_department }}
+                </v-list-item-subtitle>
+              </v-list-item-content>
+              <!-- Delete button -->
+              <v-list-item-action>
+                <v-btn color="error" icon @click="deleteUser(user.id)">
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </v-list-item-action>
+            </v-list-item>
+          </v-list>
 
-            <template v-slot:top>
-              <v-toolbar flat>
-                <v-toolbar-title>Deleted Screens History</v-toolbar-title>
-                <v-divider class="mx-4" inset vertical></v-divider>
-                <v-spacer></v-spacer>
-              </v-toolbar>
-            </template>
-          </v-data-table>
-        </v-dialog>
-        
-      </template>
+          <!-- Pagination -->
+          <v-pagination
+            v-model="paginationPageUserScreen"
+            :length="totalPagesUserScreen"
+            @input="changePageUserScreen"
+          ></v-pagination>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn
+            v-if="this.$auth.user.user_role === 'Admin'"
+            color="primary"
+            @click="
+              openAssignUserDialog(projectId, systemId, screenId), assignUser
+            "
+          >
+            Assign User
+          </v-btn>
 
-      <template v-slot:item="{ item }">
-        <tr>
-    <td>
-      <b>Screen ID:</b> {{ item.screen_id }} <br>
-      <b>Screen Name:</b> {{ item.screen_name }} <br>
-      <b>Due Date:</b> {{ item.screen_plan_end }} <br>
-      <b>Screen Level:</b> {{ item.screen_level }} <br>
-      <b>Progress:</b> {{ item.screen_progress }} <br>
-      <b>Picture:</b> <v-img :src="getBase64Image(item.screen_pic)" height="50" contain></v-img>
-    </td>
-    <td>
-      <v-icon class="me-2" size="20" px @click="openEditDialog(item)">mdi-pencil-circle</v-icon>
-      <v-icon size="20" px @click="confirmDeleteScreen(item)">mdi-delete-empty</v-icon>
-      <v-btn @click="goToScreensDetail(item.id)">Screen Detail</v-btn>
-    </td>
-  </tr>
-      </template>
-    </v-data-table>
+          <v-btn
+            v-if="!isUserInScreen()"
+            color="primary"
+            @click="assignCurrentUserToScreen"
+          >
+            Take Screen
+          </v-btn>
+
+          <v-btn color="error" @click="showUserManagementDialog = false"
+            >Close</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Assign Userdialog -->
+    <v-dialog v-model="dialogVisible" max-width="400">
+      <v-card>
+        <v-card-title>Assign User</v-card-title>
+        <v-card-text>
+          <v-select
+            v-model="selectedUsers"
+            :items="implementers"
+            label="Select Implementers"
+            multiple
+          ></v-select>
+          <v-select
+            v-model="selectedUsers"
+            :items="developers"
+            label="Select Developers"
+            multiple
+          ></v-select>
+          <v-select
+            v-model="selectedUsers"
+            :items="systemAnalysts"
+            label="Select System Analysts"
+            multiple
+          ></v-select>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="primary" @click="assignUsersToScreen"
+            >Assign User</v-btn
+          >
+          <v-btn color="error" @click="closeAssignUserDialog">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
-
 <script>
+import axios from "axios";
 import Swal from "sweetalert2";
 
 export default {
+  middleware: "auth",
   name: "SystemDetails",
   layout: "admin",
   data() {
     return {
+      userHasAccess: false,
+      user: this.$auth.user,
+      loggedIn: this.$auth.loggedIn,
+      selectedTab: "All",
+      tabs: ["All", "Not started yet", "design", "develop", "finish"],
+      tableHeaders: [
+        { text: "Screen Picture", align: "start", value: "screen_pic" },
+        { text: "Screen ID", value: "screen_id" },
+        { text: "Screen Name", value: "screen_name" },
+      ],
+
+      selectedDeletedScreens: [],
+      itemsPerPageUserScreen: 5,
+      paginationPageUserScreen: 1,
+
+      searchUser: "",
+      selectedSystemAnalysts: [],
+      selectedDevelopers: [],
+      selectedImplementers: [],
+      implementers: [],
+      developers: [],
+      systemAnalysts: [],
+      selectedUsers: [],
+      dialogVisible: false,
+      assignProjectId: "",
+      assignSystemId: "",
+      assignScreenId: "",
+      screenId: null,
+      screen: {},
+      showAssignUserDialog: false,
+      showUserManagementDialog: false,
+      screenUsers: [],
+      deletedScreensHeaders: [
+        { text: "Screen ID", value: "screen_id" },
+        { text: "Screen Name", value: "screen_name" },
+        { text: "Due Date", value: "screen_plan_end" },
+        { text: "Screen Level", value: "screen_level" },
+        // Add more headers as needed
+      ],
+      systemIdDialog: false,
+      userText: "",
+      selectedSystemId: null,
+      avatarFile: null,
+      userOptions: [{ text: "Position: Firstname Lastname", value: "user_id" }],
+      perPage: 12,
+      currentPage: 1,
+      itemsPerPage: 12,
+      projectUsers: [],
+      showUserDialog: false,
+      searchprojectUser: "",
+      systemUsers: [],
+      paginationPageUserSystems: 1,
+      itemsPerPageUserSystems: 5, // จำนวนรายการผู้ใช้ต่อหน้า
+      system: {},
+      showDetails: false,
       dateStartMenu: false,
       dateEndMenu: false,
       systemNameENG: "",
-      showHistoryDialog: false,
       deletedScreens: [],
       createScreenDialog: false,
       editScreenDialog: false,
@@ -195,12 +657,13 @@ export default {
         screen_id: "",
         screen_name: "",
         screen_manday: "",
-        screen_level: "",
+        screen_level: "Simple",
+        screen_status: "Not started yet",
         screen_pic: "",
         screen_plan_start: "",
         screen_plan_end: "",
       },
-      editScreen: {
+      editedScreen: {
         screen_id: "",
         screen_name: "",
         screen_level: "",
@@ -215,32 +678,166 @@ export default {
         { text: "Image", value: "screen_pic" }, // เปลี่ยนจาก "Progress" เป็น "Picture"
         { text: "Actions", value: "actions", sortable: false },
       ],
-       headers: [
-        { text: "Screen ID", value: "screen_id" },
-        { text: "Screen Name", value: "screen_name" },
-        { text: "Due date", value: "screen_plan_end" },
-        { text: "Screen ", value: "screen_level" },
-        { text: "Progress", value: "screen_progress" },
-        { text: "Actions", value: "actions", sortable: false },
-      ],
-      
-      watch: {
-        // Watch for changes in the selected system ID and fetch details accordingly
-        selectedSystemId: "fetchSystemDetails",
-      },
+      headers: [],
     };
   },
 
-  mounted() {
-    // Fetch system details on component mount
-    this.fetchScreens();
-    this.fetchSystemNameENG();
+  props: {
+    systemId: {
+      type: Number,
+      default: null,
+    },
+    projectId: {
+      type: Number,
+      default: null,
+    },
   },
+
+  mounted() {
+    this.fetchAllScreens()
+      .then(() => this.fetchAllSystems())
+      .then(() => this.fetchAllProjects())
+      .then(() => this.fetchSystem())
+      .then(() => this.fetchScreens())
+      .then(() => this.fetchSystemNameENG())
+      .then(() => {
+        this.fetchSystemUsers(this.systemId, this.projectId);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        // Handle error here
+      });
+  },
+  created() {
+    this.fetchSystemUsers(this.systemId, this.projectId);
+  },
+
   methods: {
+    isUserInScreen() {
+      // ตรวจสอบว่าผู้ใช้ปัจจุบันอยู่ในหน้าจอหรือไม่
+      return this.screenUsers.some((user) => user.id === this.$auth.user.id);
+    },
+
+    getProgressColor(progress) {
+      if (progress >= 61 && progress <= 100) {
+        return "green";
+      } else if (progress >= 40 && progress <= 60) {
+        return "#FC8705";
+      } else if (progress >= 0 && progress <= 39) {
+        return "red";
+      }
+      // เมื่อไม่ตรงกับเงื่อนไขใดๆ ให้คืนค่าเริ่มต้น
+      return "primary";
+    },
+    async fetchAllScreens() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/screens/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching screens:", error);
+        throw error;
+      }
+    },
+    async fetchAllSystems() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/systems/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching systems:", error);
+        throw error;
+      }
+    },
+    async fetchAllProjects() {
+      try {
+        const response = await axios.get(
+          "http://localhost:7777/projects/getAll"
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        throw error;
+      }
+    },
+    filteredScreensByStatus(status) {
+      if (status === "All") {
+        return this.filteredScreens;
+      } else {
+        return this.filteredScreens.filter(
+          (screen) => screen.screen_status === status
+        );
+      }
+    },
+    formatDate(dateString) {
+      const date = new Date(dateString);
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      const formattedDate = `${day.toString().padStart(2, "0")}/${month
+        .toString()
+        .padStart(2, "0")}/${year}`;
+      return formattedDate;
+    },
+    filteredScreenUsers() {
+      // กรองผู้ใช้โดยใช้คำค้นหา
+      return this.screenUsers.filter(
+        (user) =>
+          user.user_firstname
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_lastname
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_position
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase()) ||
+          user.user_department
+            .toLowerCase()
+            .includes(this.searchUser.toLowerCase())
+      );
+    },
+    changePageUserScreen(page) {
+      this.paginationPageUserScreen = page;
+    },
+    filteredUsers(position) {
+      return this.filteredUserList(position);
+    }, // ฟังก์ชันที่ใช้ในการเลือกผู้ใช้ทั้งหมดในตำแหน่งนั้นๆ
+
+    selectAllDevelopers() {
+      this.selectedDevelopers = this.filteredUsers("Developer").map(
+        (user) => user.id
+      );
+    },
+    selectAllImplementers() {
+      this.selectedImplementers = this.filteredUsers("Implementer").map(
+        (user) => user.id
+      );
+    },
+    selectAllSystemAnalysts() {
+      const users = this.filteredUsers("System Analyst");
+      this.selectedSystemAnalysts = users.map((user) => user.id);
+    },
+
     async createScreen() {
       const systemId = this.$route.params.id;
 
       try {
+        // Validate form fields
+        const valid = await this.$refs.screenForm.validate();
+        if (!valid) {
+          // If form is not valid, return early
+          return;
+        }
+
+        // Check if an avatar file is selected
+        let base64Image = null;
+        if (this.avatarFile) {
+          base64Image = await this.imageToBase64(this.avatarFile);
+        }
+
         // Fetch system data to get project_id
         const systemResponse = await fetch(
           `http://localhost:7777/systems/getOne/${systemId}`
@@ -252,21 +849,24 @@ export default {
         const systemData = await systemResponse.json();
         const projectId = systemData.project_id;
 
-        // Convert image to Base64
-        const base64Image = await this.imageToBase64(this.newScreen.avatar);
-
         // Prepare data to send
         const requestData = {
           screen_id: this.newScreen.screen_id,
           screen_name: this.newScreen.screen_name,
-          screen_status: "default_status", // Update with your default status
+          screen_status: this.newScreen.screen_status,
           screen_level: this.newScreen.screen_level,
-          screen_pic: base64Image, // Update with your default pic
+          screen_pic: base64Image,
           system_id: systemId,
-          screen_progress: 0, // Update with your default progress
-          screen_plan_start: this.newScreen.screen_plan_start || null, // Use null if empty
-          screen_plan_end: this.newScreen.screen_plan_end || null, // Use null if empty
-          project_id: projectId, // Use the fetched project_id
+          screen_progress: 0,
+          screen_plan_start: this.newScreen.screen_plan_start || null,
+          screen_plan_end: this.newScreen.screen_plan_end || null,
+          project_id: projectId,
+          assignedUsers: [
+            // Use selected users for each position
+            ...this.selectedSystemAnalysts,
+            ...this.selectedDevelopers,
+            ...this.selectedImplementers,
+          ],
         };
 
         // Make the request to create a new screen
@@ -282,7 +882,6 @@ export default {
         );
 
         // Check if the screen was created successfully
-        // Check if the screen was created successfully
         if (response.ok) {
           await Swal.fire({
             icon: "success",
@@ -290,11 +889,15 @@ export default {
             text: "The new screen has been created successfully.",
             timer: 3000, // Set the timer to 3 seconds (3000 milliseconds)
           });
+
+          // Reset the form
+          this.$refs.screenForm.reset();
         } else {
           throw new Error("Failed to create screen");
         }
-
-        // ... continue
+        this.fetchScreens();
+        this.fetchSystemNameENG();
+        this.fetchSystem();
       } catch (error) {
         console.error("Error creating screen", error);
 
@@ -302,31 +905,354 @@ export default {
         await Swal.fire({
           icon: "error",
           title: "Error",
-          text: "Failed to create the screen. Please try again.",
+          text:
+            error.message || "Failed to create the screen. Please try again.",
           timer: 3000, // Set the timer to 3 seconds (3000 milliseconds)
         });
-        // ... continue
       }
     },
-    // Function to convert image to Base64
-    imageToBase64(imagePath) {
+
+    changePageUserSystems(page) {
+      this.paginationPageUserSystems = page;
+    },
+
+    deleteUser(userId) {
+      const { systemId, projectId, screenId } = this; // สมมติว่าคุณมีตัวแปรเหล่านี้ใน Vue instance อยู่แล้ว
+      // เรียกใช้ SweetAlert2 เพื่อแสดงกล่องข้อความแจ้งเตือน
+      Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to delete this user?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#009933",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete!",
+        cancelButtonText: "Cancel",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // หากผู้ใช้กดปุ่ม "ใช่, ลบ!" ให้ทำการลบผู้ใช้
+          try {
+            fetch(
+              `http://localhost:7777/user_screens/deleteUserScreen/${systemId}/${projectId}/${screenId}/${userId}`,
+              {
+                method: "DELETE",
+              }
+            )
+              .then((response) => {
+                if (!response.ok) {
+                  throw new Error("Failed to delete user");
+                }
+                // ลบผู้ใช้ออกจากอาร์เรย์ screenUsers
+                this.screenUsers = this.screenUsers.filter(
+                  (user) => user.id !== userId
+                );
+                console.log("User deleted successfully.");
+              })
+              .catch((error) => {
+                console.error("Error deleting user:", error);
+                // จัดการข้อผิดพลาดการลบผู้ใช้
+              });
+          } catch (error) {
+            console.error("Error deleting user:", error);
+            // จัดการข้อผิดพลาดการลบผู้ใช้
+          }
+        }
+      });
+    },
+    async assignCurrentUserToScreen() {
+      const { projectId, systemId, screenId } = this;
+
+      try {
+        const response = await fetch(
+          `http://localhost:7777/user_screens/takeScreen`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: this.$auth.user.id, // ใช้ ID ของผู้ใช้ที่เข้าสู่ระบบ
+              screen_id: screenId,
+              system_id: systemId,
+              project_id: projectId,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to take screen");
+        }
+
+        // แสดง SweetAlert2 เมื่อทำการกำหนดหน้าจอสำเร็จ
+        await Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Screen taken successfully!",
+          confirmButtonColor: "#009933",
+        });
+        // Refresh ตารางผู้ใช้หลังจาก Assign User เสร็จสิ้น
+        await this.getUserScreenManagement(projectId, systemId, screenId);
+
+        // รีเซ็ตฟอร์มหลังจากกำหนดหน้าจอเสร็จสิ้น
+        this.resetForm();
+      } catch (error) {
+        console.error("Error assigning current user to screen:", error);
+        // จัดการข้อผิดพลาดที่เกิดขึ้น
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to take screen",
+        });
+      }
+    },
+
+    async assignUsersToScreen() {
+      const { assignProjectId, assignSystemId, assignScreenId, selectedUsers } =
+        this;
+
+      try {
+        const response = await fetch(
+          `http://localhost:7777/user_screens/createUser_screen`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: selectedUsers,
+              screen_id: assignScreenId,
+              system_id: assignSystemId,
+              project_id: assignProjectId,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to assign users to screen");
+        }
+
+        // ปิด Dialog หลังจากทำงานเสร็จสิ้น
+        this.closeAssignUserDialog();
+
+        // แสดง SweetAlert2 หลังจากการทำงานเสร็จสิ้น
+        await Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Users assigned to screen successfully!",
+        });
+
+        // Refresh ตารางผู้ใช้หลังจาก Assign User เสร็จสิ้น
+        await this.getUserScreenManagement(
+          assignProjectId,
+          assignSystemId,
+          assignScreenId
+        );
+
+        // รีเซ็ตฟอร์มหลังจากทำการ Assign User เสร็จสิ้น
+        this.resetForm();
+      } catch (error) {
+        console.error("Error assigning users to screen:", error);
+        // จัดการข้อผิดพลาดที่เกิดขึ้น
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to assign users to screen",
+        });
+      }
+    },
+    resetForm() {
+      // รีเซ็ตค่าที่ถูกเลือกหรือป้อนเข้ามาในฟอร์มกลับไปยังค่าเริ่มต้น
+      this.assignProjectId = ""; // รีเซ็ต projectId
+      this.assignSystemId = ""; // รีเซ็ต systemId
+      this.assignScreenId = ""; // รีเซ็ต screenId
+      this.selectedUsers = []; // รีเซ็ต selectedUsers
+    },
+
+    openAssignUserDialog(projectId, systemId, screenId) {
+      // เรียกใช้งาน assignUser ที่นี่หลังจากกำหนดค่า projectId, systemId, screenId
+      this.assignProjectId = projectId;
+      this.assignSystemId = systemId;
+      this.assignScreenId = screenId;
+      this.fetchUsersNOTINScreen(); // เรียกใช้งาน assignUser ที่นี่
+      this.dialogVisible = true;
+    },
+
+    closeAssignUserDialog() {
+      this.dialogVisible = false;
+    },
+
+    async fetchUsersNOTINScreen() {
+      const projectId = this.assignProjectId;
+      const systemId = this.assignSystemId;
+      const screenId = this.assignScreenId;
+
+      try {
+        const response = await fetch(
+          `http://localhost:7777/user_screens/checkUsersNOTINScreen/${projectId}/${systemId}/${screenId}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch users data");
+        }
+
+        const users = await response.json();
+
+        // สร้าง options สำหรับ v-select แยกตามตำแหน่งผู้ใช้
+        this.implementers = users
+          .filter((user) => user.user_position === "Implementer")
+          .map((user) => ({
+            text: `${user.user_firstname} ${user.user_lastname}`,
+            value: user.id,
+          }));
+
+        this.developers = users
+          .filter((user) => user.user_position === "Developer")
+          .map((user) => ({
+            text: `${user.user_firstname} ${user.user_lastname}`,
+            value: user.id,
+          }));
+
+        this.systemAnalysts = users
+          .filter((user) => user.user_position === "System Analyst")
+          .map((user) => ({
+            text: `${user.user_firstname} ${user.user_lastname}`,
+            value: user.id,
+          }));
+      } catch (error) {
+        console.error("Error fetching users data:", error);
+        // จัดการข้อผิดพลาดการดึงข้อมูลผู้ใช้
+      }
+    },
+
+    async getUserScreenManagement(projectId, systemId, screenId) {
+      try {
+        const response = await fetch(
+          `http://localhost:7777/user_screens/checkUsersINScreen/${projectId}/${systemId}/${screenId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch user screen management data");
+        }
+        const users = await response.json();
+
+        this.screenUsers = users; // เซ็ตค่าข้อมูลผู้ใช้ที่ดึงมาให้กับตัวแปร screenUsers
+        this.showUserManagementDialog = true; // เปิด Dialog เมื่อข้อมูลถูกดึงมาสำเร็จ
+        // ไม่เรียกใช้ this.assignUser(projectId, systemId, screenId);
+        this.projectId = projectId; // ส่ง projectId ไปยังตัวแปรของคอมโพเนนต์
+        this.systemId = systemId; // ส่ง systemId ไปยังตัวแปรของคอมโพเนนต์
+        this.screenId = screenId; // ส่ง screenId ไปยังตัวแปรของคอมโพเนนต์
+      } catch (error) {
+        console.error("Error fetching user screen management data:", error);
+        // Handle error fetching user screen management data
+      }
+    },
+
+    async fetchDeletedScreensBySystemId() {
+      try {
+        const systemId = this.systemId; // Get the systemId from the props
+        const response = await fetch(
+          `http://localhost:7777/screens/searchBySystemId_delete/${systemId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch deleted screens by system ID");
+        }
+        const deletedScreens = await response.json();
+        this.deletedScreens = deletedScreens;
+      } catch (error) {
+        console.error("Error fetching deleted screens by system ID:", error);
+      }
+    },
+
+    async showSystemIdDialog() {
+      this.systemIdDialog = true;
+      await this.fetchDeletedScreensBySystemId(); // Fetch deleted screens when opening the dialog
+    },
+
+    closeSystemIdDialog() {
+      this.systemIdDialog = false;
+    },
+
+    async imageToBase64(imageFile) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.readAsDataURL(imagePath);
 
         reader.onload = () => {
-          const base64String = reader.result.split(",")[1]; // Exclude the data:imasge/<fileType>;base64, prefix
+          const base64String = reader.result.split(",")[1]; // Skip metadata and extract base64 data
           resolve(base64String);
         };
 
         reader.onerror = (error) => {
           reject(error);
         };
+
+        reader.readAsDataURL(imageFile); // Read file as base64
       });
     },
 
     getBase64Image(base64Data) {
       return "data:image/jpeg;base64," + base64Data;
+    },
+
+    onPageChange(newPage) {
+      this.currentPage = newPage;
+    },
+
+    async fetchSystemUsers(systemId, projectId) {
+      try {
+        // เรียกข้อมูลผู้ใช้จาก API โดยใช้ systemId และ projectId
+        const response = await fetch(
+          `http://localhost:7777/user_systems/getUserBySystemAndProject/${systemId}/${projectId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch system users");
+        }
+        const users = await response.json();
+        // แปลงข้อมูลผู้ใช้เป็นรูปแบบที่ต้องการและกำหนดให้กับตัวแปร systemUsers
+        this.systemUsers = users.map((user) => ({
+          user_pic: user.user_pic,
+          user_position: user.user_position,
+          user_firstname: user.user_firstname,
+          user_lastname: user.user_lastname,
+          user_department: user.user_department,
+          id: user.id,
+          userText: `${user.user_position}: ${user.user_firstname} ${user.user_lastname}`,
+        }));
+      } catch (error) {
+        console.error("Error fetching system users:", error);
+        // กรณีเกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้ กำหนดให้ systemUsers เป็น array ว่าง
+        this.systemUsers = [];
+      }
+    },
+
+    async fetchSystem() {
+      const systemId = this.$route.params.id;
+      try {
+        const response = await fetch(
+          `http://localhost:7777/systems/getOne/${systemId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch system data");
+        }
+        const systemData = await response.json();
+        this.system = systemData;
+        this.projectId = systemData.project_id;
+        this.systemId = systemData.id;
+
+        if (this.systemId !== null && this.projectId !== null) {
+          const userOptions = await this.fetchSystemUsers(
+            this.systemId,
+            this.projectId
+          );
+          this.userOptions = userOptions;
+        }
+      } catch (error) {
+        console.error("Error fetching system data:", error);
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to fetch system data. Please try again.",
+          timer: 3000,
+        });
+      }
     },
 
     async fetchSystemNameENG() {
@@ -339,19 +1265,51 @@ export default {
           throw new Error("Failed to fetch system");
         }
         const systemData = await response.json();
-        console.log(systemData); // ตรวจสอบข้อมูลที่ได้รับมา
+
         this.systemNameENG = systemData.system_nameEN; // ใส่ชื่อ field ที่ต้องการแสดง
       } catch (error) {
         console.error("Error fetching system:", error);
         // Handle error fetching Screen
       }
     },
+
     async goToScreensDetail(screenId) {
-      await this.$router.push({ path: `/screens/${screenId}` });
+      try {
+        const response = await fetch(
+          `http://localhost:7777/user_screens/checkUsersINScreen/${this.projectId}/${this.systemId}/${screenId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch user screen management data");
+        }
+        const users = await response.json();
+
+        if (
+          users.some((user) => user.id === this.$auth.user.id) ||
+          this.$auth.user.user_role === "Admin"
+        ) {
+          // ตรวจสอบว่า this.$auth.user.id อยู่ใน users หรือเป็น "Admin" หรือไม่
+          // ถ้าใช่ให้ทำการเปลี่ยนหน้าไปยังรายละเอียดของหน้าจอ
+          await this.$router.push({ path: `/screens/${screenId}` });
+        } else {
+          console.log("User does not have access to this screen");
+          // หากไม่มีสิทธิ์เข้าถึงหน้าจอ สามารถเพิ่มการจัดการตามความเหมาะสมที่นี่
+        }
+      } catch (error) {
+        console.error("Error fetching user screen management data:", error);
+        // Handle error fetching user screen management data
+      }
     },
 
     async updateScreen() {
       try {
+        const requestData = { ...this.editScreen };
+        if (this.editScreen.screen_pic instanceof File) {
+          // Check if screen_pic is a file
+          const file = this.editScreen.screen_pic;
+          const base64Image = await this.convertFileToBase64(file);
+          requestData.screen_pic = base64Image;
+        }
+
         const response = await fetch(
           `http://localhost:7777/screens/updateScreen/${this.editScreen.id}`,
           {
@@ -359,21 +1317,25 @@ export default {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(this.editScreen),
+            body: JSON.stringify(requestData),
           }
         );
+
         if (!response.ok) {
           throw new Error("Failed to update screen");
         }
+
         await Swal.fire({
           icon: "success",
           title: "Success",
           text: "Screen updated successfully",
         });
+
         this.editScreenDialog = false;
         this.fetchScreens();
       } catch (error) {
         console.error("Error updating screen:", error);
+
         await Swal.fire({
           icon: "error",
           title: "Error",
@@ -381,37 +1343,77 @@ export default {
         });
       }
     },
+    async onFileChange(file) {
+      try {
+        if (file && file instanceof File) {
+          // Store the selected file in editScreen
+          this.editScreen.screen_pic = file;
+          // Preview the selected image
+          this.previewImage(file);
+        }
+      } catch (error) {
+        console.error("Error processing file:", error);
+      }
+    },
+    async convertFileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = (error) => reject(error);
+      });
+    },
+
+    async imageToBase64Edit(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+      });
+    },
+
     goToScreensDetails(screen) {
       this.$router.push({
         path: `/Screen/${screen.id}`,
         params: { selectedScreen: screen },
       });
     },
-    async goToHistoryScreens() {
-      await this.fetchDeletedScreens();
-      this.showHistoryDialog = true;
-    },
-    async fetchDeletedScreens() {
+
+    async openEditDialog(screen) {
       try {
-        const systemId = this.$route.params.id;
         const response = await fetch(
-          `http://localhost:7777/screens/searchBySystemId_delete/${systemId}`
+          `http://localhost:7777/user_screens/checkUsersINScreen/${this.projectId}/${this.systemId}/${screen.id}`
         );
         if (!response.ok) {
-          throw new Error("Failed to fetch deleted screens");
+          throw new Error("Failed to fetch user screen management data");
         }
-        const deletedScreens = await response.json();
-        console.log(deletedScreens); // ตรวจสอบ deleted screens ที่ได้รับมา
-        this.deletedScreens = deletedScreens;
+        const users = await response.json();
+        if (
+          users.some((user) => user.id === this.$auth.user.id) ||
+          this.$auth.user.user_role === "Admin"
+        ) {
+          // ตรวจสอบว่า this.$auth.user.id อยู่ใน users หรือไม่
+          // ถ้าใช่ให้เปิดไดอะล็อกแก้ไขหน้าจอ
+          this.editScreen = { ...screen }; // เซ็ตค่าหน้าจอที่จะแก้ไข
+          this.editScreenDialog = true; // เปิดไดอะล็อกแก้ไขหน้าจอ
+          this.userHasAccess = true; // กำหนดว่าผู้ใช้มีสิทธิ์ในการแก้ไขหน้าจอ
+        } else {
+          // หากไม่มีสิทธิ์แก้ไขหน้าจอ แจ้งเตือนผู้ใช้
+          await Swal.fire({
+            icon: "error",
+            title: "Access Denied",
+            text: "You do not have permission to edit this screen",
+            confirmButtonColor: "#009933",
+          });
+          this.userHasAccess = false; // กำหนดว่าผู้ใช้ไม่มีสิทธิ์ในการแก้ไขหน้าจอ
+        }
       } catch (error) {
-        console.error("Error fetching deleted screens:", error);
-        // Handle error fetching deleted screens
+        console.error("Error fetching user screen management data:", error);
+        // Handle error fetching user screen management data
       }
     },
-    openEditDialog(screen) {
-      this.editScreen = { ...screen };
-      this.editScreenDialog = true;
-    },
+
     async softDeleteScreen(screen) {
       try {
         const confirmResult = await Swal.fire({
@@ -419,7 +1421,7 @@ export default {
           text: "You won't be able to revert this!",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#009933",
           cancelButtonColor: "#d33",
           confirmButtonText: "Yes, delete it!",
         });
@@ -441,6 +1443,8 @@ export default {
           await Swal.fire("Success", "Screen deleted successfully.", "success");
 
           this.fetchScreens();
+          this.fetchSystemNameENG();
+          this.fetchSystem();
         }
       } catch (error) {
         console.error("Error deleting screen:", error);
@@ -452,10 +1456,12 @@ export default {
         );
       }
     },
+
     async goToCreateScreen() {
       // Open the create system dialog first
       this.createScreenDialog = true;
     },
+
     async saveEditedScreen() {
       try {
         const response = await fetch(
@@ -494,6 +1500,7 @@ export default {
         });
       }
     },
+
     updateDateTime() {
       const now = new Date();
       const options = {
@@ -510,6 +1517,7 @@ export default {
       this.greeting = this.getGreeting(now);
       this.currentDateTime = now.toLocaleDateString("en-US", options);
     },
+
     getGreeting(date) {
       const hour = date.getHours();
 
@@ -522,122 +1530,182 @@ export default {
       }
     },
 
-    async fetchSystemDetails() {
-      const systemId = this.$route.params.id;
-
+    async confirmDeleteScreenHistory(item) {
       try {
         const response = await fetch(
-          `http://localhost:7777/systems/getOne/${systemId}`
+          `http://localhost:7777/user_screens/checkUsersINScreen/${this.projectId}/${this.systemId}/${item}`
         );
-
         if (!response.ok) {
-          throw new Error("Failed to fetch system details");
+          throw new Error("Failed to fetch user screen management data");
         }
+        const users = await response.json();
+        if (
+          users.some((user) => user.id === this.$auth.user.id) ||
+          this.$auth.user.user_role === "Admin"
+        ) {
+          const confirmResult = await Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#009933",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!",
+          });
 
-        const systemData = await response.json();
+          if (confirmResult.isConfirmed) {
+            const deleteResponse = await fetch(
+              `http://localhost:7777/screens/deleteHistoryScreen/${item}`,
+              {
+                method: "DELETE",
+              }
+            );
 
-        // ตรวจสอบว่า project_id ไม่เป็น null และไม่ว่างเปล่า
-        // หากเป็น null หรือว่างเปล่า กำหนดค่าเริ่มต้นเป็นค่าที่ต้องการ
-        this.projectId =
-          systemData.project_id !== null
-            ? systemData.project_id
-            : "defaultProjectId";
-        // ... ต่อไป
+            if (!deleteResponse.ok) {
+              throw new Error("Failed to delete screen");
+            }
+
+            console.log("Screen deleted successfully");
+
+            await Swal.fire(
+              "Success",
+              "Screen deleted successfully.",
+              "success"
+            );
+
+            // Refresh the deleted screens data
+            this.fetchDeletedScreens();
+          }
+        } else {
+          console.log("User does not have access to delete this screen");
+          // หากไม่มีสิทธิ์ลบหน้าจอ แจ้งเตือนผู้ใช้
+          await Swal.fire({
+            icon: "error",
+            title: "Access Denied",
+            text: "You do not have permission to delete this screen",
+          });
+        }
       } catch (error) {
-        console.error("Error fetching system details:", error);
-        // Handle error fetching system details
+        console.error("Error deleting screen:", error);
+
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "An error occurred during the screen deletion process.",
+        });
       }
     },
 
-    async restoreScreen(item) {
+    async restoreSelectedScreen() {
       try {
         const confirmResult = await Swal.fire({
           title: "Are you sure?",
-          text: "You are about to restore this screen.",
+          text: "You are about to restore the selected screens.",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#009933",
           cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, restore it!",
+          confirmButtonText: "Yes, restore them!",
         });
 
         if (confirmResult.isConfirmed) {
-          const screenId = item.id;
-          const response = await fetch(
-            `http://localhost:7777/screens/updateScreen/${screenId}`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                screen_name: item.screen_name,
-                screen_id: item.screen_id,
-                is_deleted: 0,
-              }),
+          const restorePromises = this.selectedDeletedScreens.map(
+            async (screen) => {
+              const response = await fetch(
+                `http://localhost:7777/screens/updateScreen/${screen.id}`,
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    screen_name: screen.screen_name,
+                    screen_id: screen.screen_id,
+                    is_deleted: 0,
+                  }),
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error("Failed to restore screen");
+              }
+
+              console.log("Screen restored successfully");
+              return screen.id;
             }
           );
 
-          if (!response.ok) {
-            throw new Error("Failed to restore screen");
-          }
-
-          console.log("Screeb restored successfully");
+          await Promise.all(restorePromises);
 
           await Swal.fire(
             "Success",
-            "Screen restored successfully.",
+            "Selected screens restored successfully.",
             "success"
           );
 
-          // เพิ่มบรรทัดนี้เพื่ออัพเดทตารางอัตโนมัติ
           this.fetchDeletedScreens();
+          this.fetchScreens();
+          this.fetchSystemNameENG();
+          this.fetchSystem();
         }
       } catch (error) {
-        console.error("Error restoring screen:", error);
+        console.error("Error restoring screens:", error);
         await Swal.fire(
           "Error",
-          "An error occurred during the screen restoration process.",
+          "An error occurred during the screens restoration process.",
           "error"
         );
       }
     },
-    async confirmDeleteHistoryScreen(item) {
+    async deleteSelectedHistoryScreen() {
       try {
         const confirmResult = await Swal.fire({
           title: "Are you sure?",
           text: "You won't be able to revert this!",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#009933",
           cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, delete it!",
+          confirmButtonText: "Yes, delete them!",
         });
+
         if (confirmResult.isConfirmed) {
-          const screenId = item.id; // Get the ID of the system to delete
-          const response = await fetch(
-            `http://localhost:7777/screens/deleteHistoryScreens/${screenId}`,
-            {
-              method: "DELETE",
+          const deletePromises = this.selectedDeletedScreens.map(
+            async (screen) => {
+              const response = await fetch(
+                `http://localhost:7777/screens/deleteHistoryScreen/${screen.id}`,
+                {
+                  method: "DELETE",
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error("Failed to delete screen");
+              }
+
+              console.log("Screen deleted successfully");
+              return screen.id;
             }
           );
-          if (!response.ok) {
-            throw new Error("Failed to delete screen");
-          }
-          await Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: "System and related data deleted successfully",
-          });
-          this.fetchDeletedScreens(); // Refresh the deleted screen data
+
+          await Promise.all(deletePromises);
+
+          await Swal.fire(
+            "Success",
+            "Selected screens deleted successfully.",
+            "success"
+          );
+
+          this.fetchDeletedScreens();
         }
       } catch (error) {
-        console.error("Error confirming delete history screen:", error);
-        await Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Failed to delete history screen",
-        });
+        console.error("Error deleting screens:", error);
+
+        await Swal.fire(
+          "Error",
+          "An error occurred during the screens deletion process.",
+          "error"
+        );
       }
     },
 
@@ -668,8 +1736,13 @@ export default {
         if (!response.ok) {
           throw new Error("Failed to fetch screens");
         }
-        const data = await response.json();
-        this.screens = data;
+
+        const screens = await response.json();
+        this.screens = screens;
+        // ใช้ค่า id ของหน้าจอที่กำลังวน loop มาเพื่อกำหนดค่าให้กับ screenId
+        if (screens.length > 0) {
+          this.screenId = screens[0].id; // เลือกหน้าจอแรกในรายการเป็นตัวอย่าง
+        }
       } catch (error) {
         console.error("Error fetching screens:", error);
       }
@@ -683,31 +1756,54 @@ export default {
     },
     async confirmDeleteScreen(screen) {
       try {
-        const confirmResult = await Swal.fire({
-          title: "Are you sure?",
-          text: "You won't be able to revert this!",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#3085d6",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, delete it!",
-          showClass: {
-            popup: "animate__animated animate__fadeInDown", // กำหนด animation เมื่อแสดง SweetAlert
-          },
-          hideClass: {
-            popup: "animate__animated animate__fadeOutUp", // กำหนด animation เมื่อซ่อน SweetAlert
-          },
-        });
-        if (confirmResult.isConfirmed) {
-          // If user confirms deletion, call deleteScreen method
-          await this.deleteScreen(screen);
-          // อัพเดทข้อมูลโดยอัตโนมัติหลังจากลบข้อมูล
+        const response = await fetch(
+          `http://localhost:7777/user_screens/checkUsersINScreen/${this.projectId}/${this.systemId}/${screen.id}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch user screen management data");
+        }
+        const users = await response.json();
+        if (
+          users.some((user) => user.id === this.$auth.user.id) ||
+          this.$auth.user.user_role === "Admin"
+        ) {
+          // ตรวจสอบว่าผู้ใช้มีสิทธิ์ในการแก้ไขหน้าจอหรือไม่
+          const confirmResult = await Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#009933",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!",
+            showClass: {
+              popup: "animate__animated animate__fadeInDown", // กำหนด animation เมื่อแสดง SweetAlert
+            },
+            hideClass: {
+              popup: "animate__animated animate__fadeOutUp", // กำหนด animation เมื่อซ่อน SweetAlert
+            },
+          });
+          if (confirmResult.isConfirmed) {
+            // ถ้าผู้ใช้ยืนยันการลบ ให้เรียกเมธอด deleteScreen
+            await this.deleteScreen(screen);
+            // อัพเดทข้อมูลโดยอัตโนมัติหลังจากลบข้อมูล
+          }
           this.fetchScreens();
+          this.fetchSystemNameENG();
+          this.fetchSystem();
+        } else {
+          // หากผู้ใช้ไม่มีสิทธิ์ในการแก้ไขหน้าจอ แจ้งเตือนผู้ใช้
+          await Swal.fire({
+            icon: "error",
+            title: "Access Denied",
+            text: "You do not have permission to delete this screen",
+          });
         }
       } catch (error) {
         console.error("Error confirming delete screen:", error);
       }
     },
+
     async deleteScreen(screen) {
       const screenId = screen.id;
       try {
@@ -740,6 +1836,70 @@ export default {
     },
   },
   computed: {
+    paginatedScreenUsers() {
+      const start =
+        (this.paginationPageUserScreen - 1) * this.itemsPerPageUserScreen;
+      const end = start + this.itemsPerPageUserScreen;
+      return this.filteredScreenUsers().slice(start, end);
+    },
+    totalPagesUserScreen() {
+      return Math.ceil(
+        this.filteredScreenUsers().length / this.itemsPerPageUserScreen
+      );
+    },
+
+    filteredUserList() {
+      return (position) =>
+        this.systemUsers.filter((user) => user.user_position === position);
+    },
+    filteredsearchprojectUser() {
+      const startIndex =
+        (this.paginationPageUserSystems - 1) * this.itemsPerPageUserSystems;
+      const endIndex = startIndex + this.itemsPerPageUserSystems;
+      return this.systemUsers
+        .filter((user) => {
+          return (
+            user.user_firstname
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_lastname
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_position
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_department
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase())
+          );
+        })
+        .slice(startIndex, endIndex);
+    },
+    totalPagesUserSystems() {
+      return Math.ceil(
+        this.systemUsers.filter((user) => {
+          return (
+            user.user_firstname
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_lastname
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_position
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase()) ||
+            user.user_department
+              .toLowerCase()
+              .includes(this.searchprojectUser.toLowerCase())
+          );
+        }).length / this.itemsPerPageUserSystems
+      );
+    },
+    paginatedScreens() {
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+      return this.filteredScreens.slice(startIndex, endIndex);
+    },
     filteredScreens() {
       return this.screens.filter((screen) => {
         const searchText = this.searchQuery.toLowerCase();
@@ -753,28 +1913,32 @@ export default {
 };
 </script>
 
-<style>
-  /* CSS for the table */
-.system-details {
-  overflow-x: auto; /* Add horizontal scrollbar if table overflows */
+<style scoped>
+.full-width {
+  display: flex;
+  flex-wrap: wrap;
+}
+.custom-btn {
+  width: 100%;
+  height: 50%;
 }
 
-/* Set width for each column */
-.system-details td,
-.system-details th {
-  min-width: 120px; /* Adjust width as needed */
-  max-width: 120px; /* Adjust width as needed */
-  word-wrap: break-word; /* Allow long text to wrap */
+.card-title {
+  padding: 1.4px;
+  background-color: rgba(0, 0, 0, 0.4);
+  color: white;
+  display: grid; /* เปลี่ยนเป็น grid layout */
+  place-items: center; /* ให้อยู่ตรงกลางทั้งแนวนอนและแนวตั้ง */
 }
 
-/* CSS for the image */
-.system-details img {
-  width: 50px; /* Adjust width of the image */
-  height: auto; /* Maintain aspect ratio */
-  display: block; /* Make sure image is displayed as a block element */
-  margin: auto; /* Center the image horizontally */
+.title-text {
+  width: 100%; /* กำหนดความกว้างของตัวหนังสือให้เท่ากับความกว้างของพื้นที่ในการแสดงรูปภาพ */
+  text-align: center; /* จัดตำแหน่งตัวหนังสือให้อยู่กลาง */
 }
-
-  
+.topper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
 </style>
-

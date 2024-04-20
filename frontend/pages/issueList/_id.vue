@@ -20,7 +20,7 @@
         v-for="(system, index) in systemsList"
         :key="index"
       >
-        <v-expansion-panel-header style="background-color: #5c3efe">
+        <v-expansion-panel-header style="background-color: #009933">
           <template v-slot:actions>
             <v-icon color="white"> $expand </v-icon>
           </template>
@@ -829,7 +829,6 @@
                   </tr>
                 </template>
               </v-data-table>
-             
             </v-tab-item>
             <v-tab-item>
               <!-- *card PNC -->
@@ -991,7 +990,6 @@
                   </tr>
                 </template>
               </v-data-table>
-            
             </v-tab-item>
             <v-tab-item>
               <!-- *card New req -->
@@ -1153,7 +1151,6 @@
                   </tr>
                 </template>
               </v-data-table>
-             
             </v-tab-item>
             <v-tab-item>
               <!-- *card History -->
@@ -1325,6 +1322,7 @@ export default {
   },
   data() {
     return {
+      project_name_ENG: "",
       yourSearchData: "",
       //auth
       user: this.$auth.user,
@@ -1525,6 +1523,141 @@ export default {
   },
 
   methods: {
+    async getpdf() {
+      const response = await this.$axios.get(`/issues/getpdf/${this.issue.id}`);
+      if (response.status === 200) {
+        const pdf = response.data;
+        console.log(pdf);
+      } else {
+        // this.pdf = "Failed to load PDF document.";
+        console.log("PDF err or No have");
+      }
+    },
+
+    showIssueDetailDialog(
+      issueid,
+      issueId,
+      issueType,
+      issueScreenid,
+      issueStatus,
+      issuePriority,
+      issueFormattedDateEnd,
+      issueName,
+      issueDesSA,
+      issueInformer,
+      issueAssign,
+      issueQc,
+      issueFilename,
+      issueformattedDateAccepting,
+      issueManday,
+      issueformattedDateStart,
+      issueformattedDateExpected,
+      issueComplete,
+      issueDesImplementer,
+      issueDesDev,
+      issueDes,
+      issueCustomer,
+      issueDocId,
+      issueTypeSA,
+      issueCreate,
+      issueDeveloperStatus,
+      issueImplementerStatus,
+      issueRound,
+      issueUserAssignId,
+      issueUserQCId
+    ) {
+      this.selected.userId = this.$auth.user.id;
+      //formattedDateAccepting
+      this.selected.formattedDateAccepting =
+        issueformattedDateAccepting == null ||
+        issueformattedDateAccepting == "Invalid date" ||
+        issueformattedDateAccepting == undefined
+          ? null
+          : issueformattedDateAccepting;
+      //formattedDateStart
+      this.selected.formattedDateStart =
+        issueformattedDateStart == null ||
+        issueformattedDateStart == "Invalid date" ||
+        issueformattedDateStart == undefined
+          ? null
+          : issueformattedDateStart;
+      //formattedDateExpected
+      this.selected.formattedDateExpected =
+        issueformattedDateExpected == null ||
+        issueformattedDateExpected == "Invalid date" ||
+        issueformattedDateExpected == undefined
+          ? null
+          : issueformattedDateExpected;
+      //formattedDateComplete
+      this.selected.issue_complete =
+        issueComplete == null ||
+        issueComplete == "Invalid date" ||
+        issueComplete == undefined
+          ? null
+          : issueComplete;
+      //formattedDateEnd
+      this.selected.formattedDateEnd =
+        issueFormattedDateEnd == null ||
+        issueFormattedDateEnd == "Invalid date" ||
+        issueFormattedDateEnd == undefined
+          ? null
+          : issueFormattedDateEnd;
+
+      this.selected.Id = issueid;
+      this.selected.issue_id = issueId;
+      this.selected.issue_type = issueType;
+      this.selected.screen_id = issueScreenid;
+      this.selected.issue_status = issueStatus;
+      this.selected.issue_priority = issuePriority;
+      this.selected.issue_name = issueName;
+      this.selected.issue_des_sa = issueDesSA;
+      this.selected.issue_informer = issueInformer;
+      this.selected.issue_assign = issueAssign;
+      this.selected.issue_qc = issueQc;
+      this.selected.issue_filename = issueFilename;
+      this.selected.issue_manday = issueManday;
+      this.selected.issue_des_implementer = issueDesImplementer;
+      this.selected.issue_des_dev = issueDesDev;
+      this.selected.issue_des = issueDes;
+      this.selected.issue_customer = issueCustomer;
+      this.selected.issue_doc_id = issueDocId;
+      this.selected.issue_type_sa = issueTypeSA;
+      this.selected.user_assign_id = issueUserAssignId;
+      this.selected.user_qc_id = issueUserQCId;
+      //created at
+      const dateCreate = moment(issueCreate).format("YYYY-MM-DD");
+      this.selected.created_at = dateCreate;
+      //get screen name
+      this.$axios.get("/screens/getOne/" + issueScreenid).then((res) => {
+        const screen = res.data[0].screen_name;
+        this.selected.screenName = screen;
+      });
+      this.selected.issue_status_developer = issueDeveloperStatus;
+      if (issueDeveloperStatus === "แก้ไขเรียบร้อย") {
+        this.selected.impleSection = true;
+      } else {
+        this.selected.impleSection = false;
+      }
+      this.selected.issue_status_implement = issueImplementerStatus;
+      this.selected.issue_round = issueRound;
+      this.selected.history = this.history;
+      this.selected.no_assign = this.no_assign;
+      //check role
+      if (this.user_role == "Admin") {
+        this.dialogIssueDetail = true;
+      } else if (
+        this.user_position == "Implementer" &&
+        this.user_role == "User"
+      ) {
+        this.dialogIssueImple = true;
+      } else if (
+        this.user_position == "Developer" &&
+        this.user_role == "User"
+      ) {
+        this.dialogIssueDev = true;
+      }
+      //check role
+    },
     async getUser() {
       await this.$axios
         .get("/users/getOne/" + this.$auth.user.id)

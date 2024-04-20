@@ -11,7 +11,7 @@
                     lazy-src=""
                     max-height="500"
                     max-width="500"
-                    src=""
+                    src="/logomain.jpg"
                   ></v-img>
                 </v-col>
                 <v-col style="margin-top: 50px">
@@ -90,7 +90,7 @@
                         <v-btn
                           class="mb-8"
                           style="color: white; font-weight: bold; height: 43px"
-                          color="#5c3efe"
+                          color="#009933"
                           type="submit"
                           rounded
                           block
@@ -228,6 +228,6 @@ export default {
   font-family: "Lato", sans-serif;
 }
 .main-bg {
-  background-image: linear-gradient(to right, #574ae4, #bb5fbe);
+  background-image: linear-gradient(to right, #08ff1c, #192d70);
 }
 </style>

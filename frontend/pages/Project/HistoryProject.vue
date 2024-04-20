@@ -32,27 +32,32 @@
       :headers="headers"
       :items="filteredProjects"
       :sort-by="[{ key: 'project_id', order: 'asc' }]"
+      show-select
+      v-model:selected="selectedProjects"
     >
       <template v-slot:top>
         <v-toolbar flat>
           <v-toolbar-title>History Project</v-toolbar-title>
           <v-divider class="mx-4" inset vertical></v-divider>
           <v-spacer></v-spacer>
+
+          <v-btn class="mr-2" color="green" @click="restoreSelectedProjects">
+            <v-icon color="white" > mdi-restore </v-icon>
+          </v-btn>
+          <v-btn color="error" @click="deleteSelectedProjects">
+            <v-icon> mdi-delete </v-icon>
+          </v-btn>
         </v-toolbar>
       </template>
 
-      <template v-slot:item.actions="{ item }">
-        <v-icon class="me-2" size= 30px  @click="restoreProject(item)">
+      <!-- <template v-slot:item.actions="{ item }">
+        <v-icon color="green" size="30px" @click="restoreProject(item)">
           mdi-restore
         </v-icon>
-        <v-icon class="me-2" size=30 px @click="deleteProject(item)">
+        <v-icon color="error" size="30" px @click="deleteProject(item)">
           mdi-delete
         </v-icon>
-      </template>
-
-      <template v-slot:no-data>
-        <v-btn color="primary" @click="initialize"> Reset </v-btn>
-      </template>
+      </template> -->
     </v-data-table>
   </div>
 </template>
@@ -68,11 +73,12 @@ export default {
         { text: "Project Code", value: "project_id" },
         { text: "Project Name (ENG)", value: "project_name_ENG" },
         { text: "Project Name (TH)", value: "project_name_TH" },
-        { text: "Actions", value: "actions", sortable: false },
+        // { text: "Actions", value: "actions", sortable: false },
       ],
       historyProjects: [],
+      selectedProjects: [],
       searchQuery: "",
-      greeting: "", // เพิ่มตัวแปร greeting และ currentDateTime
+      greeting: "",
       currentDateTime: "",
     };
   },
@@ -200,6 +206,107 @@ export default {
       }
     },
 
+    async deleteSelectedProjects() {
+      try {
+        const confirmResult = await Swal.fire({
+          title: "Are you sure?",
+          text: "You are about to delete selected projects.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          cancelButtonColor: "#3085d6",
+          confirmButtonText: "Yes, delete them!",
+        });
+
+        if (confirmResult.isConfirmed) {
+          for (const project of this.selectedProjects) {
+            const response = await fetch(
+              `http://localhost:7777/projects/deleteHistoryProject/${project.id}`,
+              {
+                method: "DELETE",
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to delete project");
+            }
+          }
+
+          console.log("Selected projects deleted successfully");
+
+          await Swal.fire(
+            "Success",
+            "Selected projects deleted successfully.",
+            "success"
+          );
+
+          this.initialize();
+          this.selectedProjects = [];
+        }
+      } catch (error) {
+        console.error("Error deleting selected projects:", error);
+
+        await Swal.fire(
+          "Error",
+          "An error occurred during the selected projects deletion process.",
+          "error"
+        );
+      }
+    },
+
+    async restoreSelectedProjects() {
+      try {
+        const confirmResult = await Swal.fire({
+          title: "Are you sure?",
+          text: "You are about to restore selected projects.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, restore them!",
+        });
+
+        if (confirmResult.isConfirmed) {
+          for (const project of this.selectedProjects) {
+            const response = await fetch(
+              `http://localhost:7777/projects/updateProject/${project.id}`,
+              {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  is_deleted: 0,
+                }),
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to restore project");
+            }
+          }
+
+          console.log("Selected projects restored successfully");
+
+          await Swal.fire(
+            "Success",
+            "Selected projects restored successfully.",
+            "success"
+          );
+
+          this.initialize();
+          this.selectedProjects = [];
+        }
+      } catch (error) {
+        console.error("Error restoring selected projects:", error);
+
+        await Swal.fire(
+          "Error",
+          "An error occurred during the selected projects restoration process.",
+          "error"
+        );
+      }
+    },
     async initialize() {
       try {
         const response = await fetch(
@@ -256,3 +363,4 @@ export default {
 .dashboard {
   background-color: #ffffff;
 }
+</style>

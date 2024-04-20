@@ -8,12 +8,14 @@
           <v-list-item-title class="text-h6">
             <v-layout align-center justify-center>
               <!-- Main logo -->
-              <v-img
-                lazy-src="/mainlogo.png"
-                max-height="150"
-                max-width="100"
-                src="/mainlogo.png"
-              ></v-img>
+              <nuxt-link to="/">
+                <v-img
+                  lazy-src="/mainlogo.png"
+                  max-height="150"
+                  max-width="100"
+                  src="/mainlogo.png"
+                ></v-img>
+              </nuxt-link>
             </v-layout>
           </v-list-item-title>
         </v-list-item-content>
@@ -63,7 +65,7 @@
               <v-list-item-title
                 ><v-icon color="primary" class="mr-2"
                   >mdi mdi-format-list-bulleted</v-icon
-                >{{ child?.project_name }}</v-list-item-title
+                >{{ child?.project_name_ENG }}</v-list-item-title
               >
             </v-list-item-content>
           </v-list-item>
@@ -94,7 +96,7 @@
               <v-list-item-title
                 ><v-icon color="primary" class="mr-2"
                   >mdi mdi-format-list-bulleted</v-icon
-                >{{ child[0]?.project_name }}</v-list-item-title
+                >{{ child?.project_name_ENG }}</v-list-item-title
               >
             </v-list-item-content>
           </v-list-item>
@@ -303,6 +305,11 @@ export default {
           to: "/manageProject",
         });
         items.splice(0, 0, {
+          icon: "mdi-table",
+          title: "Dashbord Project",
+          to: "/Dashbord_Project",
+        });
+        items.splice(0, 0, {
           icon: "mdi-calendar-month",
           title: "ตารางงาน",
           to: "/schedule",
@@ -324,6 +331,11 @@ export default {
           icon: "mdi-border-all",
           title: "จัดการโครงการ",
           to: "/manageProject",
+        });
+        items.splice(0, 0, {
+          icon: "mdi-border-all",
+          title: "จัดการงาน",
+          to: "/task_management",
         });
 
         return items;

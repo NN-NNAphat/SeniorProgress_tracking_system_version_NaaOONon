@@ -68,7 +68,7 @@ router.get("/getOneScreenID/:system_id", async (req, res) => {
 
 // * POST FROM user_systems
 router.post("/createUser_system", async (req, res) => {
-    const { user_id,system_id,project_id } = req.body;
+    const { user_id, system_id, project_id } = req.body;
 
     try {
         for (let i = 0; i < user_id.length; i++) {
@@ -206,6 +206,109 @@ router.delete("/deleteProjectID/:project_id", async (req, res) => {
 });
 
 
+//* GET user by system_id and project_id
+router.get("/getUserBySystemAndProject/:system_id/:project_id", async (req, res) => {
+    const { system_id, project_id } = req.params;
+    try {
+        connection.query(
+            "SELECT users.id, users.user_firstname, users.user_lastname, users.user_position, users.user_department, users.user_pic FROM user_systems INNER JOIN users ON user_systems.user_id = users.id WHERE user_systems.system_id = ? AND user_systems.project_id = ?",
+            [system_id, project_id],
+            (err, results, fields) => {
+                if (err) {
+                    console.log(err);
+                    return res.status(400).send();
+                }
+                res.status(200).json(results);
+            }
+        );
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
+
+
+// Get users not in system by system_id
+router.get("/checkUsersNotInSystem/:project_id/:system_id", async (req, res) => {
+    const { project_id, system_id } = req.params;
+
+    try {
+        // Query to find users who are not in the specified project and system
+        const query = `
+            SELECT u.id, u.user_firstname, u.user_lastname, u.user_position
+            FROM users u
+            WHERE u.id IN (
+                SELECT up.user_id
+                FROM user_projects up
+                WHERE up.project_id = ?
+            )
+            AND u.id NOT IN (
+                SELECT us.user_id
+                FROM user_systems us
+                WHERE us.project_id = ? AND us.system_id = ?
+            )
+        `;
+
+        connection.query(query, [project_id, project_id, system_id], (err, results, fields) => {
+            if (err) {
+                console.log(err);
+                return res.status(400).send();
+            }
+            res.status(200).json(results);
+        });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
+
+
+//* DELETE user_system by system_id, project_id, and user_id
+router.delete("/deleteUserSystem/:system_id/:project_id/:user_id", async (req, res) => {
+    const { system_id, project_id, user_id } = req.params;
+
+    try {
+        connection.query(
+            "DELETE FROM user_systems WHERE system_id = ? AND project_id = ? AND user_id = ?",
+            [system_id, project_id, user_id],
+            (err, results, fields) => {
+                if (err) {
+                    console.log(err);
+                    return res.status(400).send();
+                }
+                if (results.affectedRows === 0) {
+                    return res.status(404).json({ message: "No matching user_system found" });
+                }
+                return res.status(200).json({ message: "User system deleted successfully" });
+            }
+        );
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
+
+// GET systems by user_id and project_id
+router.get("/getSystemsByUser_id/:project_id/:user_id", async (req, res) => {
+    const { project_id, user_id } = req.params;
+
+    try {
+        connection.query(
+            "SELECT systems.* FROM user_systems INNER JOIN systems ON user_systems.system_id = systems.id WHERE user_systems.project_id = ? AND user_systems.user_id = ?",
+            [project_id, user_id],
+            (err, results, fields) => {
+                if (err) {
+                    console.log(err);
+                    return res.status(400).send();
+                }
+                res.status(200).json(results);
+            }
+        );
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send();
+    }
+});
 
 
 module.exports = router;
