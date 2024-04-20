@@ -1,6 +1,5 @@
 <template>
   <div class="body">
-    <!-- *Search bar* -->
     <!-- <Searchbar title="รายการปัญหา " /> -->
     <Searchbar :title="'รายการปัญหา'" :search="yourSearchData" />
     <v-divider></v-divider>
