@@ -1369,6 +1369,7 @@
               v-model="newTask.task_manday"
               label="Manday"
               required
+              :readonly="true"
             ></v-text-field>
 
             <!-- Member ID -->
@@ -1646,6 +1647,14 @@ export default {
     this.getTasksToday();
   },
   watch: {
+    "historyTaskData.task_plan_start": function (newVal, oldVal) {
+      this.calculateMandaySAVE();
+    },
+    "historyTaskData.task_plan_end": function (newVal, oldVal) {
+      this.calculateMandaySAVE();
+    },
+    "newTask.task_plan_start": "calculateMandays",
+    "newTask.task_plan_end": "calculateMandays",
     "editedTask.task_plan_start": function (newValue, oldValue) {
       if (this.editedTask.task_plan_start && this.editedTask.task_plan_end) {
         this.calculateMandayEdit();
@@ -1656,12 +1665,7 @@ export default {
         this.calculateMandayEdit();
       }
     },
-    "historyTaskData.task_plan_start": function (newVal, oldVal) {
-      this.calculateMandaySAVE();
-    },
-    "historyTaskData.task_plan_end": function (newVal, oldVal) {
-      this.calculateMandaySAVE();
-    },
+
     filteredTasks: {
       handler() {
         // เรียกใช้ฟังก์ชันเมื่อมีการเปลี่ยนแปลงใน Task ของคุณ
@@ -1672,6 +1676,22 @@ export default {
     // Watcher to update task_manday when task_plan_start or task_plan_end changes
   },
   methods: {
+    calculateMandays() {
+      // Check if both start and end dates are selected
+      if (this.newTask.task_plan_start && this.newTask.task_plan_end) {
+        // Calculate the difference in milliseconds between the two dates
+        const diffMilliseconds =
+          new Date(this.newTask.task_plan_end) -
+          new Date(this.newTask.task_plan_start);
+        // Convert milliseconds to days
+        const days = Math.ceil(diffMilliseconds / (1000 * 60 * 60 * 24)) + 1; // Add 1 to count the end day
+        // Update the manday field
+        this.newTask.task_manday = days;
+      } else {
+        // If either start or end date is not selected, reset manday field
+        this.newTask.task_manday = null;
+      }
+    },
     async takeTask(task) {
       try {
         // ตรวจสอบว่ามีข้อมูลผู้ใช้ที่เข้าสู่ระบบหรือไม่
@@ -1821,15 +1841,43 @@ export default {
       return `${year}-${month}-${day}`;
     },
 
+    calculateMandaySAVE() {
+      // คำนวณจำนวนวันระหว่าง task_plan_start และ task_plan_end
+      const start = new Date(this.historyTaskData.task_plan_start);
+      const end = new Date(this.historyTaskData.task_plan_end);
+
+      // ลบเวลาออกจากวันที่
+      const startNoTime = new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate()
+      );
+      const endNoTime = new Date(
+        end.getFullYear(),
+        end.getMonth(),
+        end.getDate()
+      );
+
+      // หาความแตกต่างของวันแบบไม่คำนึงถึงเวลา
+      const differenceInTime = endNoTime.getTime() - startNoTime.getTime();
+      const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24)); // ใช้ Math.ceil() เพื่อปัดขึ้น
+
+      // ตรวจสอบว่าไม่สามารถใส่ค่าลบหรือค่าเป็น NaN ได้
+      if (isNaN(differenceInDays) || differenceInDays < 0) {
+        this.historyTaskData.task_manday = "";
+      } else {
+        this.historyTaskData.task_manday = differenceInDays + 1; // เพิ่ม 1 เพื่อให้นับวันเริ่มต้นด้วย
+      }
+    },
     async saveHistory() {
       try {
-        // ตรวจสอบค่า task_manday ว่าไม่น้อยกว่า 0 และไม่เกินจำนวนวันระหว่าง task_plan_start และ task_plan_end
+        // ตรวจสอบค่า manday ที่ได้จากฟังก์ชัน calculateMandaySAVE()
         const manday = parseFloat(this.historyTaskData.task_manday);
+        console.log(manday);
         const start = new Date(this.historyTaskData.task_plan_start);
         const end = new Date(this.historyTaskData.task_plan_end);
         const differenceInTime = end.getTime() - start.getTime();
-        const differenceInDays = differenceInTime / (1000 * 3600 * 24);
-
+        const differenceInDays = differenceInTime / (1000 * 3600 * 24) + 1;
         if (manday < 0 || manday > differenceInDays || isNaN(manday)) {
           // แสดง SweetAlert แจ้งเตือนเมื่อค่าไม่ถูกต้อง
           await Swal.fire({
@@ -1837,12 +1885,12 @@ export default {
             title: "Error",
             text:
               "Invalid manday value. Please enter a value between 0 and " +
-              differenceInDays +
-              ".",
+              differenceInDays,
             confirmButtonColor: "#009933",
           });
           return; // ออกจากฟังก์ชันหลังจากแสดงข้อความแจ้งเตือน
         }
+
         if (this.historyTaskData.task_progress === 100) {
           // กำหนดค่า task_status เป็น "correct"
           this.historyTaskData.task_status = "correct";
@@ -2033,26 +2081,6 @@ export default {
         (v && /^[A-Za-z0-9@#$%^&*()-_+=!]+$/.test(v)) ||
         "Invalid characters. Only English letters, numbers, and symbols are allowed"
       );
-    },
-
-    calculateMandaySAVE() {
-      // คำนวณจำนวนวันระหว่าง task_plan_start และ task_plan_end
-      const start = new Date(this.historyTaskData.task_plan_start);
-      const end = new Date(this.historyTaskData.task_plan_end);
-      const differenceInTime = end.getTime() - start.getTime();
-      const differenceInDays = differenceInTime / (1000 * 3600 * 24);
-
-      // ตรวจสอบว่าไม่สามารถใส่ค่าลบหรือค่าเป็น NaN ได้
-      if (differenceInDays < 0 || isNaN(differenceInDays)) {
-        this.historyTaskData.task_manday = "";
-      } else {
-        this.historyTaskData.task_manday = differenceInDays;
-
-        // ตรวจสอบว่า task_manday ไม่เกินจำนวนวันที่คำนวณได้
-        if (this.historyTaskData.task_manday > differenceInDays) {
-          this.historyTaskData.task_manday = differenceInDays;
-        }
-      }
     },
 
     async deleteTask(task) {
@@ -2357,14 +2385,17 @@ export default {
         );
 
         // เพิ่มเงื่อนไขเพื่อตรวจสอบ task_manday ให้ไม่มากกว่าจำนวนวันที่คำนวณและไม่เป็นค่าลบ
-        if (taskData.task_manday < 0) {
+        if (parseFloat(taskData.task_manday) < 0) {
+          // เปลี่ยนจาก taskData.task_manday < 0 เป็น parseFloat(taskData.task_manday) < 0
           throw new Error("Task manday must be greater than or equal to 0");
         }
 
         // คำนวณ Manday โดยใช้วันที่ที่กำหนดและวันที่สิ้นสุดของงาน
         const start = new Date(taskData.task_plan_start);
         const end = new Date(taskData.task_plan_end);
-        const manday = Math.round((end - start) / (1000 * 60 * 60 * 24));
+
+        // เช็คว่าวันที่เริ่มและสิ้นสุดเหมือนกัน
+        const manday = parseFloat(taskData.task_manday); // เปลี่ยนจาก parseInt(taskData.task_manday) เป็น parseFloat(taskData.task_manday)
 
         // ตรวจสอบว่า Manday มีค่ามากกว่าหรือเท่ากับ 0
         if (manday < 0) {
@@ -2372,8 +2403,8 @@ export default {
         }
 
         // ตรวจสอบว่า task_manday มีค่าน้อยกว่าหรือเท่ากับ Manday ที่คำนวณได้
-        if (taskData.task_manday > manday) {
-          throw new Error(`Task manday must be between 0 and ${manday}`);
+        if (manday > manday + 1) {
+          throw new Error(`Task manday must be between 0 and ${manday + 1}`);
         }
 
         // เพิ่มเงื่อนไขเพื่อตั้งค่า task_status เป็น "correct" เมื่อ Progress เท่ากับ 100
@@ -2427,7 +2458,7 @@ export default {
         // Handle error when start date is after end date
         return;
       }
-      const manday = Math.round((end - start) / (1000 * 60 * 60 * 24));
+      const manday = Math.round((end - start) / (1000 * 60 * 60 * 24) + 1);
       this.editedTask.task_manday = manday;
     },
 
