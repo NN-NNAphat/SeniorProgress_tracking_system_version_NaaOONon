@@ -14,13 +14,19 @@
             </v-card-title>
 
             <v-card-subtitle>
-              Systems Progress: {{ Math.floor(system.system_progress) }} %
+              Systems Progress
               <v-progress-linear
                 :color="getProgressColor(parseInt(system.system_progress))"
                 height="50"
                 :value="parseInt(system.system_progress)"
                 striped
-              ></v-progress-linear>
+              >
+            
+             <strong :style="{ color: '#5E5E5E', fontSize: '20px' }"
+                >{{ Math.floor(system_progress) || 0}}%</strong
+              ></v-progress-linear
+            >
+            </v-progress-linear>
             </v-card-subtitle>
           </v-card-item>
 

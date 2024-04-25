@@ -13,12 +13,17 @@
             </v-icon>
           </v-card-title>
           <v-card-subtitle>
-            Project Progress : {{ Math.floor(project.project_progress) }} %
+            Project Progress 
             <v-progress-linear
               :color="getProgressColor(project.project_progress)"
               height="50"
               :value="parseInt(project.project_progress)"
               striped
+            >
+
+             <strong :style="{ color: '#5E5E5E', fontSize: '20px' }"
+                >{{ Math.floor(project_progress)|| 0}}%</strong
+              ></v-progress-linear
             >
             </v-progress-linear>
           </v-card-subtitle>
