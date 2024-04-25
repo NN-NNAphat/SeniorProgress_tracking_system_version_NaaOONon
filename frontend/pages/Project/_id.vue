@@ -13,13 +13,14 @@
             </v-icon>
           </v-card-title>
           <v-card-subtitle>
-            Project Progress : {{ Math.floor(project.project_progress) }}
+            Project Progress : {{ Math.floor(project.project_progress) }} %
             <v-progress-linear
               :color="getProgressColor(project.project_progress)"
               height="50"
               :value="parseInt(project.project_progress)"
               striped
-            ></v-progress-linear>
+            >
+            </v-progress-linear>
           </v-card-subtitle>
         </v-card-item>
 
@@ -335,13 +336,17 @@
         <v-card-text>
           <!-- Form to edit system -->
           <v-form @submit.prevent="updateSystem">
+            <v-lable> Systems ID </v-lable>
             <v-text-field
               v-model="editedSystem.system_id"
               readonly
               disabled
             ></v-text-field>
+            <v-lable> Ststems Name Thai </v-lable>
             <v-text-field v-model="editedSystem.system_nameTH"></v-text-field>
+            <v-lable> Ststems Name English </v-lable>
             <v-text-field v-model="editedSystem.system_nameEN"></v-text-field>
+            <v-lable> System Shortname </v-lable>
             <v-text-field
               v-model="editedSystem.system_shortname"
             ></v-text-field>
@@ -764,6 +769,7 @@ export default {
           icon: "success",
           title: "Success",
           text: "User assigned successfully",
+          confirmButtonColor: "#009933",
         });
 
         // เรียกใช้งานเมธอดเพื่ออัปเดตรายการผู้ใช้
@@ -836,7 +842,7 @@ export default {
           text: "You are about to delete this user from the system.",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#009933",
           cancelButtonColor: "#d33",
           confirmButtonText: "Yes, delete it!",
         });
@@ -851,11 +857,12 @@ export default {
             if (index !== -1) {
               this.users.splice(index, 1);
             }
-            await Swal.fire(
-              "Deleted!",
-              "The user has been deleted from the system.",
-              "success"
-            );
+            await Swal.fire({
+              title: "Deleted!",
+              text: "The user has been deleted from the system.",
+              icon: "success",
+              confirmButtonColor: "#009933",
+            });
           } else {
             await Swal.fire(
               "Error!",
@@ -930,7 +937,7 @@ export default {
           text: "You are about to restore the selected systems.",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#009933",
           cancelButtonColor: "#d33",
           confirmButtonText: "Yes, restore them!",
         });
@@ -1000,7 +1007,7 @@ export default {
           text: "You won't be able to revert this!",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#009933",
           cancelButtonColor: "#d33",
           confirmButtonText: "Yes, delete them!",
         });
@@ -1116,6 +1123,7 @@ export default {
           text: "New system created successfully",
           showConfirmButton: true,
           allowOutsideClick: false,
+          confirmButtonColor: "#009933",
         });
         // Clear the form
         this.newSystem = {
@@ -1179,7 +1187,7 @@ export default {
           text: "You won't be able to revert this!",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#009933",
           cancelButtonColor: "#d33",
           confirmButtonText: "Yes, delete it!",
         });

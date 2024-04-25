@@ -32,11 +32,19 @@
                 <p>Screen Count: {{ system.screen_count || 0 }}</p>
                 <p>
                   System Plan Start:
-                  {{ formatDate(system.system_plan_start) || "Not determined" }}
+                  {{
+                    system.system_plan_start
+                      ? formatDate(system.system_plan_start)
+                      : "Not determined"
+                  }}
                 </p>
                 <p>
                   System Plan End:
-                  {{ formatDate(system.system_plan_end) || "Not determined" }}
+                  {{
+                    system.system_plan_end
+                      ? formatDate(system.system_plan_end)
+                      : "Not determined"
+                  }}
                 </p>
               </v-card-text>
             </div>
@@ -1039,6 +1047,7 @@ export default {
           icon: "success",
           title: "Success",
           text: "Users assigned to screen successfully!",
+          confirmButtonColor: "#009933",
         });
 
         // Refresh ตารางผู้ใช้หลังจาก Assign User เสร็จสิ้น
@@ -1267,6 +1276,8 @@ export default {
         const systemData = await response.json();
 
         this.systemNameENG = systemData.system_nameEN; // ใส่ชื่อ field ที่ต้องการแสดง
+
+        console.log(systemData.system_plan_start);
       } catch (error) {
         console.error("Error fetching system:", error);
         // Handle error fetching Screen
@@ -1329,6 +1340,7 @@ export default {
           icon: "success",
           title: "Success",
           text: "Screen updated successfully",
+          confirmButtonColor: "#009933",
         });
 
         this.editScreenDialog = false;
@@ -1438,9 +1450,12 @@ export default {
             throw new Error("Failed to delete screen");
           }
 
-          console.log("Screen deleted successfully");
-
-          await Swal.fire("Success", "Screen deleted successfully.", "success");
+          await Swal.fire({
+            title: "Success",
+            text: "Screen deleted successfully.",
+            icon: "success",
+            confirmButtonColor: "#009933",
+          });
 
           this.fetchScreens();
           this.fetchSystemNameENG();
@@ -1565,13 +1580,12 @@ export default {
               throw new Error("Failed to delete screen");
             }
 
-            console.log("Screen deleted successfully");
-
-            await Swal.fire(
-              "Success",
-              "Screen deleted successfully.",
-              "success"
-            );
+            await Swal.fire({
+              title: "Success",
+              text: "Screen deleted successfully.",
+              icon: "success",
+              confirmButtonColor: "#009933",
+            });
 
             // Refresh the deleted screens data
             this.fetchDeletedScreens();
@@ -1637,11 +1651,12 @@ export default {
 
           await Promise.all(restorePromises);
 
-          await Swal.fire(
-            "Success",
-            "Selected screens restored successfully.",
-            "success"
-          );
+          await Swal.fire({
+            title: "Success",
+            text: "Selected screens restored successfully.",
+            icon: "success",
+            confirmButtonColor: "#009933",
+          });
 
           this.fetchDeletedScreens();
           this.fetchScreens();
@@ -1683,7 +1698,6 @@ export default {
                 throw new Error("Failed to delete screen");
               }
 
-              console.log("Screen deleted successfully");
               return screen.id;
             }
           );
@@ -1822,6 +1836,7 @@ export default {
           icon: "success",
           title: "Success",
           text: "Screen deleted successfully",
+          confirmButtonColor: "#009933",
         });
         this.fetchDeletedScreens(); // Refresh the deleted screens data
       } catch (error) {

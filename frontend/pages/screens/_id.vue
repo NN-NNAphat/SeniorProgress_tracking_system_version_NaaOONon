@@ -1480,7 +1480,7 @@ export default {
       tasks: [],
       currentPage: 1,
       perPage: 12,
-      statusOptions: ["start", "stop", "correct", "mistake", "Not started yet"],
+      statusOptions: ["In Progress", "Completed", "Not started yet"],
       showImageDialog: false,
       screen_plan_start: "",
       screen_plan_end: "",

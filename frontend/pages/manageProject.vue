@@ -901,6 +901,7 @@ export default {
           icon: "success",
           title: "Success",
           text: "Project updated successfully",
+          confirmButtonColor: "#009933",
         });
         this.editProjectDialog = false;
         this.fetchProjects();
@@ -910,6 +911,7 @@ export default {
           icon: "error",
           title: "Error",
           text: "Failed to update project",
+          confirmButtonColor: "#009933",
         });
       }
     },
@@ -933,7 +935,7 @@ export default {
           text: "You won't be able to revert this!",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#009933",
           cancelButtonColor: "#d33",
           confirmButtonText: "Yes, delete it!",
         });

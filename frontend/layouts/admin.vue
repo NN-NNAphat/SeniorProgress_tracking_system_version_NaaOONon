@@ -199,12 +199,19 @@
       <v-toolbar-title class="mb-3">
         <h4>Progress Tracking</h4>
       </v-toolbar-title>
+      <v-spacer></v-spacer>
+
+      <!-- Back button -->
+      <v-btn icon class="mb-3" color="primary" @click="goBack">
+        <v-icon>mdi-chevron-left</v-icon>
+      </v-btn>
+
+      <!-- Forward button -->
+      <v-btn icon class="mb-3" color="primary" @click="goForward">
+        <v-icon>mdi-chevron-right</v-icon>
+      </v-btn>
 
       <!-- Logout button -->
-      <v-spacer></v-spacer>
-      <v-btn icon class="mb-3" color="error" @click="logout">
-        <v-icon>mdi-logout</v-icon>
-      </v-btn>
     </v-app-bar>
 
     <!-- Main content -->
@@ -345,6 +352,13 @@ export default {
     },
   },
   methods: {
+    goBack() {
+      this.$router.back();
+    },
+    // Function to go forward
+    goForward() {
+      this.$router.forward();
+    },
     async getOwnProject() {
       await this.$axios
         .get("/user_projects/getOneUserID/" + this.$auth.user.id)
