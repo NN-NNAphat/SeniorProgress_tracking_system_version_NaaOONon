@@ -846,6 +846,7 @@ export default {
           icon: "success",
           title: "Success",
           text: data.message || "New Project created successfully",
+          confirmButtonColor: "#009933",
         });
         this.createProjectDialog = false;
         this.fetchProjects();
