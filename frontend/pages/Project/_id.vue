@@ -909,7 +909,7 @@ export default {
     },
     async goToSystemsDetail(systemId) {
       // Navigate to the Systems/_id.vue page with the systemId parameter
-      await this.$router.push({ path: `/systems/${systemId}` });
+      await this.$router.push({ path: `/Project/systems/${systemId}` });
     },
     async fetchProjectNameENG() {
       try {

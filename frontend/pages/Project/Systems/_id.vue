@@ -1306,7 +1306,7 @@ export default {
         ) {
           // ตรวจสอบว่า this.$auth.user.id อยู่ใน users หรือเป็น "Admin" หรือไม่
           // ถ้าใช่ให้ทำการเปลี่ยนหน้าไปยังรายละเอียดของหน้าจอ
-          await this.$router.push({ path: `/screens/${screenId}` });
+          await this.$router.push({ path: `/Project/Systems/screens/${screenId}` });
         } else {
           console.log("User does not have access to this screen");
           // หากไม่มีสิทธิ์เข้าถึงหน้าจอ สามารถเพิ่มการจัดการตามความเหมาะสมที่นี่

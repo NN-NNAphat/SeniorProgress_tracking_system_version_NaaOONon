@@ -1816,7 +1816,7 @@
   dependencies:
     http-proxy-middleware "^1.0.6"
 
-"@nuxtjs/vuetify@^1.12.1":
+"@nuxtjs/vuetify@^1.12.3":
   version "1.12.3"
   resolved "https://registry.npmjs.org/@nuxtjs/vuetify/-/vuetify-1.12.3.tgz"
   integrity sha512-6uVL3cfESMB00eVjJTNkyU4jvuPTGPn1yteo7lQTH6v+fxHcPaOgvzVYHIKSHIz1DecuOiB5c9b+YjsRP5+C8A==

@@ -2,6 +2,11 @@
   <!-- Show screen detel -->
   <div class="screen-details">
     <v-row style="margin-bottom: 20px" align="center">
+      <div>
+        <div>
+          <Breadcrumbs />
+        </div>
+      </div>
       <v-col cols="12" v-if="screenId">
         <!-- Card แสดงข้อมูล Screen -->
         <v-card class="mx-auto align-start" max-width="none" hover>
@@ -1405,12 +1410,15 @@
 <script>
 import axios from "axios";
 import Swal from "sweetalert2";
+import Breadcrumbs from "~/components/project/Breadcrumbs.vue";
 
 export default {
   middleware: "auth",
   layout: "admin",
   layout: "admin",
-
+  components: {
+    Breadcrumbs,
+  },
   data() {
     return {
       loggedIn: this.$auth.loggedIn,
